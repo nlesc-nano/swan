@@ -24,12 +24,10 @@ setup(
     author_email='f.zapata@esciencecenter.nl',
     url='https://github.com/nlesc-nano/swan',
     packages=find_packages(),
-    package_dir={'swan':
-                 'swan'},
+    package_dir={'swan': 'swan'},
     include_package_data=True,
     license="Apache Software License 2.0",
     zip_safe=False,
-    keywords='swan',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Science/Research',
@@ -39,6 +37,9 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
+    entry_points={
+        'console_scripts': ['cosmo=swan.cosmo:main']
+    },
     test_suite='tests',
     install_requires=['numpy', 'pandas'],
     setup_requires=[
