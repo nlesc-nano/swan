@@ -1,5 +1,3 @@
-from functools import partial
-from multiprocessing import Pool
 from subprocess import (PIPE, Popen)
 
 import argparse
@@ -10,25 +8,6 @@ import pandas as pd
 
 # Starting logger
 logger = logging.getLogger(__name__)
-
-
-class Options(dict):
-    """
-    Extend the base class dictionary with a '.' notation.
-    example:
-    .. code-block:: python
-       d = Options({'a': 1})
-       d['a'] # 1
-       d.a    # 1
-    """
-    def __getattr__(self, attr):
-        return self.get(attr)
-
-    def __setattr__(self, key, value):
-        self.__setitem__(key, value)
-
-    def __deepcopy__(self, _):
-        return Options(self.copy())
 
 
 def main():
@@ -43,14 +22,10 @@ def main():
 
     inp = {"file_smiles": args.i, "solvent": args.s}
 
-    # # input arguments
-    opt = Options(inp)
-    print(opt)
-
     # compute_activity_coefficient
-    df = compute_activity_coefficient(opt)
+    df = compute_activity_coefficient(inp)
 
-    print(df.head())
+    df.to_csv("Gammas.csv", sep='\t')
 
 
 def compute_activity_coefficient(opt: dict) -> pd.DataFrame:
@@ -58,11 +33,12 @@ def compute_activity_coefficient(opt: dict) -> pd.DataFrame:
     Call the Unicaf method from ADf-Cosmo to compute the activation coefficient:
     https://www.scm.com/doc/COSMO-RS/UNIFAC_program/Input_formatting.html?highlight=smiles
     """
-    fun = partial(call_unicaf, opt)
-    smiles = np.loadtxt(opt.file_smiles, dtype=str)
-    with Pool() as p:
-        gammas = p.map(fun, smiles)
+    smiles = np.loadtxt(opt["file_smiles"], dtype=str)
+    gammas = np.empty_like(smiles)
 
+    for i, x in np.ndenumerate(smiles):
+        gammas[i] = call_unicaf(opt, x)
+        
     return pd.DataFrame(data=gammas, index=smiles, columns=['gamma'])
 
 
@@ -70,7 +46,7 @@ def call_unicaf(opt: dict, smile: str) -> float:
     """
     Call the Unicaf executable from ADF
     """
-    cmd = f'unifac -smiles {opt.solvent} {smile} -x 1 0  -t ACTIVITYCOEF'
+    cmd = f'unifac -smiles {opt["solvent"]} "{smile}" -x 1 0  -t ACTIVITYCOEF'.split('\n')
     rs = run_command(cmd)
 
     if rs[1]:
@@ -90,15 +66,14 @@ def read_gamma(xs: bytes) -> float:
     return float(arr[index])
 
 
-def run_command(cmd: str, workdir: str):
+def run_command(cmd: str, workdir: str="."):
     """
     Run a bash command using subprocess
     """
-    with Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True, cwd=workdir.as_posix()) as p:
+    with Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True, cwd=workdir) as p:
         rs = p.communicate()
 
     logger.info("RUNNING COMMAND: {}".format(cmd))
-    logger.info("COMMAND OUTPUT: {}".format(rs[0].decode()))
     logger.error("COMMAND ERROR: {}".format(rs[1].decode()))
 
     return rs
