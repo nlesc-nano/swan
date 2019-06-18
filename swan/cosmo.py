@@ -1,3 +1,4 @@
+from .functions import chunks_of
 from subprocess import (PIPE, Popen)
 
 import argparse
@@ -18,14 +19,13 @@ def main():
     parser.add_argument('-i', required=True,
                         help="Input file in with the smiles")
     parser.add_argument('-s', help='solvent', default="CC1=CC=CC=C1")
+    parser.add_argument('-n', help='Number of molecules per file', default=10000)
     args = parser.parse_args()
 
-    inp = {"file_smiles": args.i, "solvent": args.s}
+    inp = {"file_smiles": args.i, "solvent": args.s, "size_chunk": args.n}
 
     # compute_activity_coefficient
-    df = compute_activity_coefficient(inp)
-
-    df.to_csv("Gammas.csv", sep='\t')
+    compute_activity_coefficient(inp)
 
 
 def compute_activity_coefficient(opt: dict) -> pd.DataFrame:
@@ -34,19 +34,25 @@ def compute_activity_coefficient(opt: dict) -> pd.DataFrame:
     https://www.scm.com/doc/COSMO-RS/UNIFAC_program/Input_formatting.html?highlight=smiles
     """
     smiles = np.loadtxt(opt["file_smiles"], dtype=str)
-    gammas = np.empty_like(smiles)
+    size = opt["size_chunk"]
 
-    for i, x in np.ndenumerate(smiles):
-        gammas[i] = call_unicaf(opt, x)
-        
-    return pd.DataFrame(data=gammas, index=smiles, columns=['gamma'])
+    for k, xs in enumerate(chunks_of(smiles, size)):
+        gammas = np.empty(size)
+        for i, x in np.ndenumerate(smiles):
+            gammas[i] = call_unicaf(opt, x)
+
+        df = pd.DataFrame(data=gammas, index=smiles, columns=['gamma'])
+
+        name = "Gammas_{k}.csv"
+        df.to_csv(name, sep='\t')
 
 
 def call_unicaf(opt: dict, smile: str) -> float:
     """
     Call the Unicaf executable from ADF
     """
-    cmd = f'unifac -smiles {opt["solvent"]} "{smile}" -x 1 0  -t ACTIVITYCOEF'.split('\n')
+    cmd = f'unifac -smiles {opt["solvent"]} "{smile}" -x 1 0  -t ACTIVITYCOEF'.split(
+        '\n')
     rs = run_command(cmd)
 
     if rs[1]:
@@ -66,7 +72,7 @@ def read_gamma(xs: bytes) -> float:
     return float(arr[index])
 
 
-def run_command(cmd: str, workdir: str="."):
+def run_command(cmd: str, workdir: str = "."):
     """
     Run a bash command using subprocess
     """
@@ -74,7 +80,8 @@ def run_command(cmd: str, workdir: str="."):
         rs = p.communicate()
 
     logger.info("RUNNING COMMAND: {}".format(cmd))
-    logger.error("COMMAND ERROR: {}".format(rs[1].decode()))
+    if rs[1]:
+        logger.error("COMMAND ERROR: {}".format(rs[1].decode()))
 
     return rs
 
@@ -85,7 +92,7 @@ def config_logger(workdir: str):
     """
     file_log = os.path.join(workdir, 'output.log')
     logging.basicConfig(filename=file_log, level=logging.DEBUG,
-                        format='%(asctime)s---%(levelname)s\n%(message)s\n',
+                        format='%(asctime)s---%(levelname)s\n%(message)s',
                         datefmt='[%I:%M:%S]')
     logging.getLogger("noodles").setLevel(logging.WARNING)
     handler = logging.StreamHandler()
