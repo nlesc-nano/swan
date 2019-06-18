@@ -61,9 +61,11 @@ def read_gamma(xs: bytes) -> float:
     Read the gamma value (activity coefficient) from the Unicaf output
     """
     arr = [x.lstrip() for x in xs.split(b'\n') if x]
-    index = arr.index(b'gamma') + 2
-
-    return float(arr[index])
+    if b'gamma' in arr:
+        index = arr.index(b'gamma') + 2
+        return float(arr[index])
+    else:
+        return np.nan
 
 
 def run_command(cmd: str, workdir: str="."):
