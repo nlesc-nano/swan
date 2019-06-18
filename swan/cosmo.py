@@ -28,22 +28,25 @@ def main():
     compute_activity_coefficient(inp)
 
 
-def compute_activity_coefficient(opt: dict) -> pd.DataFrame:
+def compute_activity_coefficient(opt: dict):
     """
     Call the Unicaf method from ADf-Cosmo to compute the activation coefficient:
     https://www.scm.com/doc/COSMO-RS/UNIFAC_program/Input_formatting.html?highlight=smiles
     """
-    smiles = np.loadtxt(opt["file_smiles"], dtype=str)
+    # Read the file containing the smiles
+    df = pd.read_csv(opt["file_smiles"], sep="\t", header=None)
+    df.rename(columns = {0: "smiles"}, inplace=True)
+    smiles = df["smiles"].values
+    
     size = opt["size_chunk"]
 
     for k, xs in enumerate(chunks_of(smiles, size)):
-        gammas = np.empty(size)
-        for i, x in np.ndenumerate(smiles):
+        gammas = np.empty(len(xs))
+        for i, x in enumerate(xs):
             gammas[i] = call_unicaf(opt, x)
-
-        df = pd.DataFrame(data=gammas, index=smiles, columns=['gamma'])
-
-        name = "Gammas_{k}.csv"
+        
+        df = pd.DataFrame(data=gammas, index=xs, columns=['gamma'])
+        name = f"Gammas_{k}.csv"
         df.to_csv(name, sep='\t')
 
 
