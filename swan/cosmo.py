@@ -1,4 +1,6 @@
 from .functions import (chunks_of, run_command)
+from pathlib import Path
+from scm.plams import init, finish
 
 import argparse
 import logging
@@ -11,21 +13,23 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    # configure logger
-    config_logger(".")
-
     parser = argparse.ArgumentParser(description="cosmos -i file_smiles")
     parser.add_argument('-i', required=True,
                         help="Input file in with the smiles")
     parser.add_argument('-s', help='solvent', default="CC1=CC=CC=C1")
     parser.add_argument(
         '-n', help='Number of molecules per file', default=10000)
+    parser.add_argument('-w', help="workdir", default=Path("."))
     args = parser.parse_args()
 
-    inp = {"file_smiles": args.i, "solvent": args.s, "size_chunk": args.n}
+    inp = {"file_smiles": args.i, "solvent": args.s, "size_chunk": args.n, "workdir": args.w}
+
+    # configure logger
+    config_logger(args.w)
 
     # compute_activity_coefficient
     compute_activity_coefficient(inp)
+    finish()
 
 
 def compute_activity_coefficient(opt: dict):
@@ -43,7 +47,7 @@ def compute_activity_coefficient(opt: dict):
     for k, xs in enumerate(chunks_of(smiles, size)):
         gammas = np.empty(len(xs))
         for i, x in enumerate(xs):
-            gammas[i] = call_unifac(opt, x)
+            gammas[i] = call_mopac(x)
 
         df = pd.DataFrame(data=gammas, index=xs, columns=['gamma'])
         name = f"Gammas_{k}.csv"
@@ -54,14 +58,14 @@ def call_unifac(opt: dict, smile: str) -> float:
     """
     Call the Unifac executable from ADF
     """
-    unifac = os.path.join(os.environ['ADFBIN'], 'unifac')
+    unifac = Path(os.environ['ADFBIN']) / 'unifac'
     cmd = f'{unifac} -smiles {opt["solvent"]} "{smile}" -x 1 0  -t ACTIVITYCOEF'.split(
         '\n')
     rs = run_command(cmd)
 
     if rs[1]:
         # There was an error
-        return np.nan
+        return np.call_mopac(opt, smile)
     else:
         return read_gamma(rs[0])
 
@@ -78,11 +82,11 @@ def read_gamma(xs: bytes) -> float:
         return np.nan
 
 
-def config_logger(workdir: str):
+def config_logger(workdir: Path):
     """
     Setup the logging infrasctucture.
     """
-    file_log = os.path.join(workdir, 'output.log')
+    file_log = workdir / 'output.log'
     logging.basicConfig(filename=file_log, level=logging.DEBUG,
                         format='%(asctime)s---%(levelname)s\n%(message)s',
                         datefmt='[%I:%M:%S]')
