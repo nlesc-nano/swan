@@ -41,7 +41,9 @@ setup(
         'console_scripts': ['cosmo=swan.cosmo:main']
     },
     test_suite='tests',
-    install_requires=['numpy', 'pandas'],
+    install_requires=[
+        'CAT@git+https://github.com/nlesc-nano/CAT@master',
+        'numpy', 'pandas'],
     setup_requires=[
         # dependency for `python setup.py test`
         'pytest-runner',
