@@ -21,7 +21,7 @@ def call_mopac(smile: str, solvents=["Toluene.coskf"]) -> float:
     cmd = f'{fast_sigma} --smiles "{smile}"'
 
     try:
-        tmp = tempfile.mkdtemp(prefix = "cat_")
+        tmp = tempfile.mkdtemp(prefix="cat_")
         rs = run_command(cmd, workdir=tmp)
         if rs[1]:
             return np.nan, np.nan
@@ -29,6 +29,7 @@ def call_mopac(smile: str, solvents=["Toluene.coskf"]) -> float:
             return call_cat_mopac(Path(tmp), smile, solvents)
     finally:
         shutil.rmtree(tmp)
+
 
 def call_cat_mopac(tmp: Path, smile: str, solvents: list):
     """
@@ -48,11 +49,11 @@ def call_cat_mopac(tmp: Path, smile: str, solvents: list):
     solvents = [(coskf_path / solv).as_posix() for solv in solvents]
 
     # Call Cosmo
-    E_solv, gamma = get_solv(mol, solvents, coskf.as_posix(), job=CAT.CRSJob, s=s)
+    E_solv, gamma = get_solv(
+        mol, solvents, coskf.as_posix(), job=CAT.CRSJob, s=s)
 
-   
     return tuple(map(check_output, (E_solv, gamma)))
-   
+
 
 def check_output(xs):
     """
@@ -62,4 +63,3 @@ def check_output(xs):
         return xs[0]
     else:
         return np.nan
-    

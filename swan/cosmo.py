@@ -52,9 +52,11 @@ def compute_activity_coefficient(opt: dict):
     size = opt["size_chunk"]
 
     with Pool(processes=4) as p:
-        files = p.starmap(call_cosmo_on_chunk, enumerate(chunks_of(smiles, size)))
+        files = p.starmap(call_cosmo_on_chunk,
+                          enumerate(chunks_of(smiles, size)))
 
     return files
+
 
 def call_cosmo_on_chunk(k: int, smiles: list) -> str:
     """
@@ -72,7 +74,8 @@ def call_cosmo_on_chunk(k: int, smiles: list) -> str:
     df.to_csv(name, sep='\t')
 
     return name
-        
+
+
 def call_unifac(opt: dict, smile: str) -> float:
     """
     Call the Unifac executable from ADF
