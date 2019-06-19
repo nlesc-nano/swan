@@ -1,7 +1,7 @@
 from .functions import run_command
 from CAT.analysis.ligand_solvation import get_solv
 from pathlib import Path
-from scm.plams import init, finish, Settings
+from scm.plams import Settings
 
 import CAT
 import numpy as np
@@ -21,22 +21,21 @@ def call_mopac(smile: str, solvents=["Toluene.coskf"]) -> float:
     cmd = f'{fast_sigma} --smiles "{smile}"'
 
     try:
-        rs = run_command(cmd, workdir=os.getcwd())
-if rs[1]:
-            return np.nan
+        tmp = tempfile.mkdtemp(prefix = "cat_")
+        rs = run_command(cmd, workdir=tmp)
+        if rs[1]:
+            return np.nan, np.nan
         else:
-            x = call_cat_mopac(smile, solvents)
-            result = x if x is not None else np.nan
-            return result
+            return call_cat_mopac(Path(tmp), smile, solvents)
     finally:
-        shutil.rmtree("plams_workdir")
+        shutil.rmtree(tmp)
 
-def call_cat_mopac(smile: str, solvents: list):
+def call_cat_mopac(tmp: Path, smile: str, solvents: list):
     """
     use the CAT to call MOPAC.
     """
     # Call COSMO
-    coskf = Path(os.getcwd()) / 'CRSKF'
+    coskf = tmp / 'CRSKF'
 
     mol = molkit.from_smiles(smile)
     s = Settings()
@@ -49,10 +48,18 @@ def call_cat_mopac(smile: str, solvents: list):
     solvents = [(coskf_path / solv).as_posix() for solv in solvents]
 
     # Call Cosmo
-    init()
     E_solv, gamma = get_solv(mol, solvents, coskf.as_posix(), job=CAT.CRSJob, s=s)
-    finish()
 
    
-    return gamma
+    return tuple(map(check_output, (E_solv, gamma)))
    
+
+def check_output(xs):
+    """
+    Check that there is a valid output in x.
+    """
+    if xs:
+        return xs[0]
+    else:
+        return np.nan
+    
