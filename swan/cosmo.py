@@ -21,9 +21,9 @@ def main():
                         help="Input file in with the smiles")
     parser.add_argument('-s', help='solvent', default="CC1=CC=CC=C1")
     parser.add_argument(
-        '-n', help='Number of molecules per file', default=10000)
+        '-n', help='Number of molecules per file', default=10000, type=int)
     parser.add_argument(
-        '-p', help='Number of processes', default=10)
+        '-p', help='Number of processes', default=10, type=int)
     parser.add_argument('-w', help="workdir", default=Path("."))
     args = parser.parse_args()
 
