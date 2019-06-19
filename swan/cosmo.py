@@ -23,7 +23,7 @@ def main():
     parser.add_argument(
         '-n', help='Number of molecules per file', default=10000, type=int)
     parser.add_argument(
-        '-p', help='Number of processes', default=10, type=int)
+        '-p', help='Number of processes', default=1, type=int)
     parser.add_argument('-w', help="workdir", default=Path("."))
     args = parser.parse_args()
 
@@ -35,10 +35,10 @@ def main():
 
     # compute_activity_coefficient
     init()
-    compute_activity_coefficient(inp)
+    compute_activity_coefficient(Options(inp))
     finish()
-
-
+    
+    
 def compute_activity_coefficient(opt: dict):
     """
     Call the ADf-Cosmo method to compute the activation coefficient:
@@ -49,9 +49,10 @@ def compute_activity_coefficient(opt: dict):
     df.rename(columns={0: "smiles"}, inplace=True)
     smiles = df["smiles"].values
 
-    size = opt["size_chunk"]
+    # split the smiles into chunks and run it in multiple processes
+    size = opt.size_chunk
 
-    with Pool(processes=4) as p:
+    with Pool(processes=opt.processes) as p:
         files = p.starmap(call_cosmo_on_chunk,
                           enumerate(chunks_of(smiles, size)))
 
@@ -115,3 +116,22 @@ def config_logger(workdir: Path):
     logging.getLogger("command").setLevel(logging.WARNING)
     handler = logging.StreamHandler(sys.stdout)
     handler.terminator = ""
+
+
+class Options(dict):
+    """
+    Extend the base class dictionary with a '.' notation.
+    example:
+    .. code-block:: python
+       d = Options({'a': 1})
+       d['a'] # 1
+       d.a    # 1
+    """
+    def __getattr__(self, attr):
+        return self.get(attr)
+
+    def __setattr__(self, key, value):
+        self.__setitem__(key, value)
+
+    def __deepcopy__(self, _):
+        return Options(self.copy())
