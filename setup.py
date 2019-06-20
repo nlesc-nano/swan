@@ -38,7 +38,7 @@ setup(
         'Programming Language :: Python :: 3.7',
     ],
     entry_points={
-        'console_scripts': ['cosmo=swan.cosmo:main']
+        'console_scripts': ['cosmo=swan.cosmo.cosmo:main']
     },
     test_suite='tests',
     install_requires=[

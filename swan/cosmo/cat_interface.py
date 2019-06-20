@@ -28,7 +28,8 @@ def call_mopac(smile: str, solvents=["Toluene.coskf"]) -> float:
         else:
             return call_cat_mopac(Path(tmp), smile, solvents)
     finally:
-        shutil.rmtree(tmp)
+        if Path(tmp).exists():
+            shutil.rmtree(tmp)
 
 
 def call_cat_mopac(tmp: Path, smile: str, solvents: list):
@@ -50,7 +51,7 @@ def call_cat_mopac(tmp: Path, smile: str, solvents: list):
 
     # Call Cosmo
     E_solv, gamma = get_solv(
-        mol, solvents, coskf.as_posix(), job=CAT.CRSJob, s=s)
+        mol, solvents, coskf.as_posix(), job=CAT.CRSJob, s=s, keep_files=False)
 
     return tuple(map(check_output, (E_solv, gamma)))
 

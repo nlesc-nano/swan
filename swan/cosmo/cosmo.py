@@ -1,5 +1,6 @@
 from .cat_interface import call_mopac
 from .functions import (chunks_of, run_command)
+from functools import partial
 from pathlib import Path
 from scm.plams import init, finish
 from multiprocessing import Pool
@@ -25,10 +26,17 @@ def main():
     parser.add_argument(
         '-p', help='Number of processes', default=1, type=int)
     parser.add_argument('-w', help="workdir", default=Path("."))
+    parser.add_argument('-csv', help="Current csv data", default=None)
+    
     args = parser.parse_args()
 
+    if args.csv is not None:
+        df = pd.read_csv(args.csv, sep='\t', index_col=0)
+    else:
+        df = pd.DataFrame(columns=["E_solv", "gammas"])
+    
     inp = {"file_smiles": args.i, "solvent": args.s, "size_chunk": args.n, "workdir": args.w,
-           "processes": args.p}
+           "processes": args.p, "data": df}
 
     # configure logger
     config_logger(args.w)
@@ -52,25 +60,26 @@ def compute_activity_coefficient(opt: dict):
     # split the smiles into chunks and run it in multiple processes
     size = opt.size_chunk
 
+    fun = partial(call_cosmo_on_chunk, opt.data)
     with Pool(processes=opt.processes) as p:
-        files = p.starmap(call_cosmo_on_chunk,
-                          enumerate(chunks_of(smiles, size)))
+        files = p.starmap(fun, enumerate(chunks_of(smiles, size)))
 
     return files
 
 
-def call_cosmo_on_chunk(k: int, smiles: list) -> str:
+def call_cosmo_on_chunk(data: pd.DataFrame, k: int, smiles: list) -> str:
     """
     Call chunk `k` containing the list of string given by `smiles`
     """
-    gammas = np.empty(len(smiles))
-    E_solv = np.empty(len(smiles))
-    for i, x in enumerate(smiles):
-        x, y = call_mopac(x)
-        E_solv[i] = x
-        gammas[i] = y
+    df = pd.DataFrame(columns=data.columns)
 
-    df = pd.DataFrame(data={"gammas": gammas, "E_solv": E_solv}, index=smiles)
+    for i, x in enumerate(smiles):
+        if x in data.index:
+            df.loc[x] = data.loc[x]
+        else:
+            df.loc[x] = call_mopac(x)
+
+    # Store the chunk in a file
     name = f"Gammas_{k}.csv"
     df.to_csv(name, sep='\t')
 
