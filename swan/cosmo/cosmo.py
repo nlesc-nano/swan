@@ -27,14 +27,14 @@ def main():
         '-p', help='Number of processes', default=1, type=int)
     parser.add_argument('-w', help="workdir", default=Path("."))
     parser.add_argument('-csv', help="Current csv data", default=None)
-    
+
     args = parser.parse_args()
 
     if args.csv is not None:
         df = pd.read_csv(args.csv, sep='\t', index_col=0)
     else:
         df = pd.DataFrame(columns=["E_solv", "gammas"])
-    
+
     inp = {"file_smiles": args.i, "solvent": args.s, "size_chunk": args.n, "workdir": args.w,
            "processes": args.p, "data": df}
 
@@ -45,8 +45,8 @@ def main():
     init()
     compute_activity_coefficient(Options(inp))
     finish()
-    
-    
+
+
 def compute_activity_coefficient(opt: dict):
     """
     Call the ADf-Cosmo method to compute the activation coefficient:
@@ -136,6 +136,7 @@ class Options(dict):
        d['a'] # 1
        d.a    # 1
     """
+
     def __getattr__(self, attr):
         return self.get(attr)
 
