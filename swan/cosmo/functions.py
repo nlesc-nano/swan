@@ -14,8 +14,8 @@ def run_command(cmd: str, workdir: str = "."):
     with Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True, cwd=workdir) as p:
         rs = p.communicate()
 
-    logger.info("RUNNING COMMAND: {}".format(cmd))
     if rs[1]:
+        logger.info("RUNNING COMMAND: {}".format(cmd))
         logger.error("COMMAND ERROR: {}".format(rs[1].decode()))
 
     return rs
