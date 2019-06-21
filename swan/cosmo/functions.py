@@ -1,5 +1,7 @@
 from subprocess import (PIPE, Popen)
 import logging
+import pandas as pd
+from pathlib import Path
 
 # Starting logger
 logger = logging.getLogger(__name__)
@@ -23,3 +25,20 @@ def chunks_of(xs: list, n: int):
     """Yield successive n-sized chunks from xs"""
     for i in range(0, len(xs), n):
         yield xs[i:i + n]
+
+
+def merge_csv(path: str, output: str) -> pd.DataFrame:
+    """
+    Read all the csv files from a given `path` and generates a single dataframe
+    """
+    p = Path(path)
+    files = [x.as_posix() for x in p.rglob("Gamma*.csv")]
+    df = pd.read_csv(files[0], sep='\t', index_col=0)
+
+    # read all the csv files
+    for f in files[1:]:
+        s = pd.read_csv(f, sep='\t', index_col=0)
+        df = pd.concat((df, s))
+            
+
+    df.to_csv(output, sep='\t')
