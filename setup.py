@@ -33,17 +33,19 @@ setup(
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: Apache Software License',
         'Natural Language :: English',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
     entry_points={
-        'console_scripts': ['cosmo=swan.cosmo.cosmo:main']
+        'console_scripts': [
+            'cosmo=swan.cosmo.cosmo:main',
+            'train_model=swan.models.models:main']
     },
     test_suite='tests',
     install_requires=[
         'CAT@git+https://github.com/nlesc-nano/CAT@master',
-        'numpy', 'pandas'],
+        'deepchem', 'numpy', 'pandas', 'pyyaml>=5.1.1',
+        'schema'],
     setup_requires=[
         # dependency for `python setup.py test`
         'pytest-runner',

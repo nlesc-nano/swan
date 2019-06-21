@@ -1,0 +1,8 @@
+csv_file:
+  features.csv
+
+tasks:
+  - gammas
+
+featurizer:
+  - circularfingerprint

@@ -1,19 +1,16 @@
 from .cat_interface import call_mopac
 from .functions import (chunks_of, run_command)
 from functools import partial
+from multiprocessing import Pool
 from pathlib import Path
 from scm.plams import init, finish
-from multiprocessing import Pool
+from swan.log_config import config_logger
+from swan.utils import Options
 
 import argparse
-import logging
 import numpy as np
 import os
 import pandas as pd
-import sys
-
-# Starting logger
-logger = logging.getLogger(__name__)
 
 
 def main():
@@ -112,36 +109,3 @@ def read_gamma(xs: bytes) -> float:
         return float(arr[index])
     else:
         return np.nan
-
-
-def config_logger(workdir: Path):
-    """
-    Setup the logging infrasctucture.
-    """
-    file_log = workdir / 'output.log'
-    logging.basicConfig(filename=file_log, level=logging.DEBUG,
-                        format='%(asctime)s---%(levelname)s\n%(message)s',
-                        datefmt='[%I:%M:%S]')
-    logging.getLogger("command").setLevel(logging.WARNING)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.terminator = ""
-
-
-class Options(dict):
-    """
-    Extend the base class dictionary with a '.' notation.
-    example:
-    .. code-block:: python
-       d = Options({'a': 1})
-       d['a'] # 1
-       d.a    # 1
-    """
-
-    def __getattr__(self, attr):
-        return self.get(attr)
-
-    def __setattr__(self, key, value):
-        self.__setitem__(key, value)
-
-    def __deepcopy__(self, _):
-        return Options(self.copy())
