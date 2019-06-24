@@ -7,7 +7,6 @@ from swan.log_config import config_logger
 
 import argparse
 import logging
-import pandas as pd
 import deepchem as dc
 
 # Starting logger
@@ -67,7 +66,7 @@ class Modeler:
         self.transform_data()
 
         # Use the random forest approach
-        model = self.call_random_forest()
+        model = self.fit_model()
 
         return model
 
@@ -98,17 +97,6 @@ class Modeler:
         score = evaluator.compute_model_performance([metric])
         print("score: ", score)
 
-    def call_random_forest(self):
-        """
-        Call the sklearn `RandomForestRegressor`
-        """
-        logger.info("Train the model using a random forest")
-        sklearn_model = RandomForestRegressor(n_estimators=100, max_features='sqrt', n_jobs=-1)
-        model = dc.models.SklearnModel(sklearn_model)
-        model.fit(self.data.train)
-
-        return model
-
     def search_best_random_forest(self):
         """
         Search brute force for the best random forest model
@@ -123,6 +111,27 @@ class Modeler:
             params_dict, self.data.train, self.data.valid, self.transformers,
             metric=metric)
 
+    def fit_model(self):
+        """
+        Fit the statistical model
+        """
+        available_models = {'randomforest': call_random_forest}
+        model_name = self.opts.interface["model"]
+
+        return available_models[model_name](self.data.train)
+
+
+def call_random_forest(train):
+    """
+    Call the sklearn `RandomForestRegressor`
+    """
+    logger.info("Train the model using a random forest")
+    sklearn_model = RandomForestRegressor(n_estimators=100, max_features='sqrt', n_jobs=-1)
+    model = dc.models.SklearnModel(sklearn_model)
+    model.fit(train)
+
+    return model
+
 
 def _random_forest_model_builder(model_params, model_dir="."):
     """
@@ -131,3 +140,6 @@ def _random_forest_model_builder(model_params, model_dir="."):
     """
     sklearn_model = RandomForestRegressor(**model_params)
     return dc.models.SklearnModel(sklearn_model, model_dir)
+
+
+
