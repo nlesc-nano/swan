@@ -15,10 +15,10 @@ def config_logger(workdir: Path):
     handler = logging.StreamHandler(sys.stdout)
     handler.terminator = ""
 
-    # capture stdout and stderr
-    log = logging.getLogger(__name__)
-    sys.stdout = LoggerWriter(log.info)
-    sys.stderr = LoggerWriter(log.warning)
+    # # capture stdout and stderr
+    # log = logging.getLogger(__name__)
+    # sys.stdout = LoggerWriter(log.info)
+    # sys.stderr = LoggerWriter(log.warning)
 
 
 class LoggerWriter:

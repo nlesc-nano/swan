@@ -32,7 +32,13 @@ def main():
 
     # Train the model
     researcher = Modeler(opts)
-    researcher.train_model()
+    model = researcher.train_model()
+
+    # Check how good is the model
+    researcher.evaluate_model(model)
+
+    # predict
+    model.predict(researcher.data.test)
 
 
 class Modeler:
@@ -42,6 +48,8 @@ class Modeler:
 
     def train_model(self):
         """
+        Use the data and `options` provided by the user to create an statistical
+        model.
         """
         # Use CircularFingerprint for featurization
         featurizer = dc.feat.CircularFingerprint(size=1024)
@@ -61,8 +69,7 @@ class Modeler:
         # Use the random forest approach
         model = self.call_random_forest()
 
-        # Check how good is the model
-        self.evaluate_model(model)
+        return model
 
     def split_data(self, dataset) -> None:
         """
@@ -82,17 +89,6 @@ class Modeler:
             for t in self.transformers:
                 t.transform(ds)
 
-    def call_random_forest(self):
-        """
-        Call the sklearn `RandomForestRegressor`
-        """
-        logger.info("Train the model using a random forest")
-        sklearn_model = RandomForestRegressor(n_estimators=100, n_jobs=-1)
-        model = dc.models.SklearnModel(sklearn_model)
-        model.fit(self.data.train)
-
-        return model
-
     def evaluate_model(self, model):
         """
         Evaluate the predictive power of the model
@@ -101,3 +97,37 @@ class Modeler:
         evaluator = Evaluator(model, self.data.valid, self.transformers)
         score = evaluator.compute_model_performance([metric])
         print("score: ", score)
+
+    def call_random_forest(self):
+        """
+        Call the sklearn `RandomForestRegressor`
+        """
+        logger.info("Train the model using a random forest")
+        sklearn_model = RandomForestRegressor(n_estimators=100, max_features='sqrt', n_jobs=-1)
+        model = dc.models.SklearnModel(sklearn_model)
+        model.fit(self.data.train)
+
+        return model
+
+    def search_best_random_forest(self):
+        """
+        Search brute force for the best random forest model
+        """
+        params_dict = {
+            "n_estimators": [10, 100, 1000],
+            "max_features": ["auto", "sqrt", "log2", None]
+        }
+        metric = dc.metrics.Metric(dc.metrics.r2_score)
+        optimizer = dc.hyper.HyperparamOpt(_random_forest_model_builder)
+        best_rf, best_rf_hyperparams, all_rf_results = optimizer.hyperparam_search(
+            params_dict, self.data.train, self.data.valid, self.transformers,
+            metric=metric)
+
+
+def _random_forest_model_builder(model_params, model_dir="."):
+    """
+    Search for the best parameters to build a random forest statistical
+    model
+    """
+    sklearn_model = RandomForestRegressor(**model_params)
+    return dc.models.SklearnModel(sklearn_model, model_dir)
