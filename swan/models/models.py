@@ -1,8 +1,12 @@
 from .input_validation import validate_input
+from .metadata_models import data_hyperparam_search
 from collections import namedtuple
+from deepchem.models.models import Model
 from deepchem.utils.evaluate import Evaluator
+from functools import partial
 from pathlib import Path
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.svm import SVR
 from swan.log_config import config_logger
 
 import argparse
@@ -44,8 +48,19 @@ class Modeler:
 
     def __init__(self, opts: dict):
         self.opts = opts
+        self.create_metric()
 
-    def train_model(self):
+    def create_metric(self) -> None:
+        """
+        Create instances of the metric to use
+        """
+        if self.opts.metric == 'r2_score':
+            self.metric = dc.metrics.Metric(dc.metrics.r2_score)
+        else:
+            msg = f"Metric: {self.opts.metric} has not been implemented"
+            raise NotImplementedError(msg)
+
+    def train_model(self) -> Model:
         """
         Use the data and `options` provided by the user to create an statistical
         model.
@@ -65,10 +80,14 @@ class Modeler:
         # Normalize the data
         self.transform_data()
 
-        # Use the random forest approach
-        model = self.fit_model()
+        # Optimize hyperparameters
+        if self.opts["optimize_hyperparameters"]:
+            best_model, best_model_hyperparams, all_models_results = self.optimize_hyperparameters()
+            print("best_model_hyperparams: ", best_model_hyperparams)
+        # # Use the random forest approach
+        # model = self.fit_model()
 
-        return model
+        return best_model
 
     def split_data(self, dataset) -> None:
         """
@@ -88,7 +107,7 @@ class Modeler:
             for t in self.transformers:
                 t.transform(ds)
 
-    def evaluate_model(self, model):
+    def evaluate_model(self, model) -> None:
         """
         Evaluate the predictive power of the model
         """
@@ -97,40 +116,70 @@ class Modeler:
         score = evaluator.compute_model_performance([metric])
         print("score: ", score)
 
-    def search_best_random_forest(self):
-        """
-        Search brute force for the best random forest model
-        """
-        params_dict = {
-            "n_estimators": [10, 100, 1000],
-            "max_features": ["auto", "sqrt", "log2", None]
-        }
-        metric = dc.metrics.Metric(dc.metrics.r2_score)
-        optimizer = dc.hyper.HyperparamOpt(_random_forest_model_builder)
-        best_rf, best_rf_hyperparams, all_rf_results = optimizer.hyperparam_search(
-            params_dict, self.data.train, self.data.valid, self.transformers,
-            metric=metric)
-
     def fit_model(self):
         """
         Fit the statistical model
         """
-        available_models = {'randomforest': call_random_forest}
+        available_models = {
+            'randomforest': call_random_forest,
+            'svr': call_SVR}
         model_name = self.opts.interface["model"]
 
         return available_models[model_name](self.data.train)
+
+    def optimize_hyperparameters(self) -> tuple:
+        """
+        Search for the best hyperparameters for a given model
+        """
+        models = {'randomforest': RandomForestRegressor}
+        model_name = self.opts.interface["model"]
+        regressor = models[model_name]
+
+        builder = partial(_model_builder, regressor)
+
+        # optimizer = dc.hyper.HyperparamOpt(_random_forest_model_builder)
+        optimizer = dc.hyper.HyperparamOpt(builder)
+        params_dict = data_hyperparam_search[model_name]
+        best_model, best_model_hyperparams, all_models_results = optimizer.hyperparam_search(
+            params_dict, self.data.train, self.data.valid, self.transformers,
+            metric=self.metric)
+
+        return best_model, best_model_hyperparams, all_models_results
+
+
+def call_sklearn_model(train, fun: callable):
+    """
+    Call a SKlearn model given by `fun` using `train` data.
+    """
+    model = dc.models.SklearnModel(fun)
+    model.fit(train)
+
+    return model
 
 
 def call_random_forest(train):
     """
     Call the sklearn `RandomForestRegressor`
     """
-    logger.info("Train the model using a random forest")
-    sklearn_model = RandomForestRegressor(n_estimators=100, max_features='sqrt', n_jobs=-1)
-    model = dc.models.SklearnModel(sklearn_model)
-    model.fit(train)
+    logger.info("Train the model using a random forest regression")
+    sklearn_model = RandomForestRegressor(
+        n_estimators=100, max_features='sqrt', n_jobs=-1)
+    return call_sklearn_model(train, sklearn_model)
 
-    return model
+
+def search_best_random_forest(self) -> tuple:
+    """
+    Search brute force for the best random forest model
+    """
+    params_dict = {
+        "n_estimators": [10, 100],
+        "max_features": ["auto", "sqrt", "log2", None]
+    }
+    metric = dc.metrics.Metric(dc.metrics.r2_score)
+    optimizer = dc.hyper.HyperparamOpt(_random_forest_model_builder)
+    best_rf, best_rf_hyperparams, all_rf_results = optimizer.hyperparam_search(
+        params_dict, self.data.train, self.data.valid, self.transformers,
+        metric=metric)
 
 
 def _random_forest_model_builder(model_params, model_dir="."):
@@ -142,4 +191,18 @@ def _random_forest_model_builder(model_params, model_dir="."):
     return dc.models.SklearnModel(sklearn_model, model_dir)
 
 
+def _model_builder(regressor: object, model_params: dict, model_dir: str = "."):
+    """
+    Create a SklearnModel
+    """
+    sklearn_model = regressor(**model_params)
+    return dc.models.SklearnModel(sklearn_model, model_dir)
 
+
+def call_SVR(train):
+    """
+    call the support vector regression
+    """
+    logger.info("Train the model using a support vector regression")
+    sklearn_model = SVR()
+    return call_sklearn_model(train, sklearn_model)

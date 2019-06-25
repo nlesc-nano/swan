@@ -34,11 +34,15 @@ def validate_input(file_input: str):
         print(msg)
 
 
+# Schemas to validate the input
 sklearn_schema = Schema({
     # Use the SKlearn class
     "name": equal_lambda('sklearn'),
     # Use one of the following models
-    "model": any_lambda(("randomforest", "svr"))
+    "model": any_lambda(("randomforest", "svr")),
+
+    # Input parameters for the model
+    Optional("parameters", default={}): dict
 })
 
 schema_models = Schema({
@@ -50,11 +54,15 @@ schema_models = Schema({
     "tasks": list,
 
     # Metric to evaluate the model
-    Optional("metric"): any_lambda(('r2_score')),
+    Optional("metric", default='r2_score'): any_lambda(('r2_score')),
 
     # Method to get the features
-    "featurizer": any_lambda(('circularfingerprint')),
+    Optional("featurizer", default='circularfingerprint'):
+    any_lambda(('circularfingerprint')),
 
     # What kind of methodology to use
-    "interface": sklearn_schema
+    "interface": sklearn_schema,
+
+    # Search for best hyperparameters
+    Optional("optimize_hyperparameters", default=False): bool
 })
