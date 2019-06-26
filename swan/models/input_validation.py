@@ -32,6 +32,7 @@ def validate_input(file_input: str):
     except SchemaError as e:
         msg = "There was an error in the input yaml provided:\n{}".format(e)
         print(msg)
+        raise
 
 
 # Schemas to validate the input
@@ -39,7 +40,7 @@ sklearn_schema = Schema({
     # Use the SKlearn class
     "name": equal_lambda('sklearn'),
     # Use one of the following models
-    "model": any_lambda(("randomforest", "svr")),
+    "model": any_lambda(("randomforest", "svr", "kernelridge", "bagging")),
 
     # Input parameters for the model
     Optional("parameters", default={}): dict

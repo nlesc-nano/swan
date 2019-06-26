@@ -60,6 +60,6 @@ setup(
         'pycodestyle',
     ],
     extras_require={
-        'dev':  [],
+        'test': ['coverage', 'pytest>=3.9', 'pytest-cov'],
     }
 )

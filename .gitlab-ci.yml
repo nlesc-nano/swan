@@ -3,7 +3,8 @@ job build:
     "nlescjcer/docker_conda_nano:test"
   script:
     - cd $HOME && git clone --branch master --single-branch git://github.com/nlesc-nano/swan.git
-    - cd swan && pip install -e .[dev]
+    - cd swan && pip install -e .[test]
+    - pytest --cov=swan tests -p no:warnings
   tags:
     - nlescjcer
   only:

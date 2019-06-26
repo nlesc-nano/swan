@@ -1,8 +1,20 @@
 csv_file:
-  features.csv
+  /home/felipe/Workbench/Ligands/small_test.csv
 
 tasks:
   - gammas
 
 featurizer:
-  - circularfingerprint
+  circularfingerprint  
+  
+interface:
+  name:
+    sklearn
+  model:
+    # bagging
+    # kernelridge
+    # svr
+    randomforest
+
+optimize_hyperparameters:
+  False
