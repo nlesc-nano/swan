@@ -1,5 +1,5 @@
 csv_file:
-  /home/felipe/Workbench/Ligands/small_test.csv
+  tests/test_files/Carboxylic_Acids_GDB13.txt
 
 tasks:
   - gammas

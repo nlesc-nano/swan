@@ -48,3 +48,6 @@ var/
 
 # pytest
 .pytest*
+
+# Output
+*.log
