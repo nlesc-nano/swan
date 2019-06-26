@@ -1,5 +1,5 @@
 from pathlib import Path
-from swan.models import Modeler
+from swan.models import ModelerSKlearn
 from swan.models.input_validation import validate_input
 from scipy.stats import linregress
 
@@ -20,7 +20,7 @@ def test_modeler():
     Check the instantiation of a Modeler object
     """
     opts = validate_input(path_input)
-    researcher = Modeler(opts)
+    researcher = ModelerSKlearn(opts)
 
     xs = map(lambda x: getattr(researcher, x), ('metric', 'opts', 'available_models'))
 
@@ -32,7 +32,7 @@ def test_train():
     Check the training process
     """
     opts = validate_input(path_input)
-    researcher = Modeler(opts)
+    researcher = ModelerSKlearn(opts)
 
     model = researcher.train_model()
 
@@ -40,4 +40,3 @@ def test_train():
 
     data = researcher.data.test.y.reshape(rs.size)
     print("R2: ", linregress(rs, data))
-

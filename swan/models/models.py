@@ -14,7 +14,7 @@ import argparse
 import logging
 import deepchem as dc
 
-__all__ = ["Modeler"]
+__all__ = ["ModelerSKlearn"]
 
 # Starting logger
 logger = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ def main():
     opts = validate_input(Path(args.i))
 
     # Train the model
-    researcher = Modeler(opts)
+    researcher = ModelerSKlearn(opts)
     model = researcher.train_model()
 
     # Check how good is the model
@@ -47,7 +47,13 @@ def main():
     model.predict(researcher.data.test)
 
 
-class Modeler:
+class ModelerTensorGraph:
+
+    def __init__(self, opts: dict):
+        self.opts = opts
+
+
+class ModelerSKlearn:
 
     def __init__(self, opts: dict):
         self.opts = opts
@@ -152,7 +158,6 @@ class Modeler:
 
         builder = partial(_model_builder, regressor)
 
-        # optimizer = dc.hyper.HyperparamOpt(_random_forest_model_builder)
         optimizer = dc.hyper.HyperparamOpt(builder)
         params_dict = data_hyperparam_search[model_name]
         best_model, best_model_hyperparams, all_models_results = optimizer.hyperparam_search(
@@ -168,14 +173,3 @@ def _model_builder(regressor: object, model_params: dict, model_dir: str = "."):
     """
     sklearn_model = regressor(**model_params)
     return dc.models.SklearnModel(sklearn_model, model_dir)
-
-
-def call_sklearn_model(train, model_name: str, sklearn_model: object):
-    """
-    Call a SKlearn model given by `fun` using `train` data.
-    """
-    logger.info(f"Train the model using {model_name}")
-    model = dc.models.SklearnModel(sklearn_model)
-    model.fit(train)
-
-    return model
