@@ -8,10 +8,9 @@ def config_logger(workdir: Path):
     Setup the logging infrasctucture.
     """
     file_log = workdir / 'output.log'
-    logging.basicConfig(filename=file_log, level=logging.DEBUG,
+    logging.basicConfig(filename=file_log, level=logging.INFO,
                         format='%(asctime)s---%(levelname)s\n%(message)s',
                         datefmt='[%I:%M:%S]')
-    logging.getLogger(__name__).setLevel(logging.WARNING)
     handler = logging.StreamHandler(sys.stdout)
     handler.terminator = ""
 

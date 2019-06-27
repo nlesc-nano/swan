@@ -4,7 +4,7 @@ import logging
 import sys
 
 
-def test_logger(tmp_path):
+def test_logger(tmp_path, caplog):
     workdir = Path(tmp_path)
     config_logger(workdir)
 
