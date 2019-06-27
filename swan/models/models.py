@@ -12,8 +12,9 @@ from sklearn.kernel_ridge import KernelRidge
 from swan.log_config import config_logger
 
 import argparse
-import logging
 import deepchem as dc
+import logging
+import numpy as np
 
 __all__ = ["Modeler", "ModelerSKlearn", "ModelerTensorGraph"]
 
@@ -68,7 +69,8 @@ class Modeler:
         Create instances of the metric to use
         """
         if self.opts.metric == 'r2_score':
-            self.metric = dc.metrics.Metric(dc.metrics.r2_score, mode='regression')
+            self.metric = dc.metrics.Metric(
+                dc.metrics.r2_score, np.mean, mode='regression')
         else:
             msg = f"Metric: {self.opts.metric} has not been implemented"
             raise NotImplementedError(msg)

@@ -60,7 +60,5 @@ bagging:
     n_estimators: 100
     max_features: 0.5
     n_jobs: -1
-multitaskregressor:
-    layer_sizes:
-        - [1000]
+multitaskregressor: {}
 """, Loader=yaml.FullLoader)

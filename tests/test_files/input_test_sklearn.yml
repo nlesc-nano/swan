@@ -1,15 +1,15 @@
 csv_file:
-  tests/test_files/Carboxylic_Acids_GDB13.txt
+  "tests/test_files/thousand.csv"
 
 tasks:
   - gammas
 
 featurizer:
-  circularfingerprint  
-  
+  circularfingerprint
+
 interface:
   name:
-    sklearn
+    sklearno
   model:
     # bagging
     # kernelridge

@@ -1,17 +1,17 @@
 from pathlib import Path
-from swan.models import (ModelerSKlearn, ModelerTensorGraph)
+from swan.models import (Modeler, ModelerSKlearn, ModelerTensorGraph)
 from swan.models.input_validation import validate_input
 from scipy.stats import linregress
-import pytest
 
-path_input = Path("tests/test_files/input_test_models.yml")
+path_input_sklearn = Path("tests/test_files/input_test_sklearn.yml")
+path_input_fcnet = Path("tests/test_files/input_test_fcnet.yml")
 
 
 def test_input_validation():
     """
     Check that the input is validated correctly.
     """
-    opts = validate_input(path_input)
+    opts = validate_input(path_input_sklearn)
 
     assert isinstance(opts, dict)
 
@@ -20,10 +20,10 @@ def test_modeler_sklearn():
     """
     Check the instantiation of a ModelerSKlearn object
     """
-    opts = validate_input(path_input)
-    researcher = ModelerSKlearn(opts)
+    opts = validate_input(path_input_sklearn)
+    researcher = Modeler(opts)
 
-    xs = map(lambda x: getattr(researcher, x), ('metric', 'opts', 'available_models'))
+    xs = map(lambda x: getattr(researcher, x), ('metric', 'opts'))
 
     assert all((x is not None for x in xs))
 
@@ -32,7 +32,7 @@ def test_train_sklearn():
     """
     Check the training process of a sklearn model
     """
-    opts = validate_input(path_input)
+    opts = validate_input(path_input_sklearn)
     researcher = ModelerSKlearn(opts)
 
     model = researcher.train_model()
@@ -43,24 +43,38 @@ def test_train_sklearn():
     print("R2: ", linregress(rs, data))
 
 
-def test_modeler_tensorgraph():
+def test_hyperparameters_sklearn():
     """
-    Check the instantiation of a ModelerTensorGraph object
+    Test the hyperparameters optimization
     """
-    pass
+    opts = validate_input(path_input_sklearn)
+    opts.optimize_hyperparameters = True
+
+    researcher = ModelerSKlearn(opts)
+    researcher.train_model()
 
 
-@pytest.mark.xfail
 def test_train_tensorgraph():
     """
     Check the training process of a tensorgraph model
     """
-    opts = validate_input(path_input)
+    opts = validate_input(path_input_fcnet)
     researcher = ModelerTensorGraph(opts)
 
     model = researcher.train_model()
 
-    rs = model.predict(researcher.data.test)
+    rs = model.predict(researcher.data.test).flatten()
 
     data = researcher.data.test.y.reshape(rs.size)
     print("R2: ", linregress(rs, data))
+
+
+def test_hyperparameters_tensorgraph():
+    """
+    Check the training process of a tensorgraph model
+    """
+    opts = validate_input(path_input_fcnet)
+    researcher = ModelerTensorGraph(opts)
+    opts.optimize_hyperparameters = True
+
+    researcher.train_model()

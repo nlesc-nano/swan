@@ -1,0 +1,16 @@
+csv_file:
+  "tests/test_files/thousand.csv"
+tasks:
+  - gammas
+
+featurizer:
+  circularfingerprint
+
+interface:
+  name:
+    tensorgraph
+  model:
+    multitaskregressor
+
+optimize_hyperparameters:
+  False
