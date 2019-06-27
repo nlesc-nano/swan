@@ -9,7 +9,7 @@ featurizer:
 
 interface:
   name:
-    sklearno
+    sklearn
   model:
     # bagging
     # kernelridge
