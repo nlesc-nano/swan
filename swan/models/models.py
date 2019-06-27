@@ -190,7 +190,7 @@ class ModelerTensorGraph(Modeler):
         tensorgraph_model = self.available_models[model_name]
         model = tensorgraph_model(self.n_tasks, self.n_features, **hyper)
 
-        model.fit(self.data.train)
+        model.fit(self.data.train, nb_epoch=self.opts.interface["epochs"])
 
         return model
 

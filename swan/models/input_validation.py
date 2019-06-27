@@ -53,6 +53,9 @@ tensorgraph_schema = Schema({
     # Available models
     "model": str,
 
+    # Number of epoch to train for
+    Optional("epochs", default=10): int,
+
     # Input parameters for the model
     Optional("parameters", default={}): dict
 })

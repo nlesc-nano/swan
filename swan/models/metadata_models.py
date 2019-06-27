@@ -39,9 +39,9 @@ multitaskregressor:
     layer_sizes:
         - [1000]
     bias_init_consts:
-        - 0.9
-    weight_decay_penalty_type:
-        - l1
+        - 0.8
+    dropout:
+        - 0.75
 """, Loader=yaml.FullLoader)
 
 
@@ -60,5 +60,8 @@ bagging:
     n_estimators: 100
     max_features: 0.5
     n_jobs: -1
-multitaskregressor: {}
+multitaskregressor:
+    layer_sizes: [1000]
+    dropout: 0.75
+    bias_init_consts: 0.8
 """, Loader=yaml.FullLoader)
