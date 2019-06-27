@@ -35,6 +35,15 @@ bagging:
         - 1.0
     n_jobs:
         - -1
+multitaskregressor:
+    layer_sizes:
+        - [1000]
+    bias_init_consts:
+        - 1.0
+        - 0.9
+    weight_decay_penalty:
+        - 0.0
+        - 0.1
 """, Loader=yaml.FullLoader)
 
 
@@ -53,4 +62,5 @@ bagging:
     n_estimators: 100
     max_features: 0.5
     n_jobs: -1
+multitaskregressor: {}
 """, Loader=yaml.FullLoader)
