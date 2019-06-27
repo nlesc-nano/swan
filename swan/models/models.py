@@ -68,7 +68,7 @@ class Modeler:
         Create instances of the metric to use
         """
         if self.opts.metric == 'r2_score':
-            self.metric = dc.metrics.Metric(dc.metrics.r2_score)
+            self.metric = dc.metrics.Metric(dc.metrics.r2_score, mode='regression')
         else:
             msg = f"Metric: {self.opts.metric} has not been implemented"
             raise NotImplementedError(msg)
