@@ -2,6 +2,7 @@ from .input_validation import validate_input
 from .metadata_models import (data_hyperparam_search, default_hyperparameters)
 from collections import namedtuple
 from deepchem.models.models import Model
+from deepchem.models.tensorgraph.fcnet import MultitaskRegressor
 from deepchem.utils.evaluate import Evaluator
 from functools import partial
 from pathlib import Path
@@ -14,7 +15,7 @@ import argparse
 import logging
 import deepchem as dc
 
-__all__ = ["ModelerSKlearn"]
+__all__ = ["Modeler", "ModelerSKlearn", "ModelerTensorGraph"]
 
 # Starting logger
 logger = logging.getLogger(__name__)
@@ -47,25 +48,13 @@ def main():
     model.predict(researcher.data.test)
 
 
-class ModelerTensorGraph:
+class Modeler:
 
     def __init__(self, opts: dict):
         self.opts = opts
+        self.select_metric()
 
-
-class ModelerSKlearn:
-
-    def __init__(self, opts: dict):
-        self.opts = opts
-        self.available_models = {
-            'randomforest': RandomForestRegressor,
-            'svr': SVR,
-            'kernelridge': KernelRidge,
-            'bagging': BaggingRegressor}
-
-        self.create_metric()
-
-    def create_metric(self) -> None:
+    def select_metric(self) -> None:
         """
         Create instances of the metric to use
         """
@@ -75,33 +64,14 @@ class ModelerSKlearn:
             msg = f"Metric: {self.opts.metric} has not been implemented"
             raise NotImplementedError(msg)
 
-    def train_model(self) -> Model:
+    def load_data(self, featurizer: object):
         """
-        Use the data and `options` provided by the user to create an statistical
-        model.
+        Load a dataset
         """
-        # Use CircularFingerprint for featurization
-        featurizer = dc.feat.CircularFingerprint(size=1024)
-
-        # Load data
         logger.info("Loading data")
         loader = dc.data.CSVLoader(tasks=self.opts.tasks, smiles_field="smiles",
                                    featurizer=featurizer)
-        dataset = loader.featurize(self.opts.csv_file)
-
-        # Split the data into train/validation/test sets
-        self.split_data(dataset)
-
-        # Normalize the data
-        self.transform_data()
-
-        # Optimize hyperparameters
-        if self.opts["optimize_hyperparameters"]:
-            best_model, best_model_hyperparams, all_models_results = self.optimize_hyperparameters()
-            return best_model
-        else:
-            # Use the statistical model as it is
-            return self.fit_model()
+        return loader.featurize(self.opts.csv_file)
 
     def split_data(self, dataset) -> None:
         """
@@ -121,6 +91,31 @@ class ModelerSKlearn:
             for t in self.transformers:
                 t.transform(ds)
 
+    def train_model(self) -> Model:
+        """
+        Use the data and `options` provided by the user to create an statistical
+        model.
+        """
+        # Use CircularFingerprint for featurization
+        featurizer = dc.feat.CircularFingerprint(size=1024)
+
+        # Load the data from a csv file
+        dataset = self.load_data(featurizer)
+
+        # Split the data into train/validation/test sets
+        self.split_data(dataset)
+
+        # Normalize the data
+        self.transform_data()
+
+        # Optimize hyperparameters
+        if self.opts["optimize_hyperparameters"]:
+            best_model, best_model_hyperparams, all_models_results = self.optimize_hyperparameters()
+            return best_model
+        else:
+            # Use the statistical model as it is
+            return self.fit_model()
+
     def evaluate_model(self, model) -> None:
         """
         Evaluate the predictive power of the model
@@ -129,21 +124,54 @@ class ModelerSKlearn:
         score = evaluator.compute_model_performance([self.metric])
         print("score: ", score)
 
+    def select_hyperparameters(self) -> dict:
+        """
+        Use the parameters provided by the user or the defaults
+        """
+        model_name = self.opts.interface["model"]
+        if not self.opts.interface["parameters"]:
+            return default_hyperparameters.get(model_name, {})
+        else:
+            return self.opts.interface["parameters"]
+
+
+class ModelerTensorGraph(Modeler):
+
+    def __init__(self, opts: dict):
+        super.__init__(opts)
+
+    def optimize_hyperparameters(self) -> tuple:
+        """
+        Search for the best hyperparameters
+        """
+        raise NotImplementedError
+
     def fit_model(self) -> Model:
         """
-        Fit the statistical model using the given parameters or the default
+        Fit the statistical model using the given hyperparameters or the default
+        """
+
+
+class ModelerSKlearn(Modeler):
+
+    def __init__(self, opts: dict):
+        super().__init__(opts)
+        self.available_models = {
+            'randomforest': RandomForestRegressor,
+            'svr': SVR,
+            'kernelridge': KernelRidge,
+            'bagging': BaggingRegressor}
+
+    def fit_model(self) -> Model:
+        """
+        Fit the statistical model using the given hyperparameters or the default
         """
         model_name = self.opts.interface["model"]
         logger.info(f"Train the model using {model_name}")
 
-        # Use the parameters provided by the user or the defaults
-        if not self.opts.interface["parameters"]:
-            parameters = default_hyperparameters.get(model_name, {})
-        else:
-            parameters = self.opts.interface["parameters"]
-
         # Select model and fit it
-        sklearn_model = self.available_models[model_name](**parameters)
+        hyper = self.select_hyperparameters()
+        sklearn_model = self.available_models[model_name](**hyper)
         model = dc.models.SklearnModel(sklearn_model)
         model.fit(self.data.train)
 

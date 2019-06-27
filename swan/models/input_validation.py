@@ -1,4 +1,4 @@
-from schema import (And, Optional, Schema, SchemaError, Use)
+from schema import (And, Optional, Or, Schema, SchemaError, Use)
 from swan.utils import Options
 import yaml
 
@@ -46,6 +46,17 @@ sklearn_schema = Schema({
     Optional("parameters", default={}): dict
 })
 
+tensorgraph_schema = Schema({
+    # Use the tensorgraph class
+    "name": equal_lambda('tensorgraph'),
+
+    # Available models
+    "model": str,
+
+    # Input parameters for the model
+    Optional("parameters", default={}): dict
+})
+
 schema_models = Schema({
 
     # Path to the csv file
@@ -62,7 +73,7 @@ schema_models = Schema({
     any_lambda(('circularfingerprint')),
 
     # What kind of methodology to use
-    "interface": sklearn_schema,
+    "interface": Or(sklearn_schema, tensorgraph_schema),
 
     # Search for best hyperparameters
     Optional("optimize_hyperparameters", default=False): bool
