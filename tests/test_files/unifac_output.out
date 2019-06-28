@@ -1,0 +1,49 @@
+Method: UNIFAC
+Property: ACTIVITYCOEF
+Number of compounds: 2
+Compounds: SMILES, molar mass, filename
+ CC1=CC=CC=C1, 92.0626, 
+ CO, 32.0262, 
+
+E gas
+  0
+  0
+
+G solute
+  0
+  0
+
+deltag
+  0
+  0
+
+frac1
+  1
+  0
+
+gamma
+  1
+  13.6296
+
+henryc
+  0
+  0
+
+henrycnodim
+  0
+  0
+
+mu
+  -0.027805
+  1.54756
+
+mu gas
+  0
+  0
+
+mu pure
+  -0.027805
+  0
+
+temperature
+  298.15
