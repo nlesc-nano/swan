@@ -1,3 +1,4 @@
+from swan.cosmo.cat_interface import call_cat_mopac
 from swan.cosmo.cosmo import (call_unifac, compute_activity_coefficient, main)
 from swan.utils import Options
 from pathlib import Path
@@ -21,7 +22,8 @@ def test_cosmo_main(mocker):
             i=smiles_file, csv=None, s="CC1=CC=CC=C1", n=1000, p=1, w="."))
 
         # Mock the computation of the coefficient
-        mocker.patch("swan.cosmo.cosmo.compute_activity_coefficient", return_value=None)
+        mocker.patch(
+            "swan.cosmo.cosmo.compute_activity_coefficient", return_value=None)
 
         main()
     finally:
@@ -70,3 +72,15 @@ def test_unifac(mocker):
     x = call_unifac(opts, "CO")
 
     assert np.allclose(x, 13.6296)
+
+
+def test_call_mopac(mocker, tmp_path):
+    """
+    Check the call to `get_solv`
+    """
+    answer = ([42], ())
+    mocker.patch("swan.cosmo.cat_interface.get_solv", return_value=answer)
+
+    rs = call_cat_mopac(Path(tmp_path), "CO", ["Toluene.coskf"])
+
+    assert rs == (42, np.nan)
