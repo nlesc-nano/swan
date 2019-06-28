@@ -31,28 +31,36 @@ def test_cosmo_main(mocker):
 
 
 def test_activity_coefficients(mocker):
-
-    output = "Gammas_0.csv"
-    try:
-        # empty dataframe
-        df = pd.DataFrame(columns=["E_solv", "gammas"])
-
-        # Function to mock in the cosmo module
-        mocker.patch("swan.cosmo.cosmo.call_mopac", return_value=42)
-
-        # Options to compute the activity coefficient
-        d = {"file_smiles": smiles_file,
-             "solvent": "CC1=CC=CC=C1",
-             "workdir": Path("."), "size_chunk": 1000, "processes": 1,
-             "data": df}
-
-        opts = Options(d)
-
+    """
+    Test the activity coefficient calculation
+    """
+    def call_fun(inp):
         compute_activity_coefficient(opts)
         assert os.path.exists(output)
-
-    finally:
         os.remove(output)
+
+    output = "Gammas_0.csv"
+    # empty dataframe
+    df = pd.DataFrame(columns=["E_solv", "gammas"])
+
+    # Function to mock in the cosmo module
+    mocker.patch("swan.cosmo.cosmo.call_mopac", return_value=42)
+
+    # Options to compute the activity coefficient
+    d = {"file_smiles": smiles_file,
+         "solvent": "CC1=CC=CC=C1",
+         "workdir": Path("."), "size_chunk": 1000, "processes": 1,
+         "data": df}
+
+    opts = Options(d)
+
+    # Check the default case
+    call_fun(opts)
+
+    # Check the case when there is already some data
+    opts.data["gammas"] = 42.0
+
+    call_fun(opts)
 
 
 def test_unifac(mocker):
@@ -72,6 +80,12 @@ def test_unifac(mocker):
     x = call_unifac(opts, "CO")
 
     assert np.allclose(x, 13.6296)
+
+    # Test Failure
+    mocker.patch("swan.cosmo.cosmo.run_command", return_value=(b"", ()))
+    x = call_unifac(opts, "Wrong_smile")
+
+    assert np.isnan(x)
 
 
 def test_mopac(mocker):

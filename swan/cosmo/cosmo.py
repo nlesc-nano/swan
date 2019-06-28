@@ -94,7 +94,7 @@ def call_unifac(opt: dict, smile: str) -> float:
 
     if rs[1]:
         # There was an error
-        return np.call_mopac(opt, smile)
+        return np.nan
     else:
         return read_gamma(rs[0])
 
