@@ -13,6 +13,3 @@ class Options(dict):
 
     def __setattr__(self, key, value):
         self.__setitem__(key, value)
-
-    def __deepcopy__(self, _):
-        return Options(self.copy())
