@@ -70,7 +70,7 @@ def call_cosmo_on_chunk(data: pd.DataFrame, k: int, smiles: list) -> str:
     """
     df = pd.DataFrame(columns=data.columns)
 
-    for i, x in enumerate(smiles):
+    for x in smiles:
         if x in data.index:
             df.loc[x] = data.loc[x]
         else:
