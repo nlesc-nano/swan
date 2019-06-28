@@ -32,7 +32,7 @@ def merge_csv(path: str, output: str, patt: str = "Gamma*.csv") -> pd.DataFrame:
     Read all the csv files from a given `path` and generates a single dataframe
     """
     p = Path(path)
-    files = [x.as_posix() for x in p.rglob()]
+    files = [x.as_posix() for x in p.rglob(patt)]
     df = pd.read_csv(files[0], sep='\t', index_col=0)
 
     # read all the csv files
