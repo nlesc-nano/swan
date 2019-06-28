@@ -33,7 +33,7 @@ def call_mopac(smile: str, solvents=["Toluene.coskf"]) -> float:
             return call_cat_mopac(Path(tmp), smile, solvents)
     except ValueError:
         logger.warning(f"Error reading smile: {smile}")
-        return np.nan
+        return np.nan, np.nan
 
     finally:
         if Path(tmp).exists():

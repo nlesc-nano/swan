@@ -1,4 +1,4 @@
-from swan.cosmo.cat_interface import call_cat_mopac
+from swan.cosmo.cat_interface import (call_mopac, call_cat_mopac)
 from swan.cosmo.cosmo import (call_unifac, compute_activity_coefficient, main)
 from swan.utils import Options
 from pathlib import Path
@@ -64,7 +64,7 @@ def test_unifac(mocker):
         xs = f.read()
 
     # Mock the call to Unifac
-    mocker.patch.dict(os.environ, {'ADFBIN': "tests/test_files/unifac"})
+    mocker.patch.dict(os.environ, {'ADFBIN': "tests/test_files"})
     mocker.patch("swan.cosmo.cosmo.run_command", return_value=(xs, ()))
 
     opts = {"solvent": "CC1=CC=CC=C1"}
@@ -74,7 +74,27 @@ def test_unifac(mocker):
     assert np.allclose(x, 13.6296)
 
 
-def test_call_mopac(mocker, tmp_path):
+def test_mopac(mocker):
+    """
+    Test mock call to ADF/MOPAC
+    """
+    def side_effect(*args):
+        raise ValueError
+
+    # Mock fast sigma call
+    mocker.patch.dict(os.environ, {'ADFBIN': "tests/test_files"})
+    mocker.patch("swan.cosmo.cat_interface.run_command", return_value=((), ()))
+    mocker.patch("swan.cosmo.cat_interface.call_cat_mopac", return_value=(42, 42))
+    rs = call_mopac("CO")
+    assert rs == (42, 42)
+
+    # Check failure
+    mocker.patch("swan.cosmo.cat_interface.call_cat_mopac", side_effect=side_effect)
+    rs = call_mopac("Wrong_smile")
+    assert rs == (np.nan, np.nan)
+
+
+def test_call_cat_mopac(mocker, tmp_path):
     """
     Check the call to `get_solv`
     """
