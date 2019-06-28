@@ -29,11 +29,11 @@ def main():
     # configure logger
     parser.add_argument('-i', required=True,
                         help="Input file with options")
-    parser.add_argument('-w', help="workdir", default=Path("."))
+    parser.add_argument('-w', help="workdir", default=".")
     args = parser.parse_args()
 
     # start logger
-    config_logger(args.w)
+    config_logger(Path(args.w))
 
     # Check that the input is correct
     opts = validate_input(Path(args.i))

@@ -1,10 +1,27 @@
 from pathlib import Path
 from swan.models import (Modeler, ModelerSKlearn, ModelerTensorGraph)
+from swan.models.models import main
 from swan.models.input_validation import validate_input
 from scipy.stats import linregress
+import argparse
 
 path_input_sklearn = Path("tests/test_files/input_test_sklearn.yml")
 path_input_fcnet = Path("tests/test_files/input_test_fcnet.yml")
+
+
+def test_main(mocker):
+    """
+    Test the CLI for the models
+    """
+    # Mock the CLI
+    mocker.patch("argparse.ArgumentParser.parse_args", return_value=argparse.Namespace(
+        i=path_input_fcnet, w="."))
+
+    # Mock the modelers
+    mocker.patch("swan.models.models.ModelerSKlearn")
+    mocker.patch("swan.models.models.ModelerTensorGraph")
+
+    main()
 
 
 def test_input_validation():
