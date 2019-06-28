@@ -1,10 +1,10 @@
-from .cat_interface import call_mopac
 from .functions import (chunks_of, run_command)
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
 from scm.plams import init, finish
 from swan.log_config import config_logger
+from swan.cosmo.cat_interface import call_mopac
 from swan.utils import Options
 
 import argparse
