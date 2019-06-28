@@ -19,10 +19,10 @@ def main():
                         help="Input file in with the smiles")
     parser.add_argument('-s', help='solvent', default="CC1=CC=CC=C1")
     parser.add_argument(
-        '-n', help='Number of molecules per file', default=10000, type=int)
+        '-n', help='Number of molecules per file', default=1000, type=int)
     parser.add_argument(
         '-p', help='Number of processes', default=1, type=int)
-    parser.add_argument('-w', help="workdir", default=Path("."))
+    parser.add_argument('-w', help="workdir", default=".")
     parser.add_argument('-csv', help="Current csv data", default=None)
 
     args = parser.parse_args()
@@ -32,11 +32,11 @@ def main():
     else:
         df = pd.DataFrame(columns=["E_solv", "gammas"])
 
-    inp = {"file_smiles": args.i, "solvent": args.s, "size_chunk": args.n, "workdir": args.w,
+    inp = {"file_smiles": args.i, "solvent": args.s, "size_chunk": args.n, "workdir": Path(args.w),
            "processes": args.p, "data": df}
 
     # configure logger
-    config_logger(args.w)
+    config_logger(Path(args.w))
 
     # compute_activity_coefficient
     init()
