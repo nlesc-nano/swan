@@ -140,6 +140,7 @@ class Modeler:
         """
         evaluator = Evaluator(model, self.data.valid, self.transformers)
         score = evaluator.compute_model_performance([self.metric])
+        logging.info(f"Score of the model is: {score}")
         print("score: ", score)
 
     def select_hyperparameters(self) -> dict:
