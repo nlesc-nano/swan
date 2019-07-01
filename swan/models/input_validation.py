@@ -79,5 +79,7 @@ schema_models = Schema({
     "interface": Or(sklearn_schema, tensorgraph_schema),
 
     # Search for best hyperparameters
-    Optional("optimize_hyperparameters", default=False): bool
+    Optional("optimize_hyperparameters", default=False): bool,
+
+    Optional("save", default=True): bool
 })

@@ -40,8 +40,10 @@ multitaskregressor:
         - [1000]
     bias_init_consts:
         - 0.8
+        - 0.9
     dropout:
         - 0.75
+        - 0.5
 """, Loader=yaml.FullLoader)
 
 

@@ -50,8 +50,11 @@ def main():
     # Check how good is the model
     researcher.evaluate_model(model)
 
-    # predict
-    model.predict(researcher.data.test)
+    if opts.save:
+        model.save()
+
+    # # predict
+    # model.predict(researcher.data.test)
 
 
 class Modeler:
