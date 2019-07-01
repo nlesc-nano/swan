@@ -1,4 +1,4 @@
-csv_file:
+dataset_file:
   "tests/test_files/thousand.csv"
 tasks:
   - gammas

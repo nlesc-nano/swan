@@ -54,9 +54,6 @@ def main():
     # Check how good is the model
     researcher.evaluate_model(model)
 
-    if opts.save:
-        model.save()
-
     # # predict
     # model.predict(researcher.data.test)
 
@@ -86,17 +83,29 @@ class Modeler:
         """
         Load a dataset
         """
-        logger.info("Loading data")
-        loader = dc.data.CSVLoader(tasks=self.opts.tasks, smiles_field="smiles",
-                                   featurizer=self.featurizer)
-        return loader.featurize(self.opts.csv_file)
+        logger.info(f"Loading data from {self.opts.dataset_file}")
+        print("file name: ", self.opts.dataset_file)
+        if Path(self.opts.dataset_file).suffix != ".csv":
+            dataset = dc.utils.save.load_from_disk(self.opts.dataset_file)
+
+        else:
+            loader = dc.data.CSVLoader(tasks=self.opts.tasks, smiles_field="smiles",
+                                       featurizer=self.featurizer)
+            dataset = loader.featurize(self.opts.dataset_file)
+
+        if self.opts.save_dataset:
+            file_name = f"{self.opts.filename_to_store_dataset}.joblib"
+            logger.info(f"saving dataset to: {file_name}")
+            dc.utils.save.save_to_disk(dataset, file_name)
+
+        return dataset
 
     def split_data(self, dataset) -> None:
         """
         Split the entire dataset into a train, validate and test subsets.
         """
         logger.info("splitting the data into train, validate and test subsets")
-        splitter = dc.splits.ScaffoldSplitter(self.opts.csv_file)
+        splitter = dc.splits.ScaffoldSplitter()
         self.data = DataSplitted(
             *splitter.train_valid_test_split(dataset))
 
@@ -116,7 +125,6 @@ class Modeler:
         Use the data and `options` provided by the user to create an statistical
         model.
         """
-        # Load the data from a csv file
         dataset = self.load_data()
 
         # Split the data into train/validation/test sets

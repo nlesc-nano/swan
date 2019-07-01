@@ -62,8 +62,8 @@ tensorgraph_schema = Schema({
 
 schema_models = Schema({
 
-    # Path to the csv file
-    "csv_file": str,
+    # Load the dataset from a file
+    "dataset_file": str,
 
     # Properties to predict
     "tasks": list,
@@ -81,5 +81,8 @@ schema_models = Schema({
     # Search for best hyperparameters
     Optional("optimize_hyperparameters", default=False): bool,
 
-    Optional("save", default=True): bool
+    Optional("filename_to_store_dataset", default="dataset"): str,
+
+    # Save the dataset to a file
+    Optional("save_dataset", default=True): bool
 })

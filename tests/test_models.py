@@ -24,6 +24,18 @@ def test_main(mocker):
     main()
 
 
+def test_load_data():
+    """
+    Train that the data is loaded correctly
+    """
+    opts = validate_input(path_input_fcnet)
+    opts.load_dataset = True
+    opts.dataset_file = "tests/test_files/dataset.joblib"
+
+    researcher = Modeler(opts)
+    researcher.load_data()
+
+
 def test_modeler_sklearn():
     """
     Check the instantiation of a ModelerSKlearn object
