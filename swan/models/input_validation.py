@@ -84,5 +84,8 @@ schema_models = Schema({
     Optional("filename_to_store_dataset", default="dataset"): str,
 
     # Save the dataset to a file
-    Optional("save_dataset", default=True): bool
+    Optional("save_dataset", default=True): bool,
+
+    # Workdir
+    Optional("workdir", default="."): str
 })

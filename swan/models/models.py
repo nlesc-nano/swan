@@ -94,7 +94,8 @@ class Modeler:
             dataset = loader.featurize(self.opts.dataset_file)
 
         if self.opts.save_dataset:
-            file_name = f"{self.opts.filename_to_store_dataset}.joblib"
+            file_name = Path(self.opts.workdir) / \
+                f"{self.opts.filename_to_store_dataset}.joblib"
             logger.info(f"saving dataset to: {file_name}")
             dc.utils.save.save_to_disk(dataset, file_name)
 
@@ -171,7 +172,8 @@ class Modeler:
             regressor = self.available_models[model_name]
             model_class = partial(_model_builder_sklearn, regressor)
         else:
-            model_class = partial(_model_builder_tensorgraph, self.n_tasks, self.n_features)
+            model_class = partial(_model_builder_tensorgraph,
+                                  self.n_tasks, self.n_features)
 
         optimizer = dc.hyper.HyperparamOpt(model_class)
         params_dict = data_hyperparam_search[model_name]
@@ -207,6 +209,9 @@ class ModelerTensorGraph(Modeler):
         model = tensorgraph_model(self.n_tasks, self.n_features, **hyper)
 
         model.fit(self.data.train, nb_epoch=self.opts.interface["epochs"])
+
+        # save model data
+        model.save()
 
         return model
 

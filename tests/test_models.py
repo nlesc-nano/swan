@@ -4,6 +4,7 @@ from swan.models.models import main
 from swan.models.input_validation import validate_input
 from scipy.stats import linregress
 import argparse
+import os
 
 path_input_sklearn = Path("tests/test_files/input_test_sklearn.yml")
 path_input_fcnet = Path("tests/test_files/input_test_fcnet.yml")
@@ -28,12 +29,15 @@ def test_load_data():
     """
     Train that the data is loaded correctly
     """
-    opts = validate_input(path_input_fcnet)
-    opts.load_dataset = True
-    opts.dataset_file = "tests/test_files/dataset.joblib"
+    try:
+        opts = validate_input(path_input_fcnet)
+        opts.load_dataset = True
+        opts.dataset_file = "tests/test_files/dataset.joblib"
 
-    researcher = Modeler(opts)
-    researcher.load_data()
+        researcher = Modeler(opts)
+        researcher.load_data()
+    finally:
+        os.remove("dataset.joblib")
 
 
 def test_modeler_sklearn():
