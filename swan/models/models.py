@@ -1,6 +1,7 @@
 from .input_validation import validate_input
 from .metadata_models import (data_hyperparam_search, default_hyperparameters)
 from collections import namedtuple
+from datetime import datetime
 from deepchem.models.models import Model
 from deepchem.models.tensorgraph.fcnet import MultitaskRegressor
 from deepchem.utils.evaluate import Evaluator
@@ -34,6 +35,9 @@ def main():
 
     # start logger
     config_logger(Path(args.w))
+
+    # log date
+    logger.info(f"Starting at:{datetime.now()}")
 
     # Check that the input is correct
     opts = validate_input(Path(args.i))
