@@ -27,17 +27,25 @@ def test_main(mocker):
 
 def test_load_data():
     """
-    Train that the data is loaded correctly
+    Test that the data is loaded correctly
     """
-    try:
-        opts = validate_input(path_input_fcnet)
-        opts.load_dataset = True
-        opts.dataset_file = "tests/test_files/dataset.joblib"
+    opts = validate_input(path_input_fcnet)
+    opts.load_dataset = True
+    opts.dataset_file = "tests/test_files/dataset.joblib"
 
-        researcher = Modeler(opts)
-        researcher.load_data()
-    finally:
-        os.remove("dataset.joblib")
+    researcher = Modeler(opts)
+    researcher.load_data()
+
+
+def test_save_dataset():
+    """
+    Test that the dataset is stored correctly
+    """
+    opts = validate_input(path_input_fcnet)
+    opts.save_dataset = True
+    researcher = Modeler(opts)
+    researcher.load_data()
+    os.remove("dataset.joblib")
 
 
 def test_modeler_sklearn():
