@@ -24,15 +24,6 @@ def test_main(mocker):
     main()
 
 
-def test_input_validation():
-    """
-    Check that the input is validated correctly.
-    """
-    opts = validate_input(path_input_sklearn)
-
-    assert isinstance(opts, dict)
-
-
 def test_modeler_sklearn():
     """
     Check the instantiation of a ModelerSKlearn object

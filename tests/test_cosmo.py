@@ -15,19 +15,24 @@ def test_cosmo_main(mocker):
     """
     Test the call to the main function is cosmo
     """
+    def mock_main(file_name=None):
+        try:
+            # Mock the CLI
+            mocker.patch("argparse.ArgumentParser.parse_args", return_value=argparse.Namespace(
+                i=smiles_file, s="CC1=CC=CC=C1", n=1000, p=1, w=".", csv=file_name))
 
-    try:
-        # Mock the CLI
-        mocker.patch("argparse.ArgumentParser.parse_args", return_value=argparse.Namespace(
-            i=smiles_file, csv=None, s="CC1=CC=CC=C1", n=1000, p=1, w="."))
+            # Mock the computation of the coefficient
+            mocker.patch(
+                "swan.cosmo.cosmo.compute_activity_coefficient", return_value=None)
+            main()
+        finally:
+            shutil.rmtree("plams_workdir")
 
-        # Mock the computation of the coefficient
-        mocker.patch(
-            "swan.cosmo.cosmo.compute_activity_coefficient", return_value=None)
+    # Try main without initial data
+    mock_main()
 
-        main()
-    finally:
-        shutil.rmtree("plams_workdir")
+    # Try main with initial data
+    mock_main("tests/test_files/results_Carboxylic_acids.csv")
 
 
 def test_activity_coefficients(mocker):
