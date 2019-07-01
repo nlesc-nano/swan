@@ -68,7 +68,7 @@ def check_output(xs):
     """
     Check that there is a valid output in x.
     """
-    if xs:
+    if xs and np.isreal(xs[0]):
         return xs[0]
     else:
         return np.nan
