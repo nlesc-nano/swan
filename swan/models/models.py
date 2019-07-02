@@ -49,7 +49,10 @@ def main():
         researcher = ModelerTensorGraph(opts)
 
     # train the model
-    model = researcher.train_model()
+    if opts.load_model:
+        model = researcher.load_model()
+    else:
+        model = researcher.train_model()
 
     # Check how good is the model
     researcher.evaluate_model(model)
@@ -100,6 +103,16 @@ class Modeler:
             dc.utils.save.save_to_disk(dataset, file_name)
 
         return dataset
+
+    def load_model(self) -> Model:
+        """
+        Load model from disk
+        """
+        self.load_data()
+
+        model = self.select_model()
+
+        return model.load_from_dir(self.opts.model_dir)
 
     def split_data(self, dataset) -> None:
         """
@@ -194,20 +207,26 @@ class ModelerTensorGraph(Modeler):
         self.n_tasks = len(self.opts.tasks)
         self.n_features = self.featurizer.size
 
-    def fit_model(self) -> Model:
+    def select_model(self) -> Model:
         """
-        Fit the statistical model using the given hyperparameters or the default
+        Return the Model object specificied by the user
         """
         model_name = self.opts.interface["model"]
         logger.info(f"Train the model using {model_name}")
 
         # Select model and fit it
         hyper = self.select_hyperparameters()
+        hyper["model_dir"] = self.opts.model_dir
 
         # Create model
         tensorgraph_model = self.available_models[model_name]
-        model = tensorgraph_model(self.n_tasks, self.n_features, **hyper)
+        return tensorgraph_model(self.n_tasks, self.n_features, **hyper)
 
+    def fit_model(self) -> Model:
+        """
+        Fit the statistical model using the given hyperparameters or the default
+        """
+        model = self.select_model()
         model.fit(self.data.train, nb_epoch=self.opts.interface["epochs"])
 
         # save model data
@@ -226,18 +245,27 @@ class ModelerSKlearn(Modeler):
             'kernelridge': KernelRidge,
             'bagging': BaggingRegressor}
 
-    def fit_model(self) -> Model:
+    def select_model(self) -> Model:
         """
-        Fit the statistical model using the given hyperparameters or the default
+        Return the Model object specificied by the user
         """
         model_name = self.opts.interface["model"]
         logger.info(f"Train the model using {model_name}")
 
-        # Select model and fit it
+        # Select hyperparameters
         hyper = self.select_hyperparameters()
         sklearn_model = self.available_models[model_name](**hyper)
-        model = dc.models.SklearnModel(sklearn_model)
+        return dc.models.SklearnModel(sklearn_model)
+
+    def fit_model(self) -> Model:
+        """
+        Fit the statistical model using the given hyperparameters or the default
+        """
+        model = self.select_model()
         model.fit(self.data.train)
+
+        # save the model optimized parameters
+        model.save()
 
         return model
 

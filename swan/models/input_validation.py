@@ -81,10 +81,16 @@ schema_models = Schema({
     # Search for best hyperparameters
     Optional("optimize_hyperparameters", default=False): bool,
 
-    Optional("filename_to_store_dataset", default="dataset"): str,
-
     # Save the dataset to a file
     Optional("save_dataset", default=True): bool,
+
+    # Load model from disk
+    Optional("load_model", default=False): bool,
+
+    # Folder to save the models
+    Optional("model_dir", default="models"): str,
+
+    Optional("filename_to_store_dataset", default="dataset"): str,
 
     # Workdir
     Optional("workdir", default="."): str

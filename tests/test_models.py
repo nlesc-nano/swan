@@ -37,6 +37,18 @@ def test_load_data():
     researcher.load_data()
 
 
+def test_load_model():
+    """
+    Test that a model is loaded correctly
+    """
+    opts = validate_input(path_input_fcnet)
+    opts.load_model = True
+    opts.model_dir = "tests/test_files/models"
+
+    researcher = ModelerTensorGraph(opts)
+    researcher.load_model()
+
+
 def test_save_dataset():
     """
     Test that the dataset is stored correctly
