@@ -46,7 +46,12 @@ def test_load_model():
     opts.model_dir = "tests/test_files/models"
 
     researcher = ModelerTensorGraph(opts)
-    researcher.load_model()
+    model = researcher.load_model()
+
+    # predict
+    rs = model.predict(researcher.data.test)
+
+    assert rs.flatten().size == 100
 
 
 def test_save_dataset():

@@ -108,7 +108,8 @@ class Modeler:
         """
         Load model from disk
         """
-        self.load_data()
+        dataset = self.load_data()
+        self.split_data(dataset)
 
         model = self.select_model()
 
