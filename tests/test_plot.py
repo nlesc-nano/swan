@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')
 from swan.models.plot import create_scatter_plot
 import numpy as np
 import os
