@@ -4,7 +4,6 @@ from swan.models.models import main
 from swan.models.input_validation import validate_input
 from scipy.stats import linregress
 import argparse
-import shutil
 import os
 
 path_input_sklearn = Path("tests/test_files/input_test_sklearn.yml")

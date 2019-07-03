@@ -1,5 +1,6 @@
 from .input_validation import validate_input
 from .metadata_models import (data_hyperparam_search, default_hyperparameters)
+from .plot import create_scatter_plot
 from collections import namedtuple
 from datetime import datetime
 from deepchem.models.models import Model
@@ -59,7 +60,10 @@ def main():
     researcher.evaluate_model(model)
 
     # # predict
-    # model.predict(researcher.data.test)
+    rs = model.predict(researcher.data.test)
+
+    # Create a scatter plot of the predict values vs the ground true
+    create_scatter_plot(rs, researcher.data.test.y)
 
 
 class Modeler:
@@ -125,6 +129,7 @@ class Modeler:
         """
         dataset = self.load_data()
         self.split_data(dataset)
+        self.transform_data()
 
         model = self.select_model()
 
