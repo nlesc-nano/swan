@@ -2,8 +2,8 @@ from pathlib import Path
 from swan.models import (Modeler, ModelerSKlearn, ModelerTensorGraph)
 from swan.models.models import main
 from swan.models.input_validation import validate_input
-from scipy.stats import linregress
 import argparse
+import numpy as np
 import os
 
 path_input_sklearn = Path("tests/test_files/input_test_sklearn.yml")
@@ -21,6 +21,7 @@ def test_main(mocker):
     # Mock the modelers
     mocker.patch("swan.models.models.ModelerSKlearn")
     mocker.patch("swan.models.models.ModelerTensorGraph")
+    mocker.patch("swan.models.models.create_scatter_plot", return_value=None)
 
     main()
 
@@ -87,10 +88,7 @@ def test_train_sklearn():
 
     model = researcher.train_model()
 
-    rs = model.predict(researcher.data.test)
-
-    data = researcher.data.test.y.reshape(rs.size)
-    print("R2: ", linregress(rs, data))
+    assert check_predict(model, researcher)
 
 
 def test_hyperparameters_sklearn():
@@ -101,7 +99,9 @@ def test_hyperparameters_sklearn():
     opts.optimize_hyperparameters = True
 
     researcher = ModelerSKlearn(opts)
-    researcher.train_model()
+    model = researcher.train_model()
+
+    assert check_predict(model, researcher)
 
 
 def test_train_tensorgraph():
@@ -113,10 +113,7 @@ def test_train_tensorgraph():
 
     model = researcher.train_model()
 
-    rs = model.predict(researcher.data.test).flatten()
-
-    data = researcher.data.test.y.reshape(rs.size)
-    print("R2: ", linregress(rs, data))
+    assert check_predict(model, researcher)
 
 
 def test_hyperparameters_tensorgraph():
@@ -127,4 +124,16 @@ def test_hyperparameters_tensorgraph():
     researcher = ModelerTensorGraph(opts)
     opts.optimize_hyperparameters = True
 
-    researcher.train_model()
+    model = researcher.train_model()
+
+    assert check_predict(model, researcher)
+
+
+def check_predict(model, researcher) -> bool:
+    """
+    Check that the predicted numbers are real
+    """
+    model = researcher.train_model()
+    rs = model.predict(researcher.data.test).flatten()
+
+    return np.all(np.isreal(rs))
