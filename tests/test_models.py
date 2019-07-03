@@ -133,7 +133,6 @@ def check_predict(model, researcher) -> bool:
     """
     Check that the predicted numbers are real
     """
-    model = researcher.train_model()
     rs = model.predict(researcher.data.test).flatten()
 
     return np.all(np.isreal(rs))
