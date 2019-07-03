@@ -51,7 +51,7 @@ tensorgraph_schema = Schema({
     "name": equal_lambda('tensorgraph'),
 
     # Available models
-    "model": str,
+    "model": any_lambda(("multitaskregressor")),
 
     # Number of epoch to train for
     Optional("epochs", default=10): int,
@@ -69,7 +69,7 @@ schema_models = Schema({
     "tasks": list,
 
     # Metric to evaluate the model
-    Optional("metric", default='r2_score'): any_lambda(('r2_score')),
+    Optional("metric", default='r2_score'): str,
 
     # Method to get the features
     Optional("featurizer", default='circularfingerprint'):

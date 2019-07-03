@@ -50,6 +50,6 @@ def test_tensorgraph_schema():
     """
     Check input for tensorgraph models
     """
-    d = {'name': "TensorGraph", "model": "fcnet",
+    d = {'name': "TensorGraph", "model": "multitaskregressor",
          "epochs": 100, "parameters": {"dropout": 0.75}}
     tensorgraph_schema.validate(d)

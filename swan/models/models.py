@@ -6,6 +6,7 @@ from deepchem.models.models import Model
 from deepchem.models.tensorgraph.fcnet import MultitaskRegressor
 from deepchem.utils.evaluate import Evaluator
 from functools import partial
+from importlib import import_module
 from pathlib import Path
 from sklearn.ensemble import (BaggingRegressor, RandomForestRegressor)
 from sklearn.svm import SVR
@@ -75,12 +76,15 @@ class Modeler:
         """
         Create instances of the metric to use
         """
-        if self.opts.metric == 'r2_score':
+        # Import the metric
+        mod_metric = import_module("deepchem.metrics")
+        try:
+            metric = getattr(mod_metric, self.opts.metric)
             self.metric = dc.metrics.Metric(
-                dc.metrics.r2_score, np.mean, mode='regression')
-        else:
-            msg = f"Metric: {self.opts.metric} has not been implemented"
-            raise NotImplementedError(msg)
+                metric, np.mean, mode='regression')
+        except AttributeError:
+            print(f"Metric: {self.opts.metric} does not exist in deepchem")
+            raise
 
     def load_data(self):
         """
@@ -203,7 +207,7 @@ class ModelerTensorGraph(Modeler):
     def __init__(self, opts: dict):
         super().__init__(opts)
         self.available_models = {
-            'multitaskregressor': MultitaskRegressor
+            'multitaskregressor': MultitaskRegressor,
         }
         self.n_tasks = len(self.opts.tasks)
         self.n_features = self.featurizer.size
@@ -221,7 +225,19 @@ class ModelerTensorGraph(Modeler):
 
         # Create model
         tensorgraph_model = self.available_models[model_name]
-        return tensorgraph_model(self.n_tasks, self.n_features, **hyper)
+        args = self._get_positional_args()
+        return tensorgraph_model(*args, **hyper)
+
+    def _get_positional_args(self) -> list:
+        """
+        Select the positional arguments for a given model
+        """
+        model_name = self.opts.interface["model"]
+        dict_args = {
+            'multitaskregressor': [self.n_tasks, self.n_features]
+        }
+
+        return dict_args[model_name]
 
     def fit_model(self) -> Model:
         """
