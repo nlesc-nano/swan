@@ -4,6 +4,7 @@ from swan.models.models import main
 from swan.models.input_validation import validate_input
 from scipy.stats import linregress
 import argparse
+import shutil
 import os
 
 path_input_sklearn = Path("tests/test_files/input_test_sklearn.yml")
@@ -54,11 +55,12 @@ def test_load_model():
     assert rs.flatten().size == 100
 
 
-def test_save_dataset():
+def test_save_dataset(tmp_path):
     """
     Test that the dataset is stored correctly
     """
     opts = validate_input(path_input_fcnet)
+    opts.model_dir = os.path.join(tmp_path, "models")
     opts.save_dataset = True
     researcher = Modeler(opts)
     researcher.load_data()

@@ -37,13 +37,21 @@ bagging:
         - -1
 multitaskregressor:
     layer_sizes:
-        - [1000]
+        - [50]
+        - [100]
+        - [200]
+        - [500]
+        - [100]
     bias_init_consts:
         - 0.8
         - 0.9
     dropout:
         - 0.75
         - 0.5
+        - 0.0
+    weight_init_stddevs:
+        - 0.02
+        - 0.06
 """, Loader=yaml.FullLoader)
 
 
@@ -63,7 +71,8 @@ bagging:
     max_features: 0.5
     n_jobs: -1
 multitaskregressor:
-    layer_sizes: [1000]
-    dropout: 0.75
+    layer_sizes: [80]
+    dropout: 0.5
     bias_init_consts: 0.8
+    weight_init_stddevs: 0.06
 """, Loader=yaml.FullLoader)

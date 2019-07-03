@@ -73,7 +73,7 @@ schema_models = Schema({
 
     # Method to get the features
     Optional("featurizer", default='circularfingerprint'):
-    any_lambda(('circularfingerprint')),
+    any_lambda(('circularfingerprint', 'convmolfeaturizer')),
 
     # What kind of methodology to use
     "interface": Or(sklearn_schema, tensorgraph_schema),

@@ -45,7 +45,7 @@ setup(
     install_requires=[
         'CAT@git+https://github.com/nlesc-nano/CAT@master',
         'deepchem', 'numpy', 'pandas', 'pyyaml>=5.1.1',
-        'schema'],
+        'seaborn', 'schema'],
     setup_requires=[
         # dependency for `python setup.py test`
         'pytest-runner',

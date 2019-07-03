@@ -3,7 +3,7 @@ from .metadata_models import (data_hyperparam_search, default_hyperparameters)
 from collections import namedtuple
 from datetime import datetime
 from deepchem.models.models import Model
-from deepchem.models.tensorgraph.fcnet import MultitaskRegressor
+from deepchem.models import MultitaskRegressor
 from deepchem.utils.evaluate import Evaluator
 from functools import partial
 from importlib import import_module
@@ -67,10 +67,21 @@ class Modeler:
     def __init__(self, opts: dict):
         self.opts = opts
 
-        # Use CircularFingerprint for featurization
-        self.featurizer = dc.feat.CircularFingerprint(size=2048)
-
+        # Select featurizer and metric
+        self.select_featurizer()
         self.select_metric()
+
+    def select_featurizer(self) -> None:
+        """
+        Use featurizer chosen by the user
+        """
+        logger.info(f"Using featurizer:{self.opts.featurizer}")
+        names = {
+            "circularfingerprint": "CircularFingerprint"
+        }
+        feat = import_module("deepchem.feat")
+        featurizer = getattr(feat, names[self.opts.featurizer])
+        self.featurizer = featurizer()
 
     def select_metric(self) -> None:
         """
@@ -210,7 +221,7 @@ class ModelerTensorGraph(Modeler):
             'multitaskregressor': MultitaskRegressor,
         }
         self.n_tasks = len(self.opts.tasks)
-        self.n_features = self.featurizer.size
+        self.n_features = getattr(self.featurizer, 'size', None)
 
     def select_model(self) -> Model:
         """
@@ -221,6 +232,11 @@ class ModelerTensorGraph(Modeler):
 
         # Select model and fit it
         hyper = self.select_hyperparameters()
+
+        # Operation mode
+        hyper["mode"] = 'regression'
+
+        # Path to store the trained model
         hyper["model_dir"] = self.opts.model_dir
 
         # Create model
@@ -233,11 +249,10 @@ class ModelerTensorGraph(Modeler):
         Select the positional arguments for a given model
         """
         model_name = self.opts.interface["model"]
-        dict_args = {
-            'multitaskregressor': [self.n_tasks, self.n_features]
-        }
-
-        return dict_args[model_name]
+        if model_name == 'multitaskregressor':
+            return [self.n_tasks, self.n_features]
+        else:
+            return [self.n_tasks]
 
     def fit_model(self) -> Model:
         """
