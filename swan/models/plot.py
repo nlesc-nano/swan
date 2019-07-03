@@ -1,10 +1,11 @@
 import numpy as np
+import matplotlib.pyplot as plt
+import os
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
 
 
-def create_scatter_plot(predicted: np.ndarray, expected: np.ndarray) -> None:
+def create_scatter_plot(predicted: np.ndarray, expected: np.ndarray, workdir: str = ".") -> None:
     """
     Plot the predicted vs the expected values
     """
@@ -16,4 +17,5 @@ def create_scatter_plot(predicted: np.ndarray, expected: np.ndarray) -> None:
 
     sns.scatterplot(x='expected', y='predicted', data=df)
 
-    plt.savefig("scatterplot.png")
+    path = os.path.join(workdir, "scatterplot.png")
+    plt.savefig(path)
