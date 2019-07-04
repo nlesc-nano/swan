@@ -88,7 +88,7 @@ schema_models = Schema({
     Optional("load_model", default=False): bool,
 
     # Folder to save the models
-    Optional("model_dir", default="models"): str,
+    Optional("model_dir", default="swan_models"): str,
 
     Optional("filename_to_store_dataset", default="dataset"): str,
 
