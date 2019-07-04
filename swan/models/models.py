@@ -244,6 +244,8 @@ class ModelerTensorGraph(Modeler):
         # Path to store the trained model
         hyper["model_dir"] = self.opts.model_dir
 
+        logger.info(f"Model hyperparameters are: {hyper}")
+
         # Create model
         tensorgraph_model = self.available_models[model_name]
         args = self._get_positional_args()
