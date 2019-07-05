@@ -39,7 +39,7 @@ setup(
     entry_points={
         'console_scripts': [
             'cosmo=swan.cosmo.cosmo:main',
-            'train_model=swan.models.models:main']
+            'modeler=swan.models.models:main']
     },
     test_suite='tests',
     install_requires=[

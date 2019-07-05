@@ -26,7 +26,7 @@ def validate_input(file_input: str):
     with open(file_input, 'r') as f:
         dict_input = yaml.load(f.read(), Loader=yaml.FullLoader)
     try:
-        d = schema_models.validate(dict_input)
+        d = schema_modeler.validate(dict_input)
         return Options(d)
 
     except SchemaError as e:
@@ -60,8 +60,7 @@ tensorgraph_schema = Schema({
     Optional("parameters", default={}): dict
 })
 
-schema_models = Schema({
-
+schema_train = Schema({
     # Load the dataset from a file
     "dataset_file": str,
 
@@ -95,3 +94,18 @@ schema_models = Schema({
     # Workdir
     Optional("workdir", default="."): str
 })
+
+
+schema_predict = Schema({
+    # File with the smiles to predict properties
+    "smiles_file": str,
+
+    # Folder to save the models
+    Optional("model_dir", default="swan_models"): str,
+
+    # What kind of methodology to use
+    "interface": Or(sklearn_schema, tensorgraph_schema),
+
+})
+
+schema_modeler = Or(schema_train, schema_predict)

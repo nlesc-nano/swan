@@ -16,7 +16,7 @@ def test_main(mocker):
     """
     # Mock the CLI
     mocker.patch("argparse.ArgumentParser.parse_args", return_value=argparse.Namespace(
-        i=path_input_fcnet, w="."))
+        i=path_input_fcnet, w=".", mode="train"))
 
     # Mock the modelers
     mocker.patch("swan.models.models.ModelerSKlearn")

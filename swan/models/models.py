@@ -32,6 +32,8 @@ def main():
     # configure logger
     parser.add_argument('-i', required=True,
                         help="Input file with options")
+    parser.add_argument("-m", "--mode", help="Operation mode: train or predict",
+                        choices=["train", "predict"], default="train")
     parser.add_argument('-w', help="workdir", default=".")
     args = parser.parse_args()
 
@@ -44,6 +46,17 @@ def main():
     # Check that the input is correct
     opts = validate_input(Path(args.i))
 
+    if args.mode == "train":
+        train_model(opts)
+
+    else:
+        predict_properties(opts)
+
+
+def train_model(opts: dict) -> None:
+    """
+    Train the model usign the data specificied by the user
+    """
     # Train the model
     if opts.interface["name"].lower() == "sklearn":
         researcher = ModelerSKlearn(opts)
@@ -64,6 +77,13 @@ def main():
 
     # Create a scatter plot of the predict values vs the ground true
     create_scatter_plot(rs, researcher.data.test.y)
+
+
+def predict_properties(opts: dict) -> None:
+    """
+    Used a previous trained model to predict properties
+    """
+    pass
 
 
 class Modeler:
