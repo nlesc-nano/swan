@@ -11,3 +11,61 @@ Screening Workflows And Nanomaterials
 ################################################################################
 
 Workflows and statistical models to predict numerical properties for nanomaterials
+
+
+Installation
+============
+
+- Download miniconda for python3: miniconda_ (also you can install the complete anaconda_ version).
+
+- Install according to: installConda_.
+
+- Create a new virtual environment using the following commands:
+
+  - ``conda create -n swan``
+
+- Activate the new virtual environment
+
+  - ``source activate swan``
+
+To exit the virtual environment type  ``source deactivate``.
+
+
+.. _dependecies:
+
+Dependencies installation
+-------------------------
+
+- Type in your terminal:
+
+  ``conda activate swan``
+
+Using the conda environment the following packages should be installed:
+
+
+- install deepchem_ and other dependencies:
+
+  - ``conda install -y -q -c deepchem -c rdkit -c conda-forge -c omnia h5py deepchem=2.1.0``
+
+.. _installation:
+
+Package installation
+--------------------
+Finally install the package:
+
+- Install **swan** using pip:
+  - ``pip install git+https://github.com/nlesc-nano/swan@master``
+
+Now you are ready to use *qmflows*.
+
+
+  **Notes:**
+
+  - Once the libraries and the virtual environment are installed, you only need to type
+    ``conda activate swan`` each time that you want to use the software.
+
+
+.. _miniconda: https://docs.conda.io/en/latest/miniconda.html
+.. _anaconda: https://www.anaconda.com/distribution/#download-section
+.. _installConda: https://conda.io/projects/conda/en/latest/user-guide/install/index.html
+..  _deepchem: https://deepchem.io/
