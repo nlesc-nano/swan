@@ -51,7 +51,8 @@ def main():
         train_model(opts)
 
     else:
-        predict_properties(opts)
+        rs = predict_properties(opts)
+        print(rs)
 
 
 def train_model(opts: dict) -> None:
@@ -85,8 +86,7 @@ def predict_properties(opts: dict) -> None:
     # Prepare data
     dataset = researcher.load_data()
 
-    rs = model.predict(dataset).flatten()
-    print(rs)
+    return model.predict(dataset).flatten()
 
 
 def create_modeler(opts: dict):

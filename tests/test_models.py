@@ -1,6 +1,6 @@
 from pathlib import Path
 from swan.models import (Modeler, ModelerSKlearn, ModelerTensorGraph)
-from swan.models.models import main
+from swan.models.models import (main, predict_properties)
 from swan.models.input_validation import validate_input
 import argparse
 import numpy as np
@@ -8,6 +8,7 @@ import os
 
 path_input_sklearn = Path("tests/test_files/input_test_sklearn.yml")
 path_input_fcnet = Path("tests/test_files/input_test_fcnet.yml")
+path_input_prediction = Path("tests/test_files/input_test_prediction.yml")
 
 
 def test_main(mocker):
@@ -53,6 +54,18 @@ def test_load_model():
     rs = model.predict(researcher.data.test)
 
     assert rs.flatten().size == 100
+
+
+def test_predict_unknown():
+    """
+    Predict data for a some smiles
+    """
+    opts = validate_input(path_input_prediction)
+    opts.mode = "predict"
+    opts.model_dir = "tests/test_files/models"
+    rs = predict_properties(opts)
+
+    assert (np.all(np.isreal(rs)) and (rs.size == 10))
 
 
 def test_save_dataset(tmp_path):
