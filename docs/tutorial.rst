@@ -62,7 +62,7 @@ a *joblib* file that is binary format to load a previous used dataset (see the `
  
 **save_dataset**: Save the data (and its preprocessing) for future reuse.
  
-Training a Model
+Training a model
 ****************
 In order to run the training, run the following command: ::
 
@@ -71,7 +71,7 @@ In order to run the training, run the following command: ::
 `swan` will generate a log file called  `output.log` with a timestamp for the different steps during the training.
 Finally, you can see in your `cwd` a folder called *swan_models* containing the parameters of your statistical model.
 
-Predicting New Data
+Predicting new data
 *******************
 To predict new data you need to provide some smiles for which you want to compute the properties of interest, in this
 case the `activity coefficient_`. For doing so, you need to provide in the `dataset_file` entry of the *input.yml*
@@ -88,7 +88,7 @@ Then run the command: ::
 
 `swan` will look for a *swan_model* folder with thre previously trained model and will load it.
 
-
+Finally, you will find a file called "predicted.csv" with the predicted values for the activity coefficients.
 
 ..  _deepchem: https://deepchem.io/
 .. _smiles: https://en.wikipedia.org/wiki/Simplified_molecular-input_line-entry_system
