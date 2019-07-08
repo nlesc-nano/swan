@@ -12,7 +12,6 @@ Welcome to SWAN!
 
    includereadme
    tutorial
-   input
    api
 
 

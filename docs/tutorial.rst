@@ -10,6 +10,7 @@ compute the `activity coefficient_` using the `COSMO approach_`. We store the va
 file.
 
 A peek into the file will show you something like: ::
+
   ,smiles,E_solv,gammas
   808780,OC(=O)C1OC(C#C)C2NC1C=C2,-11.05439751550119,8.816417146193844
   593047,OC(=O)C1C2NC3C(=O)C2CC13O,-8.98188869016993,52.806217658944995
@@ -25,6 +26,7 @@ generates a prediction using a previously trained model. Let's briefly explore t
 Simulation input
 ****************
 A typical `swan` input file looks like: ::
+
   dataset_file:
   "tests/test_files/thousand.csv"
 
@@ -52,21 +54,18 @@ a *joblib* file that is binary format to load a previous used dataset (see the `
 
 **tasks**: the columns names of hte csv_ file representing the molecular properties to fit.
 
-**featurizer**: The type of transformation to apply to the smiles_ to generates the features_. For more
- information of the available features_ see: `deepchem.feat_`
+**featurizer**: The type of transformation to apply to the smiles_ to generates the features_. For more information of the available features_ see: `deepchem.feat_`.
 
-**interface**: deepchem_ statistical models belong to either the SKlearn_ or Tensorgraph_ classes. Therefore,
- `name` should be one of the two. Also, the `model` key is the name of the concrete model.
+**interface**: deepchem_ statistical models belong to either the SKlearn_ or Tensorgraph_ classes. Therefore, `name` should be one of the two. Also, the `model` key is the name of the concrete model.
 
-**optimize_hyperparameters**: Most machine learning models required some tweaking of their hyperparameters.
-This option allow to search for the best hyperparameters using a predefined set of values define in the
-`metadata module_`.
+**optimize_hyperparameters**: Most machine learning models required some tweaking of their hyperparameters. This option allow to search for the best hyperparameters using a predefined set of values define in the `metadata module_`.
  
 **save_dataset**: Save the data (and its preprocessing) for future reuse.
  
 Training a Model
 ****************
 In order to run the training, run the following command: ::
+
   modeler --mode train -i input.yml
 
 `swan` will generate a log file called  `output.log` with a timestamp for the different steps during the training.
@@ -77,12 +76,14 @@ Predicting New Data
 To predict new data you need to provide some smiles for which you want to compute the properties of interest, in this
 case the `activity coefficient_`. For doing so, you need to provide in the `dataset_file` entry of the *input.yml*
 file the path to a csv_ file containing the smiles, like the `smiles.csv_`: ::
+
   ,smiles
   0,OC(=O)C1CNC2C3C4CC2C1N34
   1,OC(=O)C1CNC2COC1(C2)C#C
   2,OC(=O)CN1CC(=C)C(C=C)C1=N
 
 Then run the command: ::
+
   modeler --mode predict -i input.yml
 
 `swan` will look for a *swan_model* folder with thre previously trained model and will load it.
@@ -101,3 +102,5 @@ Then run the command: ::
 .. _Tensorgraph: https://deepchem.io/docs/deepchem.models.tensorgraph.models.html
 .. _metadata module: https://github.com/nlesc-nano/swan/blob/master/swan/models/metadata_models.py
 .. _smiles.csv: https://github.com/nlesc-nano/swan/blob/master/tests/test_files/smiles.csv
+.. _yaml: https://yaml.org
+.. _csv: https://en.wikipedia.org/wiki/Comma-separated_values
