@@ -5,12 +5,14 @@
     :target: https://www.codacy.com/app/nlesc-jcer/swan?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=nlesc-nano/swan&amp;utm_campaign=Badge_Grade
 .. image:: https://img.shields.io/badge/python-3.7-blue.svg
    :target: https://www.python.org
+.. image:: https://readthedocs.org/projects/swan/badge/?version=latest
+   :target: https://swan.readthedocs.io/en/latest/?badge=latest
 
 ################################################################################
 Screening Workflows And Nanomaterials
 ################################################################################
 
-Workflows and statistical models to predict numerical properties for nanomaterials
+Workflows and statistical models to predict numerical properties for nanomaterials. See Documentation_.
 
 
 Installation
@@ -64,7 +66,7 @@ Now you are ready to use *qmflows*.
   - Once the libraries and the virtual environment are installed, you only need to type
     ``conda activate swan`` each time that you want to use the software.
 
-
+.. _Documentation: https://swan.readthedocs.io/en/latest/
 .. _miniconda: https://docs.conda.io/en/latest/miniconda.html
 .. _anaconda: https://www.anaconda.com/distribution/#download-section
 .. _installConda: https://conda.io/projects/conda/en/latest/user-guide/install/index.html
