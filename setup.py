@@ -61,5 +61,6 @@ setup(
     ],
     extras_require={
         'test': ['coverage', 'pytest>=3.9', 'pytest-cov', 'pytest-mock'],
+        'doc': ['sphinx', 'sphinx-autodoc-typehints', 'sphinx_rtd_theme', 'nbsphinx']
     }
 )

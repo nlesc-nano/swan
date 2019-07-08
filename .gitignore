@@ -51,3 +51,6 @@ var/
 
 # Output
 *.log
+
+# swan internals
+swan_models
