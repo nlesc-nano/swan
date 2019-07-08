@@ -65,6 +65,9 @@ def test_predict_unknown():
     opts.model_dir = "tests/test_files/models"
     rs = predict_properties(opts)
 
+    # removed predicted data
+    os. remove('predicted.csv')
+
     assert (np.all(np.isreal(rs)) and (rs.size == 10))
 
 

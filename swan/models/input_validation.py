@@ -86,6 +86,9 @@ schema_modeler = Schema({
     # Load model from disk
     Optional("load_model", default=False): bool,
 
+    # Report predicted data
+    Optional('report_predicted', default=True): bool,
+
     # Folder to save the models
     Optional("model_dir", default="swan_models"): str,
 

@@ -18,6 +18,7 @@ import argparse
 import deepchem as dc
 import logging
 import numpy as np
+import pandas as pd
 
 __all__ = ["Modeler", "ModelerSKlearn", "ModelerTensorGraph"]
 
@@ -51,8 +52,7 @@ def main():
         train_model(opts)
 
     else:
-        rs = predict_properties(opts)
-        print(rs)
+        predict_properties(opts)
 
 
 def train_model(opts: dict) -> None:
@@ -80,13 +80,24 @@ def predict_properties(opts: dict) -> None:
     """
     Used a previous trained model to predict properties
     """
+    def report(rs):
+        df = pd.read_csv(opts.dataset_file)
+        output = pd.DataFrame({'smiles': df['smiles'], 'predicted': rs})
+        output.to_csv("predicted.csv")
+
     researcher = create_modeler(opts)
     model = researcher.load_model()
 
     # Prepare data
     dataset = researcher.load_data()
 
-    return model.predict(dataset).flatten()
+    # Predict
+    rs = model.predict(dataset).flatten()
+
+    if opts.report_predicted:
+        report(rs)
+
+    return rs
 
 
 def create_modeler(opts: dict):
