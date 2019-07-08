@@ -45,6 +45,7 @@ def main():
 
     # Check that the input is correct
     opts = validate_input(Path(args.i))
+    opts.mode = args.mode
 
     if args.mode == "train":
         train_model(opts)
@@ -57,12 +58,7 @@ def train_model(opts: dict) -> None:
     """
     Train the model usign the data specificied by the user
     """
-    # Train the model
-    if opts.interface["name"].lower() == "sklearn":
-        researcher = ModelerSKlearn(opts)
-    else:
-        researcher = ModelerTensorGraph(opts)
-
+    researcher = create_modeler(opts)
     # train the model
     if opts.load_model:
         model = researcher.load_model()
@@ -83,7 +79,25 @@ def predict_properties(opts: dict) -> None:
     """
     Used a previous trained model to predict properties
     """
-    pass
+    researcher = create_modeler(opts)
+    model = researcher.load_model()
+
+    # Prepare data
+    dataset = researcher.load_data()
+
+    rs = model.predict(dataset).flatten()
+    print(rs)
+
+
+def create_modeler(opts: dict):
+    """
+    Select the interface to use
+    """
+    # Train the model
+    if opts.interface["name"].lower() == "sklearn":
+        return ModelerSKlearn(opts)
+    else:
+        return ModelerTensorGraph(opts)
 
 
 class Modeler:
@@ -131,7 +145,8 @@ class Modeler:
             dataset = dc.utils.save.load_from_disk(self.opts.dataset_file)
 
         else:
-            loader = dc.data.CSVLoader(tasks=self.opts.tasks, smiles_field="smiles",
+            tasks = [] if self.opts.mode == "predict" else self.opts.tasks
+            loader = dc.data.CSVLoader(tasks, smiles_field="smiles",
                                        featurizer=self.featurizer)
             dataset = loader.featurize(self.opts.dataset_file)
 
@@ -149,7 +164,10 @@ class Modeler:
         """
         dataset = self.load_data()
         self.split_data(dataset)
-        self.transform_data()
+
+        # Transform the y labels
+        if self.opts.mode == "train":
+            self.transform_data()
 
         model = self.select_model()
 
