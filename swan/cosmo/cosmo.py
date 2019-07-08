@@ -71,7 +71,7 @@ def call_cosmo_on_chunk(data: pd.DataFrame, k: int, smiles: list) -> str:
     df = pd.DataFrame(columns=data.columns)
 
     for x in smiles:
-        if x in data.index and not np.isnan(df.loc[x]):
+        if x in data.index and not np.isnan(data.loc[x]):
             df.loc[x] = data.loc[x]
         else:
             df.loc[x] = call_mopac(x)
