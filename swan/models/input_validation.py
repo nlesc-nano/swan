@@ -60,7 +60,7 @@ tensorgraph_schema = Schema({
     Optional("parameters", default={}): dict
 })
 
-schema_train = Schema({
+schema_modeler = Schema({
     # Load the dataset from a file
     "dataset_file": str,
 
@@ -94,18 +94,3 @@ schema_train = Schema({
     # Workdir
     Optional("workdir", default="."): str
 })
-
-
-schema_predict = Schema({
-    # File with the smiles to predict properties
-    "smiles_file": str,
-
-    # Folder to save the models
-    Optional("model_dir", default="swan_models"): str,
-
-    # What kind of methodology to use
-    "interface": Or(sklearn_schema, tensorgraph_schema),
-
-})
-
-schema_modeler = Or(schema_train, schema_predict)
