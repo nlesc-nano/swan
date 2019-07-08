@@ -1,4 +1,7 @@
 version: 2
 
-conda:
-  environment: environment.yml
+# Optionally build your docs in additional formats such as PDF and ePub
+formats: all
+
+python:
+  version: 3.7
