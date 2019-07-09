@@ -28,7 +28,7 @@ def main():
     args = parser.parse_args()
 
     if args.csv is not None:
-        df = pd.read_csv(args.csv, sep='\t', index_col=0)
+        df = pd.read_csv(args.csv)
     else:
         df = pd.DataFrame(columns=["E_solv", "gammas"])
 
@@ -78,7 +78,7 @@ def call_cosmo_on_chunk(data: pd.DataFrame, k: int, smiles: list) -> str:
 
     # Store the chunk in a file
     name = f"Gammas_{k}.csv"
-    df.to_csv(name, sep='\t')
+    df.to_csv(name)
 
     return name
 

@@ -33,13 +33,13 @@ def merge_csv(path: str, output: str, patt: str = "Gamma*.csv") -> pd.DataFrame:
     """
     p = Path(path)
     files = [x.as_posix() for x in p.rglob(patt)]
-    df = pd.read_csv(files[0], sep='\t', index_col=0)
+    df = pd.read_csv(files[0])
 
     # read all the csv files
     for f in files[1:]:
-        s = pd.read_csv(f, sep='\t', index_col=0)
+        s = pd.read_csv(f)
         df = pd.concat((df, s))
 
-    df.to_csv(output, sep='\t')
+    df.to_csv(output)
 
     return df
