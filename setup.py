@@ -39,11 +39,14 @@ setup(
     entry_points={
         'console_scripts': [
             'cosmo=swan.cosmo.cosmo:main',
-            'modeler=swan.models.models:main']
+            'modeler=swan.models.models:main',
+            'save_dataset_in_db=swan.data.save_data:main'
+        ]
     },
     test_suite='tests',
     install_requires=[
         'CAT@git+https://github.com/nlesc-nano/CAT@master',
+        'dataCAT',
         'deepchem', 'numpy', 'pandas', 'pyyaml>=5.1.1',
         'seaborn', 'schema'],
     setup_requires=[
