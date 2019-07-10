@@ -54,3 +54,6 @@ var/
 
 # swan internals
 swan_models
+
+# data files
+*.hdf5
