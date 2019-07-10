@@ -17,7 +17,10 @@ def test_cosmo_main(mocker):
     # Mock the MongoDB interface
     mocker.patch.object(Database, 'update_mongodb')
 
+    # called mocked main
     main()
+
+    remove_files()
 
 
 def remove_files():
