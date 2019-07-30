@@ -29,7 +29,7 @@ setup(
     license="Apache Software License 2.0",
     zip_safe=False,
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 3 - Alpha',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: Apache Software License',
         'Natural Language :: English',
@@ -46,6 +46,7 @@ setup(
     test_suite='tests',
     install_requires=[
         'CAT@git+https://github.com/nlesc-nano/CAT@master',
+        'nanoCAT@git+https://github.com/nlesc-nano/nano-CAT@master',
         'dataCAT@git+https://github.com/nlesc-nano/data-CAT@master',
         'deepchem', 'numpy', 'pandas', 'pyyaml>=5.1.1',
         'seaborn', 'schema'],

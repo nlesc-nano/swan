@@ -1,5 +1,5 @@
 from .functions import run_command
-from CAT.analysis.ligand_solvation import get_solv
+from nanoCAT.analysis.ligand_solvation import get_solv
 from pathlib import Path
 from scm.plams import Settings
 
