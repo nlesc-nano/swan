@@ -1,4 +1,4 @@
-from swan.properties.properties import compute_mol_shape
+from swan.properties.molprop import compute_mol_shape
 import numpy as np
 
 
