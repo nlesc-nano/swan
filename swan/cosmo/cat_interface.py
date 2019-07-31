@@ -1,9 +1,10 @@
 from .functions import run_command
-from nanoCAT.analysis.ligand_solvation import get_solv
+from nanoCAT.ligand_solvation import get_solv
 from pathlib import Path
 from scm.plams import Settings
 
 import CAT
+import nanoCAT
 import logging
 import numpy as np
 import shutil
@@ -59,7 +60,7 @@ def call_cat_mopac(tmp: Path, smile: str, solvents: list):
 
     # Call Cosmo
     E_solv, gamma = get_solv(
-        mol, solvents, coskf.as_posix(), job=CAT.CRSJob, s=s, keep_files=False)
+        mol, solvents, coskf.as_posix(), job=nanoCAT.crs.CRSJob, s=s, keep_files=False)
 
     return tuple(map(check_output, (E_solv, gamma)))
 
