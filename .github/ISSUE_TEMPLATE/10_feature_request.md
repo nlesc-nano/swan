@@ -7,4 +7,4 @@ assignees: ''
 
 ---
 
-Tell us what would be a nice feature to make the **qmflows-namd** library even better!
+Tell us what would be a nice feature to make the **swan** library even better!
