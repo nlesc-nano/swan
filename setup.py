@@ -64,7 +64,7 @@ setup(
         'pycodestyle',
     ],
     extras_require={
-        'test': ['coverage', 'pytest>=3.9', 'pytest-cov', 'pytest-mock'],
+        'test': ['coverage', 'pycodestyle', 'pytest>=3.9', 'pytest-cov', 'pytest-mock'],
         'doc': ['sphinx', 'sphinx-autodoc-typehints', 'sphinx_rtd_theme', 'nbsphinx']
     }
 )
