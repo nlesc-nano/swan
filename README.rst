@@ -45,10 +45,11 @@ Dependencies installation
 Using the conda environment the following packages should be installed:
 
 
-- install deepchem_ and other dependencies:
+- install RDKit_ and H5PY_:
+  - ``conda install -y -q -c pytorch -c conda-forge -c h5py rdkit`
 
-  - ``conda install -y -q -c deepchem -c rdkit -c conda-forge -c omnia h5py deepchem=2.1.0``
-
+- install Pytorch_ according to this_ recipe
+    
 .. _installation:
 
 Package installation
@@ -70,4 +71,7 @@ Now you are ready to use *swan*.
 .. _miniconda: https://docs.conda.io/en/latest/miniconda.html
 .. _anaconda: https://www.anaconda.com/distribution/#download-section
 .. _installConda: https://conda.io/projects/conda/en/latest/user-guide/install/index.html
-..  _deepchem: https://deepchem.io/
+.. _Pytorch: https://pytorch.org
+.. _RDKit: https://www.rdkit.org
+.. _H5PY: https://www.h5py.org/
+.. _this: https://pytorch.org/get-started/locally/

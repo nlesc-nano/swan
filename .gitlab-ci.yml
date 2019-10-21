@@ -1,6 +1,6 @@
 job build:
   image:
-    "nlescjcer/docker_conda_nano:test"
+    "nlescjcer/docker_conda_nano:pytorch"
   script:
     - cd $HOME && git clone --branch master --single-branch git://github.com/nlesc-nano/swan.git
     - cd swan && pip install -e .[test]
@@ -9,3 +9,4 @@ job build:
     - nlescjcer
   only:
     - master
+    - devel
