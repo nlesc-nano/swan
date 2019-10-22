@@ -43,7 +43,10 @@ schema_torch = Schema({
     Optional("featurizer", default='circularfingerprint'): any_lambda(('circularfingerprint')),
 
     # Metric to evaluate the model
-    Optional("metric", default='r2_score'): str
+    Optional("metric", default='r2_score'): str,
+
+    # Frequency to log the ressult between epochs
+    Optional("frequency_log_epochs", default=10): int
 })
 
 schema_modeler = Schema({

@@ -1,0 +1,15 @@
+dataset_file:
+  tests/test_files/smiles.csv
+
+torch_config:
+  epochs: 100
+  featurizer: circularfingerprint
+    
+optimize_hyperparameters:
+  False
+
+load_model:
+  False
+  
+save_dataset:
+  False

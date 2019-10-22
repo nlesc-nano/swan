@@ -3,7 +3,9 @@ from .input_validation import validate_input
 from datetime import datetime
 from pathlib import Path
 from swan.log_config import config_logger
-from torch import (Tensor, Variable)
+from swan.utils import Options
+from torch import Tensor
+from torch.autograd import Variable
 
 import argparse
 import logging
@@ -25,20 +27,23 @@ class Dataset:
         raise NotImplementedError
 
 
-class Transform:
+# class Transform:
 
-    def __init__():
-        pass
+#     def __init__():
+#         pass
 
 
 class Net(torch.nn.Module):
+    """
+    Create a Neural network object using Pytorch
+    """
     def __init__(self, n_feature: int, n_hidden: int, n_output: int):
         super(Net, self).__init__()
         self.hidden = torch.nn.Linear(n_feature, n_hidden)   # hidden layer
         self.predict = torch.nn.Linear(n_hidden, n_output)   # output layer
 
     def forward(self, x: Tensor) -> Tensor:
-        # activation function for hidden layer
+        """activation function for hidden layer"""
         x = fun.relu(self.hidden(x))
         # linear output
         x = self.predict(x)
@@ -46,7 +51,9 @@ class Net(torch.nn.Module):
 
 
 class Modeler:
-
+    """
+    Object to create statistical models.
+    """
     def __init__(self, opts: dict):
         self.opts = opts
 
@@ -60,6 +67,8 @@ class Modeler:
         for t in range(self.opts["epochs"]):
             prediction = net(x)
             loss = loss_func(prediction, y)
+            if t % self.opts.frequency_log_epochs == 0:
+                logger.info(f"Loss: {loss.data.numpy()}")
             optimizer.zero_grad()   # clear gradients for next train
             loss.backward()         # backpropagation, compute gradients
             optimizer.step()        # apply gradients
@@ -81,7 +90,7 @@ def main():
     config_logger(Path(args.w))
 
     # log date
-    logger.info(f"Starting at:{datetime.now()}")
+    logger.info(f"Starting at: {datetime.now()}")
 
     # Check that the input is correct
     opts = validate_input(Path(args.i))
@@ -89,16 +98,19 @@ def main():
 
     if args.mode == "train":
         train_model(opts.torch_config)
-
-    # else:
-    #     predict_properties(opts)
+    else:
+        predict_properties(opts)
 
 
 def train_model(opts: dict) -> None:
     """
     Train the model usign the data specificied by the user
     """
-    researcher = Modeler(opts)
+    researcher = Modeler(Options(opts))
+    x = torch.unsqueeze(torch.linspace(-1, 1, 100), dim=1)
+    y = x.pow(2) + 0.2*torch.rand(x.size())
+    result = researcher.train_model(x, y)
+    
     # # train the model
     # if opts.load_model:
     #     model = researcher.load_model()
@@ -115,10 +127,11 @@ def train_model(opts: dict) -> None:
 #     create_scatter_plot(rs, researcher.data.test.y)
 
 
-# def predict_properties(opts: dict) -> None:
-#     """
-#     Used a previous trained model to predict properties
-#     """
+def predict_properties(opts: dict) -> None:
+    """
+    Used a previous trained model to predict properties
+    """
+    pass
 #     def report(rs):
 #         df = pd.read_csv(opts.dataset_file)
 #         output = pd.DataFrame({'smiles': df['smiles'], 'predicted': rs})
@@ -138,18 +151,6 @@ def train_model(opts: dict) -> None:
 
 #     return rs
 
-
-# def create_modeler(opts: dict):
-#     """
-#     Select the interface to use
-#     """
-#     # Train the model
-#     return ModelerTensorGraph(opts)
-
-
-#         # Select featurizer and metric
-#         self.select_featurizer()
-#         self.select_metric()
 
 #     def select_featurizer(self) -> None:
 #         """

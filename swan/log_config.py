@@ -9,7 +9,7 @@ def config_logger(workdir: Path):
     """
     file_log = workdir / 'output.log'
     logging.basicConfig(filename=file_log, level=logging.INFO,
-                        format='%(asctime)s---%(levelname)s\n%(message)s',
+                        format='%(asctime)s  %(message)s',
                         datefmt='[%I:%M:%S]')
     handler = logging.StreamHandler(sys.stdout)
     handler.terminator = ""
