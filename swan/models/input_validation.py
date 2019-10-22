@@ -1,4 +1,4 @@
-from schema import (And, Optional, Or, Schema, SchemaError, Use)
+from schema import (And, Optional, Schema, SchemaError, Use)
 from swan.utils import Options
 import yaml
 
@@ -19,7 +19,7 @@ def any_lambda(xs: iter):
         str, Use(str.lower), lambda s: s in xs)
 
 
-def validate_input(file_input: str):
+def validate_input(file_input: str) -> Options:
     """
     Check the input validation against an schema
     """
@@ -35,47 +35,23 @@ def validate_input(file_input: str):
         raise
 
 
-# Schemas to validate the input
-sklearn_schema = Schema({
-    # Use the SKlearn class
-    "name": equal_lambda('sklearn'),
-    # Use one of the following models
-    "model": any_lambda(("randomforest", "svr", "kernelridge", "bagging")),
-
-    # Input parameters for the model
-    Optional("parameters", default={}): dict
-})
-
-tensorgraph_schema = Schema({
-    # Use the tensorgraph class
-    "name": equal_lambda('tensorgraph'),
-
-    # Available models
-    "model": any_lambda(("multitaskregressor")),
-
+schema_torch = Schema({
     # Number of epoch to train for
-    Optional("epochs", default=10): int,
+    Optional("epochs", default=100): int,
 
-    # Input parameters for the model
-    Optional("parameters", default={}): dict
+    # Method to get the features
+    Optional("featurizer", default='circularfingerprint'): any_lambda(('circularfingerprint')),
+
+    # Metric to evaluate the model
+    Optional("metric", default='r2_score'): str
 })
 
 schema_modeler = Schema({
     # Load the dataset from a file
     "dataset_file": str,
 
-    # Properties to predict
-    "tasks": list,
-
-    # Metric to evaluate the model
-    Optional("metric", default='r2_score'): str,
-
-    # Method to get the features
-    Optional("featurizer", default='circularfingerprint'):
-    any_lambda(('circularfingerprint', 'convmolfeaturizer')),
-
-    # What kind of methodology to use
-    "interface": Or(sklearn_schema, tensorgraph_schema),
+    # Network and training options options
+    Optional("torch_config"): schema_torch,
 
     # Search for best hyperparameters
     Optional("optimize_hyperparameters", default=False): bool,

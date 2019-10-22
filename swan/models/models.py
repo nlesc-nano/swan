@@ -1,12 +1,15 @@
-# from .input_validation import validate_input
+from .input_validation import validate_input
 # from .plot import create_scatter_plot
-# from pathlib import Path
-# from swan.log_config import config_logger
+from datetime import datetime
+from pathlib import Path
+from swan.log_config import config_logger
+from torch import (Tensor, Variable)
 
-# import argparse
+import argparse
 import logging
-# import numpy as np
-# import pandas as pd
+import torch
+import torch.nn.functional as fun
+
 
 __all__ = ["Modeler"]
 
@@ -14,43 +17,93 @@ __all__ = ["Modeler"]
 logger = logging.getLogger(__name__)
 
 
-# def main():
-#     parser = argparse.ArgumentParser(description="train -i input.yml")
-#     # configure logger
-#     parser.add_argument('-i', required=True,
-#                         help="Input file with options")
-#     parser.add_argument("-m", "--mode", help="Operation mode: train or predict",
-#                         choices=["train", "predict"], default="train")
-#     parser.add_argument('-w', help="workdir", default=".")
-#     args = parser.parse_args()
+class Dataset:
+    def __getitem__(self, index):
+        raise NotImplementedError
 
-#     # start logger
-#     config_logger(Path(args.w))
-
-#     # log date
-#     logger.info(f"Starting at:{datetime.now()}")
-
-#     # Check that the input is correct
-#     opts = validate_input(Path(args.i))
-#     opts.mode = args.mode
-
-#     if args.mode == "train":
-#         train_model(opts)
-
-#     else:
-#         predict_properties(opts)
+    def __len__(self):
+        raise NotImplementedError
 
 
-# def train_model(opts: dict) -> None:
-#     """
-#     Train the model usign the data specificied by the user
-#     """
-#     researcher = create_modeler(opts)
-#     # train the model
-#     if opts.load_model:
-#         model = researcher.load_model()
-#     else:
-#         model = researcher.train_model()
+class Transform:
+
+    def __init__():
+        pass
+
+
+class Net(torch.nn.Module):
+    def __init__(self, n_feature: int, n_hidden: int, n_output: int):
+        super(Net, self).__init__()
+        self.hidden = torch.nn.Linear(n_feature, n_hidden)   # hidden layer
+        self.predict = torch.nn.Linear(n_hidden, n_output)   # output layer
+
+    def forward(self, x: Tensor) -> Tensor:
+        # activation function for hidden layer
+        x = fun.relu(self.hidden(x))
+        # linear output
+        x = self.predict(x)
+        return x
+
+
+class Modeler:
+
+    def __init__(self, opts: dict):
+        self.opts = opts
+
+    def train_model(self, x: Variable, y: Variable):
+        """ """
+        # define the network
+        net = Net(n_feature=1, n_hidden=10, n_output=1)
+        optimizer = torch.optim.SGD(net.parameters(), lr=0.2)
+        loss_func = torch.nn.MSELoss()
+
+        for t in range(self.opts["epochs"]):
+            prediction = net(x)
+            loss = loss_func(prediction, y)
+            optimizer.zero_grad()   # clear gradients for next train
+            loss.backward()         # backpropagation, compute gradients
+            optimizer.step()        # apply gradients
+
+        return prediction
+
+
+def main():
+    parser = argparse.ArgumentParser(description="modeler -i input.yml")
+    # configure logger
+    parser.add_argument('-i', required=True,
+                        help="Input file with options")
+    parser.add_argument("-m", "--mode", help="Operation mode: train or predict",
+                        choices=["train", "predict"], default="train")
+    parser.add_argument('-w', help="workdir", default=".")
+    args = parser.parse_args()
+
+    # start logger
+    config_logger(Path(args.w))
+
+    # log date
+    logger.info(f"Starting at:{datetime.now()}")
+
+    # Check that the input is correct
+    opts = validate_input(Path(args.i))
+    opts.mode = args.mode
+
+    if args.mode == "train":
+        train_model(opts.torch_config)
+
+    # else:
+    #     predict_properties(opts)
+
+
+def train_model(opts: dict) -> None:
+    """
+    Train the model usign the data specificied by the user
+    """
+    researcher = Modeler(opts)
+    # # train the model
+    # if opts.load_model:
+    #     model = researcher.load_model()
+    # else:
+    #     model = researcher.train_model()
 
 #     # Check how good is the model
 #     researcher.evaluate_model(model)
@@ -93,11 +146,6 @@ logger = logging.getLogger(__name__)
 #     # Train the model
 #     return ModelerTensorGraph(opts)
 
-
-class Modeler:
-
-    def __init__(self, opts: dict):
-        self.opts = opts
 
 #         # Select featurizer and metric
 #         self.select_featurizer()
@@ -244,67 +292,3 @@ class Modeler:
 #             metric=self.metric)
 
 #         return best_model, best_model_hyperparams, all_models_results
-
-
-# class ModelerTensorGraph(Modeler):
-
-#     def __init__(self, opts: dict):
-#         super().__init__(opts)
-#         self.available_models = {
-#             'multitaskregressor': MultitaskRegressor,
-#         }
-#         self.n_tasks = len(self.opts.tasks)
-#         self.n_features = getattr(self.featurizer, 'size', None)
-
-#     def select_model(self) -> Model:
-#         """
-#         Return the Model object specificied by the user
-#         """
-#         model_name = self.opts.interface["model"]
-#         logger.info(f"Train the model using {model_name}")
-
-#         # Select model and fit it
-#         hyper = self.select_hyperparameters()
-
-#         # Operation mode
-#         hyper["mode"] = 'regression'
-
-#         # Path to store the trained model
-#         hyper["model_dir"] = self.opts.model_dir
-
-#         logger.info(f"Model hyperparameters are: {hyper}")
-
-#         # Create model
-#         tensorgraph_model = self.available_models[model_name]
-#         args = self._get_positional_args()
-#         return tensorgraph_model(*args, **hyper)
-
-#     def _get_positional_args(self) -> list:
-#         """
-#         Select the positional arguments for a given model
-#         """
-#         model_name = self.opts.interface["model"]
-#         if model_name == 'multitaskregressor':
-#             return [self.n_tasks, self.n_features]
-#         else:
-#             return [self.n_tasks]
-
-#     def fit_model(self) -> Model:
-#         """
-#         Fit the statistical model using the given hyperparameters or the default
-#         """
-#         model = self.select_model()
-#         model.fit(self.data.train, nb_epoch=self.opts.interface["epochs"])
-
-#         # save model data
-#         model.save()
-
-#         return model
-
-
-# def _model_builder_tensorgraph(n_tasks: int, n_features: int, model_params: dict,
-#                                model_dir: str = "."):
-#     """
-#     Create a TensorGraph Model
-#     """
-#     return MultitaskRegressor(n_tasks, n_features, **model_params)
