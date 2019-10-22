@@ -8,5 +8,4 @@ job build:
   tags:
     - nlescjcer
   only:
-    - master
     - devel
