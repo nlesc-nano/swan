@@ -7,6 +7,3 @@ job build:
     - pytest --cov=swan tests -p no:warnings
   tags:
     - nlescjcer
-  only:
-    - master
-    - devel
