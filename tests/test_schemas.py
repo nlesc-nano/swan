@@ -1,18 +1,18 @@
 from pathlib import Path
 from schema import SchemaError
 from swan.models.input_validation import (
-    sklearn_schema, tensorgraph_schema, validate_input)
+    schema_torch, validate_input)
 import yaml
 
 
-path_input_sklearn = Path("tests/test_files/input_test_sklearn.yml")
+path_input_train = Path("tests/test_files/input_test_train.yml")
 
 
 def test_input_validation():
     """
     Check that the input is validated correctly.
     """
-    opts = validate_input(path_input_sklearn)
+    opts = validate_input(path_input_train)
 
     assert isinstance(opts, dict)
 
@@ -21,11 +21,7 @@ def test_wrong_input(tmp_path):
     """
     Test schema failure with wrong input
     """
-    d = {
-        "csv_file": "Non-existing/path.csv",
-        "tasks": ['one'],
-        "interface": {'name': "SKlearn", "model": "randomForest", "parameters": {"n_jobs": -1}}
-    }
+    d = {"csv_file": "Non-existing/path.csv"}
 
     file_path = Path(tmp_path) / "tmp.yml"
 
@@ -38,18 +34,9 @@ def test_wrong_input(tmp_path):
         pass
 
 
-def test_sklearn_schema():
-    """
-    Check input for sklearn models
-    """
-    d = {'name': "SKlearn", "model": "randomForest", "parameters": {"n_jobs": -1}}
-    sklearn_schema.validate(d)
-
-
-def test_tensorgraph_schema():
+def test_schema_torch():
     """
     Check input for tensorgraph models
     """
-    d = {'name': "TensorGraph", "model": "multitaskregressor",
-         "epochs": 100, "parameters": {"dropout": 0.75}}
-    tensorgraph_schema.validate(d)
+    d = {"epochs": 100, "featurizer": "circularfingerprint"}
+    schema_torch.validate(d)
