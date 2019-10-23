@@ -3,7 +3,8 @@ def test_main(mocker):
     """
     Test the CLI for the models
     """
-    mocker.patch("swan.models.models.create_scatter_plot", return_value=None)
+    pass
+    # mocker.patch("swan.models.models.create_scatter_plot", return_value=None)
 
 
 def test_load_data():

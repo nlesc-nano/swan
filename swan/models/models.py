@@ -1,14 +1,15 @@
 from .input_validation import validate_input
-# from .plot import create_scatter_plot
+from .plot import create_scatter_plot
 from datetime import datetime
 from pathlib import Path
 from swan.log_config import config_logger
-from swan.utils import Options
 from torch import Tensor
 from torch.autograd import Variable
+from torch.utils.data import (DataLoader, TensorDataset, random_split)
 
 import argparse
 import logging
+import numpy as np
 import torch
 import torch.nn.functional as fun
 
@@ -17,63 +18,6 @@ __all__ = ["Modeler"]
 
 # Starting logger
 logger = logging.getLogger(__name__)
-
-
-class Dataset:
-    def __getitem__(self, index):
-        raise NotImplementedError
-
-    def __len__(self):
-        raise NotImplementedError
-
-
-# class Transform:
-
-#     def __init__():
-#         pass
-
-
-class Net(torch.nn.Module):
-    """
-    Create a Neural network object using Pytorch
-    """
-    def __init__(self, n_feature: int, n_hidden: int, n_output: int):
-        super(Net, self).__init__()
-        self.hidden = torch.nn.Linear(n_feature, n_hidden)   # hidden layer
-        self.predict = torch.nn.Linear(n_hidden, n_output)   # output layer
-
-    def forward(self, x: Tensor) -> Tensor:
-        """activation function for hidden layer"""
-        x = fun.relu(self.hidden(x))
-        # linear output
-        x = self.predict(x)
-        return x
-
-
-class Modeler:
-    """
-    Object to create statistical models.
-    """
-    def __init__(self, opts: dict):
-        self.opts = opts
-
-    def train_model(self, x: Variable, y: Variable):
-        """ """
-        # define the network
-        net = Net(n_feature=1, n_hidden=10, n_output=1)
-        optimizer = torch.optim.SGD(net.parameters(), lr=0.2)
-        loss_func = torch.nn.MSELoss()
-
-        for t in range(self.opts["epochs"]):
-            prediction = net(x)
-            loss = loss_func(prediction, y)
-            if t % self.opts.frequency_log_epochs == 0:
-                logger.info(f"Loss: {loss.data.numpy()}")
-            optimizer.zero_grad()   # clear gradients for next train
-            loss.backward()         # backpropagation, compute gradients
-            optimizer.step()        # apply gradients
-
-        return prediction
 
 
 def main():
@@ -97,59 +41,148 @@ def main():
     opts.mode = args.mode
 
     if args.mode == "train":
-        train_model(opts.torch_config)
+        train_and_validate_model(opts)
     else:
         predict_properties(opts)
 
 
-def train_model(opts: dict) -> None:
+class Net(torch.nn.Module):
+    """
+    Create a Neural network object using Pytorch
+    """
+
+    def __init__(self, n_feature: int, n_hidden: int, n_output: int):
+        super(Net, self).__init__()
+        self.hidden = torch.nn.Linear(n_feature, n_hidden)   # hidden layer
+        self.predict = torch.nn.Linear(n_hidden, n_output)   # output layer
+
+    def forward(self, x: Tensor) -> Tensor:
+        """activation function for hidden layer"""
+        x = fun.relu(self.hidden(x))
+        # linear output
+        x = self.predict(x)
+        return x
+
+
+class Modeler:
+    """
+    Object to create statistical models.
+    """
+
+    def __init__(self, opts: dict):
+        self.opts = opts
+
+        # Create an Network architecture
+        self.network = Net(n_feature=1, n_hidden=10, n_output=1)
+
+        # Create an optimizer
+        self.optimizer = torch.optim.SGD(
+            self.network.parameters(), **self.opts.torch_config.optimizer)
+
+        # Create loss function
+        self.loss_func = torch.nn.MSELoss()
+
+    def train_model(self,  train_loader: DataLoader) -> None:
+        """ Train an statistical model"""
+        logger.info("TRAINING STEP")
+
+        # Set the model to training mode
+        self.network.train()
+
+        for t in range(self.opts.torch_config.epochs):
+            loss_batch = 0
+            for x_batch, y_batch in train_loader:
+                loss_batch = self.train_batch(x_batch, y_batch)
+            mean = loss_batch / self.opts.torch_config.batch_size
+            if t % self.opts.torch_config.frequency_log_epochs == 0:
+                logger.info(f"Loss: {mean}")
+
+        # Save the models
+        torch.save(self.network.state_dict(), self.opts.model_path)
+
+    def train_batch(self, x_batch: Variable, y_batch: Variable) -> float:
+        """ Train a single batch"""
+        prediction = self.network(x_batch)
+        loss = self.loss_func(prediction, y_batch)
+        loss.backward()              # backpropagation, compute gradients
+        self.optimizer.step()        # apply gradients
+        self.optimizer.zero_grad()   # clear gradients for next train
+
+        return loss.data.numpy()
+
+    def evaluate_model(self, valid_loader: DataLoader) -> None:
+        """
+        Evaluate the model against the validation dataset
+        """
+        logger.info("VALIDATION STEP")
+        # Disable any gradient calculation
+        with torch.no_grad():
+            self.network.eval()
+            val_loss = 0
+            for x_val, y_val in valid_loader:
+                predicted = self.network(x_val)
+                val_loss += self.loss_func(y_val, predicted)
+            mean_val_loss = val_loss / self.opts.torch_config.batch_size
+        logger.info(f"validation loss:{mean_val_loss}")
+
+    def predict(self, x: Tensor):
+        """
+        Use a previously trained model to predict
+        """
+        with torch.no_grad():
+            self.network.load_state_dict(torch.load(self.opts.model_path))
+            self.network.eval()  # Set model to evaluation mode
+            predicted = self.network(x)
+        return predicted
+
+    def plot_evaluation(self, train_loader, valid_loader) -> None:
+        """
+        Create a scatter plot of the predict values vs the ground true
+        """
+        dataset = valid_loader.dataset
+        index = dataset.indices
+        predicted = self.network(dataset.dataset[index][0]).detach().numpy()
+        expected = np.stack(dataset.dataset[index][1]).flatten()
+        create_scatter_plot(predicted, expected)
+
+
+def train_and_validate_model(opts: dict) -> None:
     """
     Train the model usign the data specificied by the user
     """
-    researcher = Modeler(Options(opts))
+    researcher = Modeler(opts)
+    train_loader, valid_loader = load_data(opts)
+    researcher.train_model(train_loader)
+    researcher.evaluate_model(valid_loader)
+    researcher.plot_evaluation(train_loader, valid_loader)
+
+
+def load_data(opts: dict) -> tuple:
+    """
+    Load the data and split it into a training and validation set
+    """
     x = torch.unsqueeze(torch.linspace(-1, 1, 100), dim=1)
     y = x.pow(2) + 0.2*torch.rand(x.size())
-    result = researcher.train_model(x, y)
-    
-    # # train the model
-    # if opts.load_model:
-    #     model = researcher.load_model()
-    # else:
-    #     model = researcher.train_model()
+    dataset = TensorDataset(x, y)
+    train_data, valid_data = random_split(dataset, [80, 20])
 
-#     # Check how good is the model
-#     researcher.evaluate_model(model)
+    # Generate the classes that feed the data for training and validation
+    train_loader = DataLoader(
+        dataset=train_data, batch_size=opts.torch_config.batch_size, shuffle=True)
 
-#     # # predict
-#     rs = model.predict(researcher.data.test)
+    valid_loader = DataLoader(
+        dataset=valid_data, batch_size=opts.torch_config.batch_size)
 
-#     # Create a scatter plot of the predict values vs the ground true
-#     create_scatter_plot(rs, researcher.data.test.y)
+    return train_loader, valid_loader
 
 
-def predict_properties(opts: dict) -> None:
+def predict_properties(opts: dict) -> Tensor:
     """
     Used a previous trained model to predict properties
     """
-    pass
-#     def report(rs):
-#         df = pd.read_csv(opts.dataset_file)
-#         output = pd.DataFrame({'smiles': df['smiles'], 'predicted': rs})
-#         output.to_csv("predicted.csv")
-
-#     researcher = create_modeler(opts)
-#     model = researcher.load_model()
-
-#     # Prepare data
-#     dataset = researcher.load_data()
-
-#     # Predict
-#     rs = model.predict(dataset).flatten()
-
-#     if opts.report_predicted:
-#         report(rs)
-
-#     return rs
+    x = torch.unsqueeze(torch.linspace(-1, 1, 10), dim=1)
+    researcher = Modeler(opts)
+    return researcher.predict(x)
 
 
 #     def select_featurizer(self) -> None:
@@ -178,43 +211,6 @@ def predict_properties(opts: dict) -> None:
 #             print(f"Metric: {self.opts.metric} does not exist in deepchem")
 #             raise
 
-#     def load_data(self):
-#         """
-#         Load a dataset
-#         """
-#         logger.info(f"Loading data from {self.opts.dataset_file}")
-#         print("file name: ", self.opts.dataset_file)
-#         if Path(self.opts.dataset_file).suffix != ".csv":
-#             dataset = dc.utils.save.load_from_disk(self.opts.dataset_file)
-
-#         else:
-#             tasks = [] if self.opts.mode == "predict" else self.opts.tasks
-#             loader = dc.data.CSVLoader(tasks, smiles_field="smiles",
-#                                        featurizer=self.featurizer)
-#             dataset = loader.featurize(self.opts.dataset_file)
-
-#         if self.opts.save_dataset:
-#             file_name = Path(self.opts.workdir) / \
-#                 f"{self.opts.filename_to_store_dataset}.joblib"
-#             logger.info(f"saving dataset to: {file_name}")
-#             dc.utils.save.save_to_disk(dataset, file_name)
-
-#         return dataset
-
-#     def load_model(self) -> Model:
-#         """
-#         Load model from disk
-#         """
-#         dataset = self.load_data()
-#         self.split_data(dataset)
-
-#         # Transform the y labels
-#         if self.opts.mode == "train":
-#             self.transform_data()
-
-#         model = self.select_model()
-
-#         return model.load_from_dir(self.opts.model_dir)
 
 #     def split_data(self, dataset) -> None:
 #         """
@@ -235,61 +231,3 @@ def predict_properties(opts: dict) -> None:
 #         for ds in self.data:
 #             for t in self.transformers:
 #                 t.transform(ds)
-
-#     def train_model(self) -> Model:
-#         """
-#         Use the data and `options` provided by the user to create an statistical
-#         model.
-#         """
-#         dataset = self.load_data()
-
-#         # Split the data into train/validation/test sets
-#         self.split_data(dataset)
-
-#         # Normalize the data
-#         self.transform_data()
-
-#         # Optimize hyperparameters
-#         if self.opts["optimize_hyperparameters"]:
-#             best_model, best_model_hyperparams, _ = self.optimize_hyperparameters()
-#             logger.info(f"best hyperparameters: {best_model_hyperparams}")
-#             return best_model
-#         else:
-#             # Use the statistical model as it is
-#             return self.fit_model()
-
-#     def evaluate_model(self, model) -> None:
-#         """
-#         Evaluate the predictive power of the model
-#         """
-#         evaluator = Evaluator(model, self.data.valid, self.transformers)
-#         score = evaluator.compute_model_performance([self.metric])
-#         logging.info(f"Score of the model is: {score}")
-#         print("score: ", score)
-
-#     def select_hyperparameters(self) -> dict:
-#         """
-#         Use the parameters provided by the user or the defaults
-#         """
-#         model_name = self.opts.interface["model"]
-#         if not self.opts.interface["parameters"]:
-#             return default_hyperparameters.get(model_name, {})
-#         else:
-#             return self.opts.interface["parameters"]
-
-#     def optimize_hyperparameters(self) -> tuple:
-#         """
-#         Search for the best hyperparameters for a given model
-#         """
-#         model_name = self.opts.interface["model"]
-
-#         model_class = partial(_model_builder_tensorgraph,
-#                               self.n_tasks, self.n_features)
-
-#         optimizer = dc.hyper.HyperparamOpt(model_class)
-#         params_dict = data_hyperparam_search[model_name]
-#         best_model, best_model_hyperparams, all_models_results = optimizer.hyperparam_search(
-#             params_dict, self.data.train, self.data.valid, self.transformers,
-#             metric=self.metric)
-
-#         return best_model, best_model_hyperparams, all_models_results

@@ -3,12 +3,12 @@ dataset_file:
 
 torch_config:
   epochs: 100
+  batch_size: 10
   featurizer: circularfingerprint
+  optimizer:
+    lr: 0.2
     
 optimize_hyperparameters:
-  False
-
-load_model:
   False
   
 save_dataset:

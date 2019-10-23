@@ -35,9 +35,28 @@ def validate_input(file_input: str) -> Options:
         raise
 
 
+schema_optimizer = Schema({
+    # Learning rate
+    Optional("lr", default=0.1): float,
+
+    Optional("momentum", default=0): float,
+
+    Optional("dampening", default=0): float,
+
+    Optional("weight_decay", default=0): float
+})
+
+
+optimizer_defaults = schema_optimizer.validate({})
+
 schema_torch = Schema({
+
     # Number of epoch to train for
     Optional("epochs", default=100): int,
+
+    Optional("batch_size", default=100): int,
+
+    Optional("optimizer", default=optimizer_defaults): schema_optimizer,
 
     # Method to get the features
     Optional("featurizer", default='circularfingerprint'): any_lambda(('circularfingerprint')),
@@ -46,7 +65,8 @@ schema_torch = Schema({
     Optional("metric", default='r2_score'): str,
 
     # Frequency to log the ressult between epochs
-    Optional("frequency_log_epochs", default=10): int
+    Optional("frequency_log_epochs", default=10): int,
+
 })
 
 schema_modeler = Schema({
@@ -62,14 +82,11 @@ schema_modeler = Schema({
     # Save the dataset to a file
     Optional("save_dataset", default=True): bool,
 
-    # Load model from disk
-    Optional("load_model", default=False): bool,
+    # Folder to save the models
+    Optional("model_path", default="swan_models"): str,
 
     # Report predicted data
     Optional('report_predicted', default=True): bool,
-
-    # Folder to save the models
-    Optional("model_dir", default="swan_models"): str,
 
     Optional("filename_to_store_dataset", default="dataset"): str,
 
