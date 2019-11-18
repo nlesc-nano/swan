@@ -1,12 +1,12 @@
+"""Logger configuration."""
+
 from pathlib import Path
 import logging
 import sys
 
 
 def config_logger(workdir: Path):
-    """
-    Setup the logging infrasctucture.
-    """
+    """Set the logging infrasctucture."""
     file_log = workdir / 'output.log'
     logging.basicConfig(filename=file_log, level=logging.INFO,
                         format='%(asctime)s  %(message)s',
@@ -21,6 +21,8 @@ def config_logger(workdir: Path):
 
 
 class LoggerWriter:
+    """Modify the default behaviour of the logger."""
+
     def __init__(self, level):
         self.level = level
 

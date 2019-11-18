@@ -1,26 +1,27 @@
-from .input_validation import validate_input
-from .plot import create_scatter_plot
+"""Statistical models."""
 from datetime import datetime
 from pathlib import Path
-from swan.log_config import config_logger
-from torch import Tensor
-from torch.autograd import Variable
-from torch.utils.data import (DataLoader, TensorDataset, random_split)
-
 import argparse
 import logging
 import numpy as np
 import torch
 import torch.nn.functional as fun
 
+from torch import Tensor
+from torch.autograd import Variable
+from torch.utils.data import (DataLoader, TensorDataset, random_split)
+from swan.log_config import config_logger
+from .input_validation import validate_input
+from .plot import create_scatter_plot
 
 __all__ = ["Modeler"]
 
 # Starting logger
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 def main():
+    """Parse the command line arguments and call the modeler class."""
     parser = argparse.ArgumentParser(description="modeler -i input.yml")
     # configure logger
     parser.add_argument('-i', required=True,
@@ -34,7 +35,7 @@ def main():
     config_logger(Path(args.w))
 
     # log date
-    logger.info(f"Starting at: {datetime.now()}")
+    LOGGER.info(f"Starting at: {datetime.now()}")
 
     # Check that the input is correct
     opts = validate_input(Path(args.i))
@@ -47,9 +48,7 @@ def main():
 
 
 class Net(torch.nn.Module):
-    """
-    Create a Neural network object using Pytorch
-    """
+    """Create a Neural network object using Pytorch."""
 
     def __init__(self, n_feature: int, n_hidden: int, n_output: int):
         super(Net, self).__init__()
@@ -57,7 +56,7 @@ class Net(torch.nn.Module):
         self.predict = torch.nn.Linear(n_hidden, n_output)   # output layer
 
     def forward(self, x: Tensor) -> Tensor:
-        """activation function for hidden layer"""
+        """Activation function for hidden layer."""
         x = fun.relu(self.hidden(x))
         # linear output
         x = self.predict(x)
@@ -65,9 +64,7 @@ class Net(torch.nn.Module):
 
 
 class Modeler:
-    """
-    Object to create statistical models.
-    """
+    """Object to create statistical models."""
 
     def __init__(self, opts: dict):
         self.opts = opts
@@ -82,9 +79,9 @@ class Modeler:
         # Create loss function
         self.loss_func = torch.nn.MSELoss()
 
-    def train_model(self,  train_loader: DataLoader) -> None:
-        """ Train an statistical model"""
-        logger.info("TRAINING STEP")
+    def train_model(self, train_loader: DataLoader) -> None:
+        """Train an statistical model."""
+        LOGGER.info("TRAINING STEP")
 
         # Set the model to training mode
         self.network.train()
@@ -95,13 +92,13 @@ class Modeler:
                 loss_batch = self.train_batch(x_batch, y_batch)
             mean = loss_batch / self.opts.torch_config.batch_size
             if t % self.opts.torch_config.frequency_log_epochs == 0:
-                logger.info(f"Loss: {mean}")
+                LOGGER.info(f"Loss: {mean}")
 
         # Save the models
         torch.save(self.network.state_dict(), self.opts.model_path)
 
     def train_batch(self, x_batch: Variable, y_batch: Variable) -> float:
-        """ Train a single batch"""
+        """Train a single batch."""
         prediction = self.network(x_batch)
         loss = self.loss_func(prediction, y_batch)
         loss.backward()              # backpropagation, compute gradients
@@ -111,10 +108,8 @@ class Modeler:
         return loss.data.numpy()
 
     def evaluate_model(self, valid_loader: DataLoader) -> None:
-        """
-        Evaluate the model against the validation dataset
-        """
-        logger.info("VALIDATION STEP")
+        """Evaluate the model against the validation dataset."""
+        LOGGER.info("VALIDATION STEP")
         # Disable any gradient calculation
         with torch.no_grad():
             self.network.eval()
@@ -123,12 +118,10 @@ class Modeler:
                 predicted = self.network(x_val)
                 val_loss += self.loss_func(y_val, predicted)
             mean_val_loss = val_loss / self.opts.torch_config.batch_size
-        logger.info(f"validation loss:{mean_val_loss}")
+        LOGGER.info(f"validation loss:{mean_val_loss}")
 
     def predict(self, x: Tensor):
-        """
-        Use a previously trained model to predict
-        """
+        """Use a previously trained model to predict."""
         with torch.no_grad():
             self.network.load_state_dict(torch.load(self.opts.model_path))
             self.network.eval()  # Set model to evaluation mode
@@ -136,9 +129,7 @@ class Modeler:
         return predicted
 
     def plot_evaluation(self, train_loader, valid_loader) -> None:
-        """
-        Create a scatter plot of the predict values vs the ground true
-        """
+        """Create a scatter plot of the predict values vs the ground true."""
         dataset = valid_loader.dataset
         index = dataset.indices
         predicted = self.network(dataset.dataset[index][0]).detach().numpy()
@@ -147,9 +138,7 @@ class Modeler:
 
 
 def train_and_validate_model(opts: dict) -> None:
-    """
-    Train the model usign the data specificied by the user
-    """
+    """Train the model usign the data specificied by the user."""
     researcher = Modeler(opts)
     train_loader, valid_loader = load_data(opts)
     researcher.train_model(train_loader)
@@ -158,11 +147,9 @@ def train_and_validate_model(opts: dict) -> None:
 
 
 def load_data(opts: dict) -> tuple:
-    """
-    Load the data and split it into a training and validation set
-    """
+    """Load the data and split it into a training and validation set."""
     x = torch.unsqueeze(torch.linspace(-1, 1, 100), dim=1)
-    y = x.pow(2) + 0.2*torch.rand(x.size())
+    y = x.pow(2) + 0.2 * torch.rand(x.size())
     dataset = TensorDataset(x, y)
     train_data, valid_data = random_split(dataset, [80, 20])
 
@@ -177,9 +164,7 @@ def load_data(opts: dict) -> tuple:
 
 
 def predict_properties(opts: dict) -> Tensor:
-    """
-    Used a previous trained model to predict properties
-    """
+    """Use a previous trained model to predict properties."""
     x = torch.unsqueeze(torch.linspace(-1, 1, 10), dim=1)
     researcher = Modeler(opts)
     return researcher.predict(x)

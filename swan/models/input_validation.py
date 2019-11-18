@@ -1,36 +1,32 @@
+"""Functionality to validate the user input against the schemas."""
+
+import yaml
 from schema import (And, Optional, Schema, SchemaError, Use)
 from swan.utils import Options
-import yaml
 
 
 def equal_lambda(name: str):
-    """
-    Create an schema checking that the keyword matches the expected value
-    """
+    """Create an schema checking that the keyword matches the expected value."""
     return And(
         str, Use(str.lower), lambda s: s == name)
 
 
-def any_lambda(xs: iter):
-    """
-    Create an schema checking that the keyword matches one of the expected values
-    """
+def any_lambda(array: iter):
+    """Create an schema checking that the keyword matches one of the expected values."""
     return And(
-        str, Use(str.lower), lambda s: s in xs)
+        str, Use(str.lower), lambda s: s in array)
 
 
 def validate_input(file_input: str) -> Options:
-    """
-    Check the input validation against an schema
-    """
+    """Check the input validation against an schema."""
     with open(file_input, 'r') as f:
         dict_input = yaml.load(f.read(), Loader=yaml.FullLoader)
     try:
-        d = schema_modeler.validate(dict_input)
-        return Options(d)
+        data = schema_modeler.validate(dict_input)
+        return Options(data)
 
-    except SchemaError as e:
-        msg = "There was an error in the input yaml provided:\n{}".format(e)
+    except SchemaError as err:
+        msg = "There was an error in the input yaml provided:\n{}".format(err)
         print(msg)
         raise
 
