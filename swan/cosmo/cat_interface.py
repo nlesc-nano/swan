@@ -1,16 +1,16 @@
-from .functions import run_command
-from nanoCAT.ligand_solvation import get_solv
+"""Interface with CAT/PLAMS Packages."""
 from pathlib import Path
-from scm.plams import Settings
-
-import CAT
-import nanoCAT
 import logging
-import numpy as np
 import shutil
 import os
-import scm.plams.interfaces.molecule.rdkit as molkit
 import tempfile
+import numpy as np
+import CAT
+from nanoCAT.ligand_solvation import get_solv
+from scm.plams import (CRSJob, Settings)
+import scm.plams.interfaces.molecule.rdkit as molkit
+from .functions import run_command
+
 
 # Starting logger
 logger = logging.getLogger(__name__)
@@ -30,8 +30,7 @@ def call_mopac(smile: str, solvents=["Toluene.coskf"]) -> float:
         rs = run_command(cmd, workdir=tmp)
         if rs[1]:
             return np.nan, np.nan
-        else:
-            return call_cat_mopac(Path(tmp), smile, solvents)
+        return call_cat_mopac(Path(tmp), smile, solvents)
     except ValueError:
         logger.warning(f"Error reading smile: {smile}")
         return np.nan, np.nan
@@ -42,9 +41,7 @@ def call_mopac(smile: str, solvents=["Toluene.coskf"]) -> float:
 
 
 def call_cat_mopac(tmp: Path, smile: str, solvents: list):
-    """
-    use the CAT to call MOPAC.
-    """
+    """Use the CAT to call MOPAC."""
     # Call COSMO
     coskf = tmp / 'CRSKF'
 
@@ -60,16 +57,13 @@ def call_cat_mopac(tmp: Path, smile: str, solvents: list):
 
     # Call Cosmo
     E_solv, gamma = get_solv(
-        mol, solvents, coskf.as_posix(), job=nanoCAT.crs.CRSJob, s=s, keep_files=False)
+        mol, solvents, coskf.as_posix(), job=CRSJob, s=s, keep_files=False)
 
     return tuple(map(check_output, (E_solv, gamma)))
 
 
 def check_output(xs):
-    """
-    Check that there is a valid output in x.
-    """
+    """Check that there is a valid output in x."""
     if xs and np.isreal(xs[0]):
         return xs[0]
-    else:
-        return np.nan
+    return np.nan
