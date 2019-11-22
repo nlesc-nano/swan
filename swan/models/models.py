@@ -4,13 +4,15 @@ from pathlib import Path
 import argparse
 import logging
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn.functional as fun
 
 from torch import Tensor
 from torch.autograd import Variable
-from torch.utils.data import (DataLoader, TensorDataset, random_split)
+from torch.utils.data import (DataLoader, Dataset)
 from swan.log_config import config_logger
+from .featurizer import generate_fingerprints
 from .input_validation import validate_input
 from .plot import create_scatter_plot
 
@@ -55,9 +57,9 @@ class Net(torch.nn.Module):
         self.hidden = torch.nn.Linear(n_feature, n_hidden)   # hidden layer
         self.predict = torch.nn.Linear(n_hidden, n_output)   # output layer
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, tensor: Tensor) -> Tensor:
         """Activation function for hidden layer."""
-        x = fun.relu(self.hidden(x))
+        x = fun.relu(self.hidden(tensor))
         # linear output
         x = self.predict(x)
         return x
@@ -70,7 +72,7 @@ class Modeler:
         self.opts = opts
 
         # Create an Network architecture
-        self.network = Net(n_feature=1, n_hidden=10, n_output=1)
+        self.network = Net(n_feature=2048, n_hidden=2048, n_output=1)
 
         # Create an optimizer
         self.optimizer = torch.optim.SGD(
@@ -86,12 +88,12 @@ class Modeler:
         # Set the model to training mode
         self.network.train()
 
-        for t in range(self.opts.torch_config.epochs):
+        for epoch in range(self.opts.torch_config.epochs):
             loss_batch = 0
             for x_batch, y_batch in train_loader:
                 loss_batch = self.train_batch(x_batch, y_batch)
             mean = loss_batch / self.opts.torch_config.batch_size
-            if t % self.opts.torch_config.frequency_log_epochs == 0:
+            if epoch % self.opts.torch_config.frequency_log_epochs == 0:
                 LOGGER.info(f"Loss: {mean}")
 
         # Save the models
@@ -120,21 +122,48 @@ class Modeler:
             mean_val_loss = val_loss / self.opts.torch_config.batch_size
         LOGGER.info(f"validation loss:{mean_val_loss}")
 
-    def predict(self, x: Tensor):
+    def predict(self, tensor: Tensor):
         """Use a previously trained model to predict."""
         with torch.no_grad():
             self.network.load_state_dict(torch.load(self.opts.model_path))
             self.network.eval()  # Set model to evaluation mode
-            predicted = self.network(x)
+            predicted = self.network(tensor)
         return predicted
 
-    def plot_evaluation(self, train_loader, valid_loader) -> None:
+    def plot_evaluation(self, valid_loader) -> None:
         """Create a scatter plot of the predict values vs the ground true."""
         dataset = valid_loader.dataset
-        index = dataset.indices
-        predicted = self.network(dataset.dataset[index][0]).detach().numpy()
-        expected = np.stack(dataset.dataset[index][1]).flatten()
+        predicted = self.network(dataset.fingerprints).detach().numpy()
+        expected = np.stack(dataset.labels).flatten()
         create_scatter_plot(predicted, expected)
+
+
+class LigandsDataset(Dataset):
+    """Read the smiles, properties and compute the fingerprints."""
+
+    def __init__(self, df: pd.DataFrame, property_name: str) -> tuple:
+        smiles = df['smiles'].to_numpy()
+        fingerprints = generate_fingerprints(smiles)
+        self.fingerprints = torch.from_numpy(fingerprints)
+        labels = df[property_name].to_numpy(np.float32)
+        size_labels = labels.size
+        self.labels = torch.from_numpy(labels.reshape(size_labels, 1))
+
+    def __len__(self):
+        return self.labels.shape[0]
+
+    def __getitem__(self, idx: int):
+        return self.fingerprints[idx], self.labels[idx]
+
+
+def split_data(df: pd.DataFrame, frac: float = 0.2) -> tuple:
+    """Split the data into a training and test set."""
+    df.reset_index()  # Enumerate from 0
+    test_df = df.sample(frac=frac)
+    test_df.reset_index()
+    df.drop(test_df.index)
+
+    return df, test_df
 
 
 def train_and_validate_model(opts: dict) -> None:
@@ -143,19 +172,19 @@ def train_and_validate_model(opts: dict) -> None:
     train_loader, valid_loader = load_data(opts)
     researcher.train_model(train_loader)
     researcher.evaluate_model(valid_loader)
-    researcher.plot_evaluation(train_loader, valid_loader)
+    researcher.plot_evaluation(valid_loader)
 
 
 def load_data(opts: dict) -> tuple:
     """Load the data and split it into a training and validation set."""
-    x = torch.unsqueeze(torch.linspace(-1, 1, 100), dim=1)
-    y = x.pow(2) + 0.2 * torch.rand(x.size())
-    dataset = TensorDataset(x, y)
-    train_data, valid_data = random_split(dataset, [80, 20])
-
-    # Generate the classes that feed the data for training and validation
+    df = pd.read_csv(opts.dataset_file)
+    # Normalize the property
+    df['normalized_labels'] = df[opts.property] / np.linalg.norm(df[opts.property])
+    train_df, valid_df = split_data(df)
+    train_data = LigandsDataset(train_df, 'normalized_labels')
+    valid_data = LigandsDataset(valid_df, 'normalized_labels')
     train_loader = DataLoader(
-        dataset=train_data, batch_size=opts.torch_config.batch_size, shuffle=True)
+        dataset=train_data, batch_size=opts.torch_config.batch_size)
 
     valid_loader = DataLoader(
         dataset=valid_data, batch_size=opts.torch_config.batch_size)
@@ -169,18 +198,6 @@ def predict_properties(opts: dict) -> Tensor:
     researcher = Modeler(opts)
     return researcher.predict(x)
 
-
-#     def select_featurizer(self) -> None:
-#         """
-#         Use featurizer chosen by the user
-#         """
-#         logger.info(f"Using featurizer:{self.opts.featurizer}")
-#         names = {
-#             "circularfingerprint": "CircularFingerprint"
-#         }
-#         feat = import_module("deepchem.feat")
-#         featurizer = getattr(feat, names[self.opts.featurizer])
-#         self.featurizer = featurizer()
 
 #     def select_metric(self) -> None:
 #         """

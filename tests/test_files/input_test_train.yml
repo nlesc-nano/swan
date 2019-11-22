@@ -1,5 +1,7 @@
 dataset_file:
-  tests/test_files/smiles.csv
+  tests/test_files/thousand.csv
+
+property: gammas
 
 torch_config:
   epochs: 100

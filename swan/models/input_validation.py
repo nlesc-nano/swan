@@ -22,7 +22,7 @@ def validate_input(file_input: str) -> Options:
     with open(file_input, 'r') as f:
         dict_input = yaml.load(f.read(), Loader=yaml.FullLoader)
     try:
-        data = schema_modeler.validate(dict_input)
+        data = SCHEMA_MODELER.validate(dict_input)
         return Options(data)
 
     except SchemaError as err:
@@ -31,7 +31,7 @@ def validate_input(file_input: str) -> Options:
         raise
 
 
-schema_optimizer = Schema({
+SCHEMA_OPTIMIZER = Schema({
     # Learning rate
     Optional("lr", default=0.1): float,
 
@@ -43,16 +43,16 @@ schema_optimizer = Schema({
 })
 
 
-optimizer_defaults = schema_optimizer.validate({})
+OPTIMIZER_DEFAULTS = SCHEMA_OPTIMIZER.validate({})
 
-schema_torch = Schema({
+SCHEMA_TORCH = Schema({
 
     # Number of epoch to train for
     Optional("epochs", default=100): int,
 
     Optional("batch_size", default=100): int,
 
-    Optional("optimizer", default=optimizer_defaults): schema_optimizer,
+    Optional("optimizer", default=OPTIMIZER_DEFAULTS): SCHEMA_OPTIMIZER,
 
     # Method to get the features
     Optional("featurizer", default='circularfingerprint'): any_lambda(('circularfingerprint')),
@@ -65,12 +65,15 @@ schema_torch = Schema({
 
 })
 
-schema_modeler = Schema({
+SCHEMA_MODELER = Schema({
     # Load the dataset from a file
     "dataset_file": str,
 
+    # Property to predict
+    "property": str,
+
     # Network and training options options
-    Optional("torch_config"): schema_torch,
+    Optional("torch_config"): SCHEMA_TORCH,
 
     # Search for best hyperparameters
     Optional("optimize_hyperparameters", default=False): bool,
