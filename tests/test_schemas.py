@@ -1,7 +1,7 @@
 from pathlib import Path
 from schema import SchemaError
 from swan.models.input_validation import (
-    schema_torch, validate_input)
+    SCHEMA_TORCH, validate_input)
 import yaml
 
 
@@ -39,4 +39,4 @@ def test_schema_torch():
     Check input for tensorgraph models
     """
     d = {"epochs": 100, "featurizer": "circularfingerprint"}
-    schema_torch.validate(d)
+    SCHEMA_TORCH.validate(d)

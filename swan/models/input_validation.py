@@ -1,7 +1,11 @@
 """Functionality to validate the user input against the schemas."""
 
+import warnings
+
+import torch
 import yaml
-from schema import (And, Optional, Schema, SchemaError, Use)
+from schema import And, Optional, Schema, SchemaError, Use
+
 from swan.utils import Options
 
 
@@ -23,12 +27,22 @@ def validate_input(file_input: str) -> Options:
         dict_input = yaml.load(f.read(), Loader=yaml.FullLoader)
     try:
         data = SCHEMA_MODELER.validate(dict_input)
-        return Options(data)
+        opts = Options(data)
+        if opts.use_cuda:
+            check_if_cuda_is_available(opts)
+        return opts
 
     except SchemaError as err:
         msg = "There was an error in the input yaml provided:\n{}".format(err)
         print(msg)
         raise
+
+
+def check_if_cuda_is_available(opts: dict):
+    """Check that a CUDA device is available, otherwise turnoff the option."""
+    if not torch.cuda.is_available():
+        opts.use_cuda = False
+        warnings.warn("There is not CUDA device available using default CPU methods")
 
 
 SCHEMA_OPTIMIZER = Schema({
@@ -71,6 +85,9 @@ SCHEMA_MODELER = Schema({
 
     # Property to predict
     "property": str,
+
+    # Whether to use CPU or GPU
+    Optional("use_cuda", default=False): bool,
 
     # Network and training options options
     Optional("torch_config"): SCHEMA_TORCH,

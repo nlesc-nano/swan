@@ -1,17 +1,19 @@
 """Statistical models."""
-from datetime import datetime
-from pathlib import Path
 import argparse
 import logging
+from datetime import datetime
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as fun
-
 from torch import Tensor
 from torch.autograd import Variable
-from torch.utils.data import (DataLoader, Dataset)
+from torch.utils.data import DataLoader, Dataset
+
 from swan.log_config import config_logger
+
 from .featurizer import generate_fingerprints
 from .input_validation import validate_input
 from .plot import create_scatter_plot
@@ -71,8 +73,14 @@ class Modeler:
     def __init__(self, opts: dict):
         self.opts = opts
 
+        if opts.use_cuda:
+            self.device = torch.device("cuda:0")
+        else:
+            self.device = torch.device("cpu")
+
         # Create an Network architecture
         self.network = Net(n_feature=2048, n_hidden=2048, n_output=1)
+        self.network.to(self.device)
 
         # Create an optimizer
         self.optimizer = torch.optim.SGD(
