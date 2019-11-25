@@ -20,7 +20,7 @@ jobs:
     - run: conda install pytorch torchvision cpuonly -c pytorch
 
     - name: Install the package
-      run: pip install . -v
+      run: pip install .[test] -v
       env:
         CONDA_PREFIX: /usr/share/miniconda
 
@@ -37,4 +37,5 @@ jobs:
     - name: Test with pytest
       env:
         CONDA_PREFIX: /usr/share/miniconda
-      run: pytest --cov=swan tests
+      run: |
+        pytest --cov=swan tests
