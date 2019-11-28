@@ -67,10 +67,28 @@ class Net(torch.nn.Module):
         return x
 
 
+class LigandsDataset(Dataset):
+    """Read the smiles, properties and compute the fingerprints."""
+
+    def __init__(self, df: pd.DataFrame, property_name: str) -> tuple:
+        smiles = df['smiles'].to_numpy()
+        fingerprints = generate_fingerprints(smiles)
+        self.fingerprints = torch.from_numpy(fingerprints)
+        labels = df[property_name].to_numpy(np.float32)
+        size_labels = labels.size
+        self.labels = torch.from_numpy(labels.reshape(size_labels, 1))
+
+    def __len__(self):
+        return self.labels.shape[0]
+
+    def __getitem__(self, idx: int):
+        return self.fingerprints[idx], self.labels[idx]
+
+
 class Modeler:
     """Object to create statistical models."""
 
-    def __init__(self, opts: dict):
+    def __init__(self, opts: dict, load_model: bool = False):
         """Set up a modeler object."""
         self.opts = opts
 
@@ -79,6 +97,13 @@ class Modeler:
         else:
             self.device = torch.device("cpu")
 
+        if not load_model:
+            self.create_new_model()
+        else:
+            self.load_trained_model()
+
+    def create_new_model(self):
+        """Configure a new model."""
         # Create an Network architecture
         self.network = Net(n_feature=2048, n_hidden=2048, n_output=1)
         self.network = self.network.to(self.device)
@@ -89,6 +114,12 @@ class Modeler:
 
         # Create loss function
         self.loss_func = torch.nn.MSELoss()
+
+    def load_data(self, data: pd.DataFrame) -> DataLoader:
+        """Create a DataLoader instance for the data."""
+        dataset = LigandsDataset(data, 'normalized_labels')
+        return DataLoader(
+            dataset=dataset, batch_size=self.opts.torch_config.batch_size)
 
     def train_model(self, train_loader: DataLoader) -> None:
         """Train an statistical model."""
@@ -160,22 +191,13 @@ class Modeler:
         create_scatter_plot(predicted, expected)
 
 
-class LigandsDataset(Dataset):
-    """Read the smiles, properties and compute the fingerprints."""
+def read_data(opts: dict) -> tuple:
+    """Read data from csv file."""
+    df = pd.read_csv(opts.dataset_file)
+    # Normalize the property
+    df['normalized_labels'] = df[opts.property] / np.linalg.norm(df[opts.property])
 
-    def __init__(self, df: pd.DataFrame, property_name: str) -> tuple:
-        smiles = df['smiles'].to_numpy()
-        fingerprints = generate_fingerprints(smiles)
-        self.fingerprints = torch.from_numpy(fingerprints)
-        labels = df[property_name].to_numpy(np.float32)
-        size_labels = labels.size
-        self.labels = torch.from_numpy(labels.reshape(size_labels, 1))
-
-    def __len__(self):
-        return self.labels.shape[0]
-
-    def __getitem__(self, idx: int):
-        return self.fingerprints[idx], self.labels[idx]
+    return df
 
 
 def split_data(df: pd.DataFrame, frac: float = 0.2) -> tuple:
@@ -191,53 +213,19 @@ def split_data(df: pd.DataFrame, frac: float = 0.2) -> tuple:
 def train_and_validate_model(opts: dict) -> None:
     """Train the model usign the data specificied by the user."""
     researcher = Modeler(opts)
-    df = read_data(opts)
-    train_df, valid_df = split_data(df)
-    train_loader = load_data(train_df, opts)
-    valid_loader = load_data(valid_df, opts)
+    data = read_data(opts)
+    train_df, valid_df = split_data(data)
+    train_loader = researcher.load_data(train_df)
+    valid_loader = researcher.load_data(valid_df)
     researcher.train_model(train_loader)
     researcher.evaluate_model(valid_loader)
     researcher.plot_evaluation(valid_loader)
 
 
-def read_data(opts: dict) -> tuple:
-    """Read data from csv file."""
-    df = pd.read_csv(opts.dataset_file)
-    # Normalize the property
-    df['normalized_labels'] = df[opts.property] / np.linalg.norm(df[opts.property])
-
-    return df
-
-
-def load_data(data: pd.DataFrame, opts: dict) -> tuple:
-    """Load the data and split it into a training and validation set."""
-    dataset = LigandsDataset(data, 'normalized_labels')
-    loader = DataLoader(
-        dataset=dataset, batch_size=opts.torch_config.batch_size)
-
-    return loader
-
-
 def predict_properties(opts: dict) -> Tensor:
     """Use a previous trained model to predict properties."""
-    x = torch.unsqueeze(torch.linspace(-1, 1, 10), dim=1)
-    researcher = Modeler(opts)
-    return researcher.predict(x)
-
-
-#     def select_metric(self) -> None:
-#         """
-#         Create instances of the metric to use
-#         """
-#         # Import the metric
-#         mod_metric = import_module("deepchem.metrics")
-#         try:
-#             metric = getattr(mod_metric, self.opts.metric)
-#             self.metric = dc.metrics.Metric(
-#                 metric, np.mean, mode='regression')
-#         except AttributeError:
-#             print(f"Metric: {self.opts.metric} does not exist in deepchem")
-#             raise
+    pass
+    # return researcher.predict(x)
 
 
 #     def split_data(self, dataset) -> None:
@@ -248,14 +236,3 @@ def predict_properties(opts: dict) -> Tensor:
 #         splitter = dc.splits.ScaffoldSplitter()
 #         self.data = DataSplitted(
 #             *splitter.train_valid_test_split(dataset))
-
-#     def transform_data(self):
-#         """
-#         Normalize the data to have zero-mean and unit-standard-deviation.
-#         """
-#         logger.info("Transforming the data")
-#         self.transformers = [dc.trans.NormalizationTransformer(
-#             transform_y=True, dataset=self.data.train)]
-#         for ds in self.data:
-#             for t in self.transformers:
-#                 t.transform(ds)
