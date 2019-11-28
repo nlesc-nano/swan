@@ -190,13 +190,27 @@ class Modeler:
         expected = np.stack(dataset.labels).flatten()
         create_scatter_plot(predicted, expected)
 
+    def read_data(self, opts: dict):
+        """Read the data from a file."""
+        self.data = pd.read_csv(opts.dataset_file)
 
-def read_data(opts: dict) -> tuple:
-    """Read data from csv file."""
-    df = pd.read_csv(opts.dataset_file)
+    def split_data(self, frac: float = 0.2):
+        """Split the data into a training and test set."""
+        size_valid = int(self.data.index.size * frac)
+        self.index_valid = np.random.choice(self.data.index, size=size_valid)
+        self.index_train = np.setdiff1d(self.data.index, self.index_valid, assume_unique=True)
+
+    def normalize_data(self) -> pd.DataFrame:
+        """Create a new column with the normalized target."""
+        # Normalize the property
+        self.data['normalized_labels'] = self.data[self.data.opts.property] / \
+            np.linalg.norm(self.data[self.opts.property])
+
+
+def normalize_data(df: pd.DataFrame, opts: dict) -> pd.DataFrame:
+    """Create a new column with the normalized target."""
     # Normalize the property
     df['normalized_labels'] = df[opts.property] / np.linalg.norm(df[opts.property])
-
     return df
 
 
@@ -213,10 +227,12 @@ def split_data(df: pd.DataFrame, frac: float = 0.2) -> tuple:
 def train_and_validate_model(opts: dict) -> None:
     """Train the model usign the data specificied by the user."""
     researcher = Modeler(opts)
-    data = read_data(opts)
-    train_df, valid_df = split_data(data)
-    train_loader = researcher.load_data(train_df)
-    valid_loader = researcher.load_data(valid_df)
+    # Read data from csv file
+    data = pd.read_csv(opts.dataset_file)
+    data = normalize_data(data, opts)
+    train_data, valid_data = split_data(data)
+    train_loader = researcher.load_data(train_data)
+    valid_loader = researcher.load_data(valid_data)
     researcher.train_model(train_loader)
     researcher.evaluate_model(valid_loader)
     researcher.plot_evaluation(valid_loader)
@@ -226,13 +242,3 @@ def predict_properties(opts: dict) -> Tensor:
     """Use a previous trained model to predict properties."""
     pass
     # return researcher.predict(x)
-
-
-#     def split_data(self, dataset) -> None:
-#         """
-#         Split the entire dataset into a train, validate and test subsets.
-#         """
-#         logger.info("splitting the data into train, validate and test subsets")
-#         splitter = dc.splits.ScaffoldSplitter()
-#         self.data = DataSplitted(
-#             *splitter.train_valid_test_split(dataset))
