@@ -23,7 +23,7 @@ setup(
     author="Felipe Zapata",
     author_email='f.zapata@esciencecenter.nl',
     url='https://github.com/nlesc-nano/swan',
-    packages=find_packages(),
+
     package_dir={'swan': 'swan'},
     include_package_data=True,
     license="Apache Software License 2.0",

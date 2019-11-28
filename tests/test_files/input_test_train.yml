@@ -3,6 +3,8 @@ dataset_file:
 
 property: gammas
 
+use_cuda: False
+
 torch_config:
   epochs: 100
   batch_size: 10

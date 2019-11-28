@@ -71,6 +71,7 @@ class Modeler:
     """Object to create statistical models."""
 
     def __init__(self, opts: dict):
+        """Set up a modeler object."""
         self.opts = opts
 
         if opts.use_cuda:
@@ -80,7 +81,7 @@ class Modeler:
 
         # Create an Network architecture
         self.network = Net(n_feature=2048, n_hidden=2048, n_output=1)
-        self.network.to(self.device)
+        self.network = self.network.to(self.device)
 
         # Create an optimizer
         self.optimizer = torch.optim.SGD(
@@ -99,6 +100,9 @@ class Modeler:
         for epoch in range(self.opts.torch_config.epochs):
             loss_batch = 0
             for x_batch, y_batch in train_loader:
+                if self.opts.use_cuda:
+                    x_batch = x_batch.to('cuda')
+                    y_batch = y_batch.to('cuda')
                 loss_batch = self.train_batch(x_batch, y_batch)
             mean = loss_batch / self.opts.torch_config.batch_size
             if epoch % self.opts.torch_config.frequency_log_epochs == 0:
@@ -115,7 +119,9 @@ class Modeler:
         self.optimizer.step()        # apply gradients
         self.optimizer.zero_grad()   # clear gradients for next train
 
-        return loss.data.numpy()
+        cpu_tensor = loss.data.cpu()
+
+        return cpu_tensor.numpy()
 
     def evaluate_model(self, valid_loader: DataLoader) -> None:
         """Evaluate the model against the validation dataset."""
@@ -125,6 +131,9 @@ class Modeler:
             self.network.eval()
             val_loss = 0
             for x_val, y_val in valid_loader:
+                if self.opts.use_cuda:
+                    x_val = x_val.to('cuda')
+                    y_val = y_val.to('cuda')
                 predicted = self.network(x_val)
                 val_loss += self.loss_func(y_val, predicted)
             mean_val_loss = val_loss / self.opts.torch_config.batch_size
@@ -141,7 +150,12 @@ class Modeler:
     def plot_evaluation(self, valid_loader) -> None:
         """Create a scatter plot of the predict values vs the ground true."""
         dataset = valid_loader.dataset
-        predicted = self.network(dataset.fingerprints).detach().numpy()
+        tensor_features = dataset.fingerprints
+        if self.opts.use_gpu:
+            tensor_features = tensor_features.to('cuda')
+        result = self.network(tensor_features)
+        result = result.cpu() if self.opts.use_cuda else result
+        predicted = result.detach().numpy()
         expected = np.stack(dataset.labels).flatten()
         create_scatter_plot(predicted, expected)
 
