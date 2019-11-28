@@ -151,7 +151,7 @@ class Modeler:
         """Create a scatter plot of the predict values vs the ground true."""
         dataset = valid_loader.dataset
         tensor_features = dataset.fingerprints
-        if self.opts.use_gpu:
+        if self.opts.use_cuda:
             tensor_features = tensor_features.to('cuda')
         result = self.network(tensor_features)
         result = result.cpu() if self.opts.use_cuda else result
@@ -191,27 +191,31 @@ def split_data(df: pd.DataFrame, frac: float = 0.2) -> tuple:
 def train_and_validate_model(opts: dict) -> None:
     """Train the model usign the data specificied by the user."""
     researcher = Modeler(opts)
-    train_loader, valid_loader = load_data(opts)
+    df = read_data(opts)
+    train_df, valid_df = split_data(df)
+    train_loader = load_data(train_df, opts)
+    valid_loader = load_data(valid_df, opts)
     researcher.train_model(train_loader)
     researcher.evaluate_model(valid_loader)
     researcher.plot_evaluation(valid_loader)
 
 
-def load_data(opts: dict) -> tuple:
-    """Load the data and split it into a training and validation set."""
+def read_data(opts: dict) -> tuple:
+    """Read data from csv file."""
     df = pd.read_csv(opts.dataset_file)
     # Normalize the property
     df['normalized_labels'] = df[opts.property] / np.linalg.norm(df[opts.property])
-    train_df, valid_df = split_data(df)
-    train_data = LigandsDataset(train_df, 'normalized_labels')
-    valid_data = LigandsDataset(valid_df, 'normalized_labels')
-    train_loader = DataLoader(
-        dataset=train_data, batch_size=opts.torch_config.batch_size)
 
-    valid_loader = DataLoader(
-        dataset=valid_data, batch_size=opts.torch_config.batch_size)
+    return df
 
-    return train_loader, valid_loader
+
+def load_data(data: pd.DataFrame, opts: dict) -> tuple:
+    """Load the data and split it into a training and validation set."""
+    dataset = LigandsDataset(data, 'normalized_labels')
+    loader = DataLoader(
+        dataset=dataset, batch_size=opts.torch_config.batch_size)
+
+    return loader
 
 
 def predict_properties(opts: dict) -> Tensor:
