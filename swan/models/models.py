@@ -91,6 +91,7 @@ class Modeler:
     def __init__(self, opts: dict, load_model: bool = False):
         """Set up a modeler object."""
         self.opts = opts
+        self.data = pd.read_csv(opts.dataset_file, index_col=0).reset_index()
 
         if opts.use_cuda:
             self.device = torch.device("cuda:0")
@@ -115,13 +116,18 @@ class Modeler:
         # Create loss function
         self.loss_func = torch.nn.MSELoss()
 
-    def load_data(self, data: pd.DataFrame) -> DataLoader:
+    def load_data(self):
+        """Create loaders for the train and validation dataset."""
+        self.train_loader = self.create_data_loader(self.index_train)
+        self.valid_loader = self.create_data_loader(self.index_valid)
+
+    def create_data_loader(self, indices: np.array) -> DataLoader:
         """Create a DataLoader instance for the data."""
-        dataset = LigandsDataset(data, 'normalized_labels')
+        dataset = LigandsDataset(self.data.loc[indices], 'normalized_labels')
         return DataLoader(
             dataset=dataset, batch_size=self.opts.torch_config.batch_size)
 
-    def train_model(self, train_loader: DataLoader) -> None:
+    def train_model(self):
         """Train an statistical model."""
         LOGGER.info("TRAINING STEP")
 
@@ -130,7 +136,7 @@ class Modeler:
 
         for epoch in range(self.opts.torch_config.epochs):
             loss_batch = 0
-            for x_batch, y_batch in train_loader:
+            for x_batch, y_batch in self.train_loader:
                 if self.opts.use_cuda:
                     x_batch = x_batch.to('cuda')
                     y_batch = y_batch.to('cuda')
@@ -154,14 +160,14 @@ class Modeler:
 
         return cpu_tensor.numpy()
 
-    def evaluate_model(self, valid_loader: DataLoader) -> None:
+    def evaluate_model(self):
         """Evaluate the model against the validation dataset."""
         LOGGER.info("VALIDATION STEP")
         # Disable any gradient calculation
         with torch.no_grad():
             self.network.eval()
             val_loss = 0
-            for x_val, y_val in valid_loader:
+            for x_val, y_val in self.valid_loader:
                 if self.opts.use_cuda:
                     x_val = x_val.to('cuda')
                     y_val = y_val.to('cuda')
@@ -178,9 +184,9 @@ class Modeler:
             predicted = self.network(tensor)
         return predicted
 
-    def plot_evaluation(self, valid_loader) -> None:
+    def plot_evaluation(self):
         """Create a scatter plot of the predict values vs the ground true."""
-        dataset = valid_loader.dataset
+        dataset = self.valid_loader.dataset
         tensor_features = dataset.fingerprints
         if self.opts.use_cuda:
             tensor_features = tensor_features.to('cuda')
@@ -189,10 +195,6 @@ class Modeler:
         predicted = result.detach().numpy()
         expected = np.stack(dataset.labels).flatten()
         create_scatter_plot(predicted, expected)
-
-    def read_data(self, opts: dict):
-        """Read the data from a file."""
-        self.data = pd.read_csv(opts.dataset_file)
 
     def split_data(self, frac: float = 0.2):
         """Split the data into a training and test set."""
@@ -203,39 +205,19 @@ class Modeler:
     def normalize_data(self) -> pd.DataFrame:
         """Create a new column with the normalized target."""
         # Normalize the property
-        self.data['normalized_labels'] = self.data[self.data.opts.property] / \
+        self.data['normalized_labels'] = self.data[self.opts.property] / \
             np.linalg.norm(self.data[self.opts.property])
-
-
-def normalize_data(df: pd.DataFrame, opts: dict) -> pd.DataFrame:
-    """Create a new column with the normalized target."""
-    # Normalize the property
-    df['normalized_labels'] = df[opts.property] / np.linalg.norm(df[opts.property])
-    return df
-
-
-def split_data(df: pd.DataFrame, frac: float = 0.2) -> tuple:
-    """Split the data into a training and test set."""
-    df.reset_index()  # Enumerate from 0
-    test_df = df.sample(frac=frac)
-    test_df.reset_index()
-    df.drop(test_df.index)
-
-    return df, test_df
 
 
 def train_and_validate_model(opts: dict) -> None:
     """Train the model usign the data specificied by the user."""
     researcher = Modeler(opts)
-    # Read data from csv file
-    data = pd.read_csv(opts.dataset_file)
-    data = normalize_data(data, opts)
-    train_data, valid_data = split_data(data)
-    train_loader = researcher.load_data(train_data)
-    valid_loader = researcher.load_data(valid_data)
-    researcher.train_model(train_loader)
-    researcher.evaluate_model(valid_loader)
-    researcher.plot_evaluation(valid_loader)
+    researcher.normalize_data()
+    researcher.split_data()
+    researcher.load_data()
+    researcher.train_model()
+    researcher.evaluate_model()
+    researcher.plot_evaluation()
 
 
 def predict_properties(opts: dict) -> Tensor:
