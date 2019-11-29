@@ -56,15 +56,17 @@ class Net(torch.nn.Module):
 
     def __init__(self, n_feature: int, n_hidden: int, n_output: int):
         super(Net, self).__init__()
-        self.hidden = torch.nn.Linear(n_feature, n_hidden)   # hidden layer
-        self.predict = torch.nn.Linear(n_hidden, n_output)   # output layer
+        self.seq = torch.nn.Sequential(
+            torch.nn.Linear(n_feature, n_hidden),
+            torch.nn.ReLU(),
+            torch.nn.Linear(n_hidden, n_hidden),
+            torch.nn.ReLU(),
+            torch.nn.Linear(n_hidden, n_output)
+        )
 
     def forward(self, tensor: Tensor) -> Tensor:
         """Activation function for hidden layer."""
-        x = fun.relu(self.hidden(tensor))
-        # linear output
-        x = self.predict(x)
-        return x
+        return self.seq(tensor)
 
 
 class LigandsDataset(Dataset):
@@ -92,6 +94,7 @@ class Modeler:
         """Set up a modeler object."""
         self.opts = opts
         self.data = pd.read_csv(opts.dataset_file, index_col=0).reset_index()
+        self.sanitize_data()
 
         if opts.use_cuda:
             self.device = torch.device("cuda:0")
@@ -103,10 +106,14 @@ class Modeler:
         else:
             self.load_trained_model()
 
+    def sanitize_data(self):
+        """Check that the data in the DataFrame is valid."""
+        self.data.dropna(inplace=True)
+
     def create_new_model(self):
         """Configure a new model."""
         # Create an Network architecture
-        self.network = Net(n_feature=2048, n_hidden=2048, n_output=1)
+        self.network = Net(n_feature=2048, n_hidden=1024, n_output=1)
         self.network = self.network.to(self.device)
 
         # Create an optimizer
@@ -204,7 +211,6 @@ class Modeler:
 
     def normalize_data(self) -> pd.DataFrame:
         """Create a new column with the normalized target."""
-        # Normalize the property
         self.data['normalized_labels'] = self.data[self.opts.property] / \
             np.linalg.norm(self.data[self.opts.property])
 
