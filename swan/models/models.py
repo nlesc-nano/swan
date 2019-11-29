@@ -61,7 +61,7 @@ class Net(torch.nn.Module):
             torch.nn.ReLU(),
             torch.nn.Linear(n_hidden, n_hidden),
             torch.nn.ReLU(),
-            torch.nn.Linear(n_hidden, n_output)
+            torch.nn.Linear(n_hidden, n_output),
         )
 
     def forward(self, tensor: Tensor) -> Tensor:
@@ -130,7 +130,7 @@ class Modeler:
 
     def create_data_loader(self, indices: np.array) -> DataLoader:
         """Create a DataLoader instance for the data."""
-        dataset = LigandsDataset(self.data.loc[indices], 'normalized_labels')
+        dataset = LigandsDataset(self.data.loc[indices], 'transformed_labels')
         return DataLoader(
             dataset=dataset, batch_size=self.opts.torch_config.batch_size)
 
@@ -181,7 +181,7 @@ class Modeler:
                 predicted = self.network(x_val)
                 val_loss += self.loss_func(y_val, predicted)
             mean_val_loss = val_loss / self.opts.torch_config.batch_size
-        LOGGER.info(f"validation loss:{mean_val_loss}")
+        LOGGER.info(f"validation loss: {mean_val_loss}")
 
     def predict(self, tensor: Tensor):
         """Use a previously trained model to predict."""
@@ -209,16 +209,15 @@ class Modeler:
         self.index_valid = np.random.choice(self.data.index, size=size_valid)
         self.index_train = np.setdiff1d(self.data.index, self.index_valid, assume_unique=True)
 
-    def normalize_data(self) -> pd.DataFrame:
-        """Create a new column with the normalized target."""
-        self.data['normalized_labels'] = self.data[self.opts.property] / \
-            np.linalg.norm(self.data[self.opts.property])
+    def transform_data(self) -> pd.DataFrame:
+        """Create a new column with the transformed target."""
+        self.data['transformed_labels'] = np.log(self.data[self.opts.property])
 
 
 def train_and_validate_model(opts: dict) -> None:
     """Train the model usign the data specificied by the user."""
     researcher = Modeler(opts)
-    researcher.normalize_data()
+    researcher.transform_data()
     researcher.split_data()
     researcher.load_data()
     researcher.train_model()
