@@ -7,7 +7,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
-import torch.nn.functional as fun
 from torch import Tensor
 from torch.autograd import Variable
 from torch.utils.data import DataLoader, Dataset
