@@ -90,25 +90,28 @@ class LigandsDataset(Dataset):
 class Modeler:
     """Object to create statistical models."""
 
-    def __init__(self, opts: dict, load_model: bool = False):
+    def __init__(self, opts: dict):
         """Set up a modeler object."""
         self.opts = opts
         self.data = pd.read_csv(opts.dataset_file, index_col=0).reset_index()
-        self.sanitize_data()
 
         if opts.use_cuda:
             self.device = torch.device("cuda:0")
         else:
             self.device = torch.device("cpu")
 
-        if not load_model:
-            self.create_new_model()
-        else:
-            self.load_trained_model()
+        self.create_new_model()
+        if opts.mode == 'train':
+            self.sanitize_data()
 
     def sanitize_data(self):
         """Check that the data in the DataFrame is valid."""
+        # discard nan values
         self.data.dropna(inplace=True)
+        # discard values that are 3 sigma from the mean
+        prop = self.data[self.opts.property]
+        deviation = np.sqrt(prop.var())
+        self.data = self.data[prop < (prop.mean() + 3 * deviation)]
 
     def create_new_model(self):
         """Configure a new model."""
@@ -135,7 +138,7 @@ class Modeler:
             dataset=dataset, batch_size=self.opts.torch_config.batch_size)
 
     def train_model(self):
-        """Train an statistical model."""
+        """Train a statistical model."""
         LOGGER.info("TRAINING STEP")
 
         # Set the model to training mode
@@ -197,11 +200,14 @@ class Modeler:
         tensor_features = dataset.fingerprints
         if self.opts.use_cuda:
             tensor_features = tensor_features.to('cuda')
-        result = self.network(tensor_features)
-        result = result.cpu() if self.opts.use_cuda else result
-        predicted = result.detach().numpy()
+        predicted = self.to_numpy_detached(self.network(tensor_features))
         expected = np.stack(dataset.labels).flatten()
         create_scatter_plot(predicted, expected)
+
+    def to_numpy_detached(self, tensor: Tensor):
+        """Create a view of a Numpy array in CPU."""
+        tensor = tensor.cpu() if self.opts.use_cuda else tensor
+        return tensor.detach().numpy()
 
     def split_data(self, frac: float = 0.2):
         """Split the data into a training and test set."""
@@ -227,5 +233,11 @@ def train_and_validate_model(opts: dict) -> None:
 
 def predict_properties(opts: dict) -> Tensor:
     """Use a previous trained model to predict properties."""
-    pass
-    # return researcher.predict(x)
+    researcher = Modeler(opts)
+    smiles = researcher.data['smiles'].to_numpy()
+    fingerprints = generate_fingerprints(smiles)
+    tensor = torch.from_numpy(fingerprints).to(researcher.device)
+    predicted = researcher.to_numpy_detached(researcher.predict(tensor))
+    transformed = np.exp(predicted)
+    df = pd.DataFrame({'smiles': smiles, 'predicted_property': transformed.flatten()})
+    print(df)

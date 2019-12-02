@@ -99,12 +99,10 @@ SCHEMA_MODELER = Schema({
     Optional("save_dataset", default=True): bool,
 
     # Folder to save the models
-    Optional("model_path", default="swan_models"): str,
+    Optional("model_path", default="swan_models.pt"): str,
 
     # Report predicted data
     Optional('report_predicted', default=True): bool,
-
-    Optional("filename_to_store_dataset", default="dataset"): str,
 
     # Workdir
     Optional("workdir", default="."): str
