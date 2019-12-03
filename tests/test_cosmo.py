@@ -12,9 +12,7 @@ smiles_file = "tests/test_files/Carboxylic_Acids_GDB13.txt"
 
 
 def test_cosmo_main(mocker):
-    """
-    Test the call to the main function is cosmo
-    """
+    """Test the call to the main function is cosmo."""
     def mock_main(file_name=None):
         try:
             # Mock the CLI
@@ -36,9 +34,7 @@ def test_cosmo_main(mocker):
 
 
 def test_activity_coefficients(mocker):
-    """
-    Test the activity coefficient calculation
-    """
+    """Test the activity coefficient calculation."""
     def call_fun(inp):
         compute_activity_coefficient(opts)
         assert os.path.exists(output)
@@ -69,9 +65,7 @@ def test_activity_coefficients(mocker):
 
 
 def test_unifac(mocker):
-    """
-    Test the call to unifac
-    """
+    """Test the call to unifac."""
     unifac_output = "tests/test_files/unifac_output.out"
     with open(unifac_output, 'br') as f:
         xs = f.read()
@@ -94,9 +88,7 @@ def test_unifac(mocker):
 
 
 def test_mopac(mocker):
-    """
-    Test mock call to ADF/MOPAC
-    """
+    """Test mock call to ADF/MOPAC."""
     def side_effect(*args):
         raise ValueError
 
@@ -114,9 +106,7 @@ def test_mopac(mocker):
 
 
 def test_call_cat_mopac(mocker, tmp_path):
-    """
-    Check the call to `get_solv`
-    """
+    """Check the call to `get_solv`."""
     answer = ([42], ())
     mocker.patch("swan.cosmo.cat_interface.get_solv", return_value=answer)
 

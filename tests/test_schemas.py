@@ -9,18 +9,14 @@ path_input_train = Path("tests/test_files/input_test_train.yml")
 
 
 def test_input_validation():
-    """
-    Check that the input is validated correctly.
-    """
+    """Check that the input is validated correctly."""
     opts = validate_input(path_input_train)
 
     assert isinstance(opts, dict)
 
 
 def test_wrong_input(tmp_path):
-    """
-    Test schema failure with wrong input
-    """
+    """Test schema failure with wrong input."""
     d = {"csv_file": "Non-existing/path.csv"}
 
     file_path = Path(tmp_path) / "tmp.yml"

@@ -1,4 +1,4 @@
-""" Lint tests """
+"""Lint tests."""
 import os
 import textwrap
 import pycodestyle  # formerly known as pep8

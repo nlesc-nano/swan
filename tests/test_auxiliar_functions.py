@@ -3,9 +3,7 @@ from pathlib import Path
 
 
 def test_run_command():
-    """
-    Test command invokation
-    """
+    """Test command invokation."""
     cmd = "echo $(( 4 * 5 ))"
 
     rs, _ = run_command(cmd)
@@ -14,18 +12,14 @@ def test_run_command():
 
 
 def test_chunks():
-    """
-    Test chunks splitting
-    """
+    """Test chunks splitting."""
     xs = list(range(20))
     s = [sum(x) for x in chunks_of(xs, 5)]
     assert s == [10, 35, 60, 85]
 
 
 def test_merge_csv(tmp_path):
-    """
-    Check the merge of csv files containing the Gammas
-    """
+    """Check the merge of csv files containing the Gammas."""
     path_files = "tests/test_files"
     output = Path(tmp_path) / "merged.csv"
 

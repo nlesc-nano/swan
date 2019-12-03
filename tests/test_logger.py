@@ -5,6 +5,7 @@ import sys
 
 
 def test_logger(tmp_path, caplog):
+    """Test that the logger is configure properly."""
     workdir = Path(tmp_path)
     config_logger(workdir)
 
