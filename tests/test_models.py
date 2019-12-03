@@ -1,16 +1,24 @@
+"""Test the models funcionality."""
+from swan.models.models import main
+from pathlib import Path
+import argparse
+
+path_input_test = Path("tests/test_files/input_test_train.yml")
+
 
 def test_main(mocker):
-    """
-    Test the CLI for the models
-    """
-    pass
-    # mocker.patch("swan.models.models.create_scatter_plot", return_value=None)
+    """Test the CLI for the models."""
+    mocker.patch("argparse.ArgumentParser.parse_args", return_value=argparse.Namespace(
+        i=path_input_test, w=".", mode="train"))
+
+    mocker.patch("swan.models.models.predict_properties", return_value=None)
+    mocker.patch("swan.models.models.train_and_validate_model", return_value=None)
+
+    main()
 
 
 def test_load_data():
-    """
-    Test that the data is loaded correctly
-    """
+    """Test that the data is loaded correctly."""
     return True
 
 
@@ -35,15 +43,6 @@ def test_save_dataset(tmp_path):
     return True
 
 
-def test_train_tensorgraph():
-    """
-    Check the training process of a tensorgraph model
-    """
-    return True
-
-
 def check_predict(model, researcher) -> bool:
-    """
-    Check that the predicted numbers are real
-    """
+    """Check that the predicted numbers are real. """
     return True
