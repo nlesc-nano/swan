@@ -45,11 +45,11 @@ Dependencies installation
 Using the conda environment the following packages should be installed:
 
 
-- install RDKit_ and H5PY_:
-  - ``conda install -y -q -c pytorch -c conda-forge -c h5py rdkit`
+- install RDKit_ and H5PY:
+  - `conda install -y -q -c conda-forge -c h5py rdkit`
 
 - install Pytorch_ according to this_ recipe
-    
+
 .. _installation:
 
 Package installation
