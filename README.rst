@@ -7,6 +7,8 @@
    :target: https://www.python.org
 .. image:: https://readthedocs.org/projects/swan/badge/?version=latest
    :target: https://swan.readthedocs.io/en/latest/?badge=latest
+.. image:: https://github.com/nlesc-nano/swan/workflows/build%20with%20conda/badge.svg
+   :target: https://github.com/nlesc-nano/swan/actions
 
 ################################################################################
 Screening Workflows And Nanomaterials
