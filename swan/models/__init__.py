@@ -1,3 +1,3 @@
-from .models import (Modeler, ModelerSKlearn, ModelerTensorGraph)
+from .models import Modeler
 
-__all__ = ["Modeler", "ModelerSKlearn", "ModelerTensorGraph"]
+__all__ = ["Modeler"]

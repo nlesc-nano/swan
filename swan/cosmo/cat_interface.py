@@ -13,7 +13,7 @@ from .functions import run_command
 
 
 # Starting logger
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 def call_mopac(smile: str, solvents=["Toluene.coskf"]) -> float:
@@ -32,7 +32,7 @@ def call_mopac(smile: str, solvents=["Toluene.coskf"]) -> float:
             return np.nan, np.nan
         return call_cat_mopac(Path(tmp), smile, solvents)
     except ValueError:
-        logger.warning(f"Error reading smile: {smile}")
+        LOGGER.warning(f"Error reading smile: {smile}")
         return np.nan, np.nan
 
     finally:

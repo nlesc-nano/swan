@@ -1,15 +1,15 @@
+"""Logger configuration."""
+
 from pathlib import Path
 import logging
 import sys
 
 
 def config_logger(workdir: Path):
-    """
-    Setup the logging infrasctucture.
-    """
+    """Set the logging infrasctucture."""
     file_log = workdir / 'output.log'
     logging.basicConfig(filename=file_log, level=logging.INFO,
-                        format='%(asctime)s---%(levelname)s\n%(message)s',
+                        format='%(asctime)s  %(message)s',
                         datefmt='[%I:%M:%S]')
     handler = logging.StreamHandler(sys.stdout)
     handler.terminator = ""
@@ -21,6 +21,8 @@ def config_logger(workdir: Path):
 
 
 class LoggerWriter:
+    """Modify the default behaviour of the logger."""
+
     def __init__(self, level):
         self.level = level
 

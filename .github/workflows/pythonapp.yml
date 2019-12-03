@@ -1,0 +1,41 @@
+name: build with conda
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@master
+    - name: Setup conda
+      uses: s-weigand/setup-conda@master
+      with:
+        update-conda: true
+        python-version: 3.7
+        conda-channels: anaconda, conda-forge
+    - run: conda --version
+    - run: which python
+    - run: conda install rdkit pytorch torchvision cpuonly -c pytorch
+
+    - name: Install the package
+      run: pip install .[test] -v
+      env:
+        CONDA_PREFIX: /usr/share/miniconda
+
+    - name: Lint with flake8
+      env:
+        CONDA_PREFIX: /usr/share/miniconda
+      run: |
+        pip install flake8
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Test with pytest
+      env:
+        CONDA_PREFIX: /usr/share/miniconda
+      run: |
+        pytest --cov=swan tests

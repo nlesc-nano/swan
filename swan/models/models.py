@@ -1,35 +1,31 @@
-from .input_validation import validate_input
-from .metadata_models import (data_hyperparam_search, default_hyperparameters)
-from .plot import create_scatter_plot
-from collections import namedtuple
-from datetime import datetime
-from deepchem.models.models import Model
-from deepchem.models import MultitaskRegressor
-from deepchem.utils.evaluate import Evaluator
-from functools import partial
-from importlib import import_module
-from pathlib import Path
-from sklearn.ensemble import (BaggingRegressor, RandomForestRegressor)
-from sklearn.svm import SVR
-from sklearn.kernel_ridge import KernelRidge
-from swan.log_config import config_logger
-
+"""Statistical models."""
 import argparse
-import deepchem as dc
 import logging
+from datetime import datetime
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
+import torch
+from torch import Tensor
+from torch.autograd import Variable
+from torch.utils.data import DataLoader, Dataset
 
-__all__ = ["Modeler", "ModelerSKlearn", "ModelerTensorGraph"]
+from swan.log_config import config_logger
+
+from .featurizer import generate_fingerprints
+from .input_validation import validate_input
+from .plot import create_scatter_plot
+
+__all__ = ["Modeler"]
 
 # Starting logger
-logger = logging.getLogger(__name__)
-
-DataSplitted = namedtuple('DataSplitted', 'train, valid, test')
+LOGGER = logging.getLogger(__name__)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="train -i input.yml")
+    """Parse the command line arguments and call the modeler class."""
+    parser = argparse.ArgumentParser(description="modeler -i input.yml")
     # configure logger
     parser.add_argument('-i', required=True,
                         help="Input file with options")
@@ -42,333 +38,205 @@ def main():
     config_logger(Path(args.w))
 
     # log date
-    logger.info(f"Starting at:{datetime.now()}")
+    LOGGER.info(f"Starting at: {datetime.now()}")
 
     # Check that the input is correct
     opts = validate_input(Path(args.i))
     opts.mode = args.mode
 
     if args.mode == "train":
-        train_model(opts)
-
+        train_and_validate_model(opts)
     else:
         predict_properties(opts)
 
 
-def train_model(opts: dict) -> None:
-    """
-    Train the model usign the data specificied by the user
-    """
-    researcher = create_modeler(opts)
-    # train the model
-    if opts.load_model:
-        model = researcher.load_model()
-    else:
-        model = researcher.train_model()
+class Net(torch.nn.Module):
+    """Create a Neural network object using Pytorch."""
 
-    # Check how good is the model
-    researcher.evaluate_model(model)
+    def __init__(self, n_feature: int, n_hidden: int, n_output: int):
+        super(Net, self).__init__()
+        self.seq = torch.nn.Sequential(
+            torch.nn.Linear(n_feature, n_hidden),
+            torch.nn.ReLU(),
+            torch.nn.Linear(n_hidden, n_hidden),
+            torch.nn.ReLU(),
+            torch.nn.Linear(n_hidden, n_output),
+        )
 
-    # # predict
-    rs = model.predict(researcher.data.test)
-
-    # Create a scatter plot of the predict values vs the ground true
-    create_scatter_plot(rs, researcher.data.test.y)
+    def forward(self, tensor: Tensor) -> Tensor:
+        """Activation function for hidden layer."""
+        return self.seq(tensor)
 
 
-def predict_properties(opts: dict) -> None:
-    """
-    Used a previous trained model to predict properties
-    """
-    def report(rs):
-        df = pd.read_csv(opts.dataset_file)
-        output = pd.DataFrame({'smiles': df['smiles'], 'predicted': rs})
-        output.to_csv("predicted.csv")
+class LigandsDataset(Dataset):
+    """Read the smiles, properties and compute the fingerprints."""
 
-    researcher = create_modeler(opts)
-    model = researcher.load_model()
+    def __init__(self, df: pd.DataFrame, property_name: str) -> tuple:
+        smiles = df['smiles'].to_numpy()
+        fingerprints = generate_fingerprints(smiles)
+        self.fingerprints = torch.from_numpy(fingerprints)
+        labels = df[property_name].to_numpy(np.float32)
+        size_labels = labels.size
+        self.labels = torch.from_numpy(labels.reshape(size_labels, 1))
 
-    # Prepare data
-    dataset = researcher.load_data()
+    def __len__(self):
+        return self.labels.shape[0]
 
-    # Predict
-    rs = model.predict(dataset).flatten()
-
-    if opts.report_predicted:
-        report(rs)
-
-    return rs
-
-
-def create_modeler(opts: dict):
-    """
-    Select the interface to use
-    """
-    # Train the model
-    if opts.interface["name"].lower() == "sklearn":
-        return ModelerSKlearn(opts)
-    else:
-        return ModelerTensorGraph(opts)
+    def __getitem__(self, idx: int):
+        return self.fingerprints[idx], self.labels[idx]
 
 
 class Modeler:
+    """Object to create statistical models."""
 
     def __init__(self, opts: dict):
+        """Set up a modeler object."""
         self.opts = opts
+        self.data = pd.read_csv(opts.dataset_file, index_col=0).reset_index()
 
-        # Select featurizer and metric
-        self.select_featurizer()
-        self.select_metric()
+        if opts.use_cuda:
+            self.device = torch.device("cuda:0")
+        else:
+            self.device = torch.device("cpu")
 
-    def select_featurizer(self) -> None:
-        """
-        Use featurizer chosen by the user
-        """
-        logger.info(f"Using featurizer:{self.opts.featurizer}")
-        names = {
-            "circularfingerprint": "CircularFingerprint"
-        }
-        feat = import_module("deepchem.feat")
-        featurizer = getattr(feat, names[self.opts.featurizer])
-        self.featurizer = featurizer()
+        self.create_new_model()
+        if opts.mode == 'train':
+            self.sanitize_data()
 
-    def select_metric(self) -> None:
-        """
-        Create instances of the metric to use
-        """
-        # Import the metric
-        mod_metric = import_module("deepchem.metrics")
-        try:
-            metric = getattr(mod_metric, self.opts.metric)
-            self.metric = dc.metrics.Metric(
-                metric, np.mean, mode='regression')
-        except AttributeError:
-            print(f"Metric: {self.opts.metric} does not exist in deepchem")
-            raise
+    def sanitize_data(self):
+        """Check that the data in the DataFrame is valid."""
+        # discard nan values
+        self.data.dropna(inplace=True)
+        # discard values that are 3 sigma from the mean
+        prop = self.data[self.opts.property]
+        deviation = np.sqrt(prop.var())
+        self.data = self.data[prop < (prop.mean() + 3 * deviation)]
+
+    def create_new_model(self):
+        """Configure a new model."""
+        # Create an Network architecture
+        self.network = Net(n_feature=2048, n_hidden=1024, n_output=1)
+        self.network = self.network.to(self.device)
+
+        # Create an optimizer
+        self.optimizer = torch.optim.SGD(
+            self.network.parameters(), **self.opts.torch_config.optimizer)
+
+        # Create loss function
+        self.loss_func = torch.nn.MSELoss()
 
     def load_data(self):
-        """
-        Load a dataset
-        """
-        logger.info(f"Loading data from {self.opts.dataset_file}")
-        print("file name: ", self.opts.dataset_file)
-        if Path(self.opts.dataset_file).suffix != ".csv":
-            dataset = dc.utils.save.load_from_disk(self.opts.dataset_file)
+        """Create loaders for the train and validation dataset."""
+        self.train_loader = self.create_data_loader(self.index_train)
+        self.valid_loader = self.create_data_loader(self.index_valid)
 
-        else:
-            tasks = [] if self.opts.mode == "predict" else self.opts.tasks
-            loader = dc.data.CSVLoader(tasks, smiles_field="smiles",
-                                       featurizer=self.featurizer)
-            dataset = loader.featurize(self.opts.dataset_file)
+    def create_data_loader(self, indices: np.array) -> DataLoader:
+        """Create a DataLoader instance for the data."""
+        dataset = LigandsDataset(self.data.loc[indices], 'transformed_labels')
+        return DataLoader(
+            dataset=dataset, batch_size=self.opts.torch_config.batch_size)
 
-        if self.opts.save_dataset:
-            file_name = Path(self.opts.workdir) / \
-                f"{self.opts.filename_to_store_dataset}.joblib"
-            logger.info(f"saving dataset to: {file_name}")
-            dc.utils.save.save_to_disk(dataset, file_name)
+    def train_model(self):
+        """Train a statistical model."""
+        LOGGER.info("TRAINING STEP")
 
-        return dataset
+        # Set the model to training mode
+        self.network.train()
 
-    def load_model(self) -> Model:
-        """
-        Load model from disk
-        """
-        dataset = self.load_data()
-        self.split_data(dataset)
+        for epoch in range(self.opts.torch_config.epochs):
+            loss_batch = 0
+            for x_batch, y_batch in self.train_loader:
+                if self.opts.use_cuda:
+                    x_batch = x_batch.to('cuda')
+                    y_batch = y_batch.to('cuda')
+                loss_batch = self.train_batch(x_batch, y_batch)
+            mean = loss_batch / self.opts.torch_config.batch_size
+            if epoch % self.opts.torch_config.frequency_log_epochs == 0:
+                LOGGER.info(f"Loss: {mean}")
 
-        # Transform the y labels
-        if self.opts.mode == "train":
-            self.transform_data()
+        # Save the models
+        torch.save(self.network.state_dict(), self.opts.model_path)
 
-        model = self.select_model()
+    def train_batch(self, x_batch: Variable, y_batch: Variable) -> float:
+        """Train a single batch."""
+        prediction = self.network(x_batch)
+        loss = self.loss_func(prediction, y_batch)
+        loss.backward()              # backpropagation, compute gradients
+        self.optimizer.step()        # apply gradients
+        self.optimizer.zero_grad()   # clear gradients for next train
 
-        return model.load_from_dir(self.opts.model_dir)
+        cpu_tensor = loss.data.cpu()
 
-    def split_data(self, dataset) -> None:
-        """
-        Split the entire dataset into a train, validate and test subsets.
-        """
-        logger.info("splitting the data into train, validate and test subsets")
-        splitter = dc.splits.ScaffoldSplitter()
-        self.data = DataSplitted(
-            *splitter.train_valid_test_split(dataset))
+        return cpu_tensor.numpy()
 
-    def transform_data(self):
-        """
-        Normalize the data to have zero-mean and unit-standard-deviation.
-        """
-        logger.info("Transforming the data")
-        self.transformers = [dc.trans.NormalizationTransformer(
-            transform_y=True, dataset=self.data.train)]
-        for ds in self.data:
-            for t in self.transformers:
-                t.transform(ds)
+    def evaluate_model(self):
+        """Evaluate the model against the validation dataset."""
+        LOGGER.info("VALIDATION STEP")
+        # Disable any gradient calculation
+        with torch.no_grad():
+            self.network.eval()
+            val_loss = 0
+            for x_val, y_val in self.valid_loader:
+                if self.opts.use_cuda:
+                    x_val = x_val.to('cuda')
+                    y_val = y_val.to('cuda')
+                predicted = self.network(x_val)
+                val_loss += self.loss_func(y_val, predicted)
+            mean_val_loss = val_loss / self.opts.torch_config.batch_size
+        LOGGER.info(f"validation loss: {mean_val_loss}")
 
-    def train_model(self) -> Model:
-        """
-        Use the data and `options` provided by the user to create an statistical
-        model.
-        """
-        dataset = self.load_data()
+    def predict(self, tensor: Tensor):
+        """Use a previously trained model to predict."""
+        with torch.no_grad():
+            self.network.load_state_dict(torch.load(self.opts.model_path))
+            self.network.eval()  # Set model to evaluation mode
+            predicted = self.network(tensor)
+        return predicted
 
-        # Split the data into train/validation/test sets
-        self.split_data(dataset)
+    def plot_evaluation(self):
+        """Create a scatter plot of the predict values vs the ground true."""
+        dataset = self.valid_loader.dataset
+        tensor_features = dataset.fingerprints
+        if self.opts.use_cuda:
+            tensor_features = tensor_features.to('cuda')
+        predicted = self.to_numpy_detached(self.network(tensor_features))
+        expected = np.stack(dataset.labels).flatten()
+        create_scatter_plot(predicted, expected)
 
-        # Normalize the data
-        self.transform_data()
+    def to_numpy_detached(self, tensor: Tensor):
+        """Create a view of a Numpy array in CPU."""
+        tensor = tensor.cpu() if self.opts.use_cuda else tensor
+        return tensor.detach().numpy()
 
-        # Optimize hyperparameters
-        if self.opts["optimize_hyperparameters"]:
-            best_model, best_model_hyperparams, _ = self.optimize_hyperparameters()
-            logger.info(f"best hyperparameters: {best_model_hyperparams}")
-            return best_model
-        else:
-            # Use the statistical model as it is
-            return self.fit_model()
+    def split_data(self, frac: float = 0.2):
+        """Split the data into a training and test set."""
+        size_valid = int(self.data.index.size * frac)
+        self.index_valid = np.random.choice(self.data.index, size=size_valid)
+        self.index_train = np.setdiff1d(self.data.index, self.index_valid, assume_unique=True)
 
-    def evaluate_model(self, model) -> None:
-        """
-        Evaluate the predictive power of the model
-        """
-        evaluator = Evaluator(model, self.data.valid, self.transformers)
-        score = evaluator.compute_model_performance([self.metric])
-        logging.info(f"Score of the model is: {score}")
-        print("score: ", score)
-
-    def select_hyperparameters(self) -> dict:
-        """
-        Use the parameters provided by the user or the defaults
-        """
-        model_name = self.opts.interface["model"]
-        if not self.opts.interface["parameters"]:
-            return default_hyperparameters.get(model_name, {})
-        else:
-            return self.opts.interface["parameters"]
-
-    def optimize_hyperparameters(self) -> tuple:
-        """
-        Search for the best hyperparameters for a given model
-        """
-        model_name = self.opts.interface["model"]
-
-        if self.opts.interface["name"].lower() == "sklearn":
-            regressor = self.available_models[model_name]
-            model_class = partial(_model_builder_sklearn, regressor)
-        else:
-            model_class = partial(_model_builder_tensorgraph,
-                                  self.n_tasks, self.n_features)
-
-        optimizer = dc.hyper.HyperparamOpt(model_class)
-        params_dict = data_hyperparam_search[model_name]
-        best_model, best_model_hyperparams, all_models_results = optimizer.hyperparam_search(
-            params_dict, self.data.train, self.data.valid, self.transformers,
-            metric=self.metric)
-
-        return best_model, best_model_hyperparams, all_models_results
+    def transform_data(self) -> pd.DataFrame:
+        """Create a new column with the transformed target."""
+        self.data['transformed_labels'] = np.log(self.data[self.opts.property])
 
 
-class ModelerTensorGraph(Modeler):
-
-    def __init__(self, opts: dict):
-        super().__init__(opts)
-        self.available_models = {
-            'multitaskregressor': MultitaskRegressor,
-        }
-        self.n_tasks = len(self.opts.tasks)
-        self.n_features = getattr(self.featurizer, 'size', None)
-
-    def select_model(self) -> Model:
-        """
-        Return the Model object specificied by the user
-        """
-        model_name = self.opts.interface["model"]
-        logger.info(f"Train the model using {model_name}")
-
-        # Select model and fit it
-        hyper = self.select_hyperparameters()
-
-        # Operation mode
-        hyper["mode"] = 'regression'
-
-        # Path to store the trained model
-        hyper["model_dir"] = self.opts.model_dir
-
-        logger.info(f"Model hyperparameters are: {hyper}")
-
-        # Create model
-        tensorgraph_model = self.available_models[model_name]
-        args = self._get_positional_args()
-        return tensorgraph_model(*args, **hyper)
-
-    def _get_positional_args(self) -> list:
-        """
-        Select the positional arguments for a given model
-        """
-        model_name = self.opts.interface["model"]
-        if model_name == 'multitaskregressor':
-            return [self.n_tasks, self.n_features]
-        else:
-            return [self.n_tasks]
-
-    def fit_model(self) -> Model:
-        """
-        Fit the statistical model using the given hyperparameters or the default
-        """
-        model = self.select_model()
-        model.fit(self.data.train, nb_epoch=self.opts.interface["epochs"])
-
-        # save model data
-        model.save()
-
-        return model
+def train_and_validate_model(opts: dict) -> None:
+    """Train the model usign the data specificied by the user."""
+    researcher = Modeler(opts)
+    researcher.transform_data()
+    researcher.split_data()
+    researcher.load_data()
+    researcher.train_model()
+    researcher.evaluate_model()
+    researcher.plot_evaluation()
 
 
-class ModelerSKlearn(Modeler):
-
-    def __init__(self, opts: dict):
-        super().__init__(opts)
-        self.available_models = {
-            'randomforest': RandomForestRegressor,
-            'svr': SVR,
-            'kernelridge': KernelRidge,
-            'bagging': BaggingRegressor}
-
-    def select_model(self) -> Model:
-        """
-        Return the Model object specificied by the user
-        """
-        model_name = self.opts.interface["model"]
-        logger.info(f"Train the model using {model_name}")
-
-        # Select hyperparameters
-        hyper = self.select_hyperparameters()
-        sklearn_model = self.available_models[model_name](**hyper)
-        return dc.models.SklearnModel(sklearn_model)
-
-    def fit_model(self) -> Model:
-        """
-        Fit the statistical model using the given hyperparameters or the default
-        """
-        model = self.select_model()
-        model.fit(self.data.train)
-
-        # save the model optimized parameters
-        model.save()
-
-        return model
-
-
-def _model_builder_tensorgraph(n_tasks: int, n_features: int, model_params: dict,
-                               model_dir: str = "."):
-    """
-    Create a TensorGraph Model
-    """
-    return MultitaskRegressor(n_tasks, n_features, **model_params)
-
-
-def _model_builder_sklearn(regressor: object, model_params: dict, model_dir: str = "."):
-    """
-    Create a Sklearn Model
-    """
-    sklearn_model = regressor(**model_params)
-    return dc.models.SklearnModel(sklearn_model, model_dir)
+def predict_properties(opts: dict) -> Tensor:
+    """Use a previous trained model to predict properties."""
+    researcher = Modeler(opts)
+    smiles = researcher.data['smiles'].to_numpy()
+    fingerprints = generate_fingerprints(smiles)
+    tensor = torch.from_numpy(fingerprints).to(researcher.device)
+    predicted = researcher.to_numpy_detached(researcher.predict(tensor))
+    transformed = np.exp(predicted)
+    df = pd.DataFrame({'smiles': smiles, 'predicted_property': transformed.flatten()})
+    print(df)

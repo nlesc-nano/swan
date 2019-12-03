@@ -1,29 +1,27 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import os
 
-from setuptools import (find_packages, setup)
+from setuptools import setup
 
-here = os.path.abspath(os.path.dirname(__file__))
+HERE = os.path.abspath(os.path.dirname(__file__))
 
-# To update the package version number, edit swan/__version__.py
 version = {}
-with open(os.path.join(here, 'swan', '__version__.py')) as f:
+with open(os.path.join(HERE, 'swan', '__version__.py')) as f:
     exec(f.read(), version)
 
 with open('README.rst') as readme_file:
-    readme = readme_file.read()
+    README = readme_file.read()
 
 setup(
     name='swan',
     version=version['__version__'],
     description="",
-    long_description=readme + '\n\n',
+    long_description=README + '\n\n',
     long_description_content_type='text/markdown',
     author="Felipe Zapata",
     author_email='f.zapata@esciencecenter.nl',
     url='https://github.com/nlesc-nano/swan',
-    packages=find_packages(),
+
     package_dir={'swan': 'swan'},
     include_package_data=True,
     license="Apache Software License 2.0",
@@ -48,8 +46,7 @@ setup(
         'CAT@git+https://github.com/nlesc-nano/CAT@master',
         'nano-CAT@git+https://github.com/nlesc-nano/nano-CAT@master',
         'data-CAT@git+https://github.com/nlesc-nano/data-CAT@master',
-        'deepchem', 'numpy', 'pandas', 'pyyaml>=5.1.1',
-        'seaborn', 'schema'],
+        'numpy', 'pandas', 'pyyaml>=5.1.1', 'seaborn', 'schema'],
     setup_requires=[
         # dependency for `python setup.py test`
         'pytest-runner',
