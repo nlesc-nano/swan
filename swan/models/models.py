@@ -7,7 +7,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
-from rdkit.Chem import AllChem
 from torch import Tensor
 from torch.autograd import Variable
 from torch.utils.data import DataLoader, Dataset
@@ -117,7 +116,7 @@ class Modeler:
     def create_new_model(self):
         """Configure a new model."""
         # Create an Network architecture
-        self.network = Net(n_feature=self.opts.fingerprint_size + 2, n_hidden=1000, n_output=1)
+        self.network = Net(n_feature=self.opts.fingerprint_size, n_hidden=1000, n_output=1)
         self.network = self.network.to(self.device)
 
         # Create an optimizer
