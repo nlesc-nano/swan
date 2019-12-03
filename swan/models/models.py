@@ -7,13 +7,13 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
+from rdkit.Chem import AllChem
 from torch import Tensor
 from torch.autograd import Variable
 from torch.utils.data import DataLoader, Dataset
 
 from swan.log_config import config_logger
-
-from .featurizer import generate_fingerprints
+from .featurizer import (create_molecules, generate_fingerprints)
 from .input_validation import validate_input
 from .plot import create_scatter_plot
 
@@ -71,10 +71,11 @@ class Net(torch.nn.Module):
 class LigandsDataset(Dataset):
     """Read the smiles, properties and compute the fingerprints."""
 
-    def __init__(self, df: pd.DataFrame, property_name: str) -> tuple:
-        smiles = df['smiles'].to_numpy()
-        fingerprints = generate_fingerprints(smiles)
-        self.fingerprints = torch.from_numpy(fingerprints)
+    def __init__(self, df: pd.DataFrame, property_name: str, fingerprint_size: int) -> tuple:
+        molecules = df['molecules']
+
+        fingerprints = generate_fingerprints(molecules, bits=fingerprint_size)
+        self.features = torch.from_numpy(fingerprints)
         labels = df[property_name].to_numpy(np.float32)
         size_labels = labels.size
         self.labels = torch.from_numpy(labels.reshape(size_labels, 1))
@@ -83,7 +84,7 @@ class LigandsDataset(Dataset):
         return self.labels.shape[0]
 
     def __getitem__(self, idx: int):
-        return self.fingerprints[idx], self.labels[idx]
+        return self.features[idx], self.labels[idx]
 
 
 class Modeler:
@@ -92,7 +93,8 @@ class Modeler:
     def __init__(self, opts: dict):
         """Set up a modeler object."""
         self.opts = opts
-        self.data = pd.read_csv(opts.dataset_file, index_col=0).reset_index()
+        self.data = pd.read_csv(opts.dataset_file, index_col=0).reset_index(drop=True)
+        self.data['molecules'] = create_molecules(self.data['smiles'].to_numpy())
 
         if opts.use_cuda:
             self.device = torch.device("cuda:0")
@@ -100,22 +102,22 @@ class Modeler:
             self.device = torch.device("cpu")
 
         self.create_new_model()
-        if opts.mode == 'train':
-            self.sanitize_data()
+        self.sanitize_data()
 
     def sanitize_data(self):
         """Check that the data in the DataFrame is valid."""
         # discard nan values
         self.data.dropna(inplace=True)
-        # discard values that are 3 sigma from the mean
-        prop = self.data[self.opts.property]
-        deviation = np.sqrt(prop.var())
-        self.data = self.data[prop < (prop.mean() + 3 * deviation)]
+
+        # # Create conformers
+        # self.data['molecules'].apply(lambda mol: AllChem.EmbedMolecule(mol))
+        # # Discard molecules that do not have conformer
+        # self.data = self.data[self.data['molecules'].apply(lambda x: x.GetNumConformers()) >= 1]
 
     def create_new_model(self):
         """Configure a new model."""
         # Create an Network architecture
-        self.network = Net(n_feature=2048, n_hidden=1024, n_output=1)
+        self.network = Net(n_feature=self.opts.fingerprint_size + 2, n_hidden=1000, n_output=1)
         self.network = self.network.to(self.device)
 
         # Create an optimizer
@@ -132,7 +134,8 @@ class Modeler:
 
     def create_data_loader(self, indices: np.array) -> DataLoader:
         """Create a DataLoader instance for the data."""
-        dataset = LigandsDataset(self.data.loc[indices], 'transformed_labels')
+        dataset = LigandsDataset(
+            self.data.loc[indices], 'transformed_labels', self.opts.fingerprint_size)
         return DataLoader(
             dataset=dataset, batch_size=self.opts.torch_config.batch_size)
 
@@ -196,7 +199,7 @@ class Modeler:
     def plot_evaluation(self):
         """Create a scatter plot of the predict values vs the ground true."""
         dataset = self.valid_loader.dataset
-        tensor_features = dataset.fingerprints
+        tensor_features = dataset.features
         if self.opts.use_cuda:
             tensor_features = tensor_features.to('cuda')
         predicted = self.to_numpy_detached(self.network(tensor_features))
@@ -211,7 +214,7 @@ class Modeler:
     def split_data(self, frac: float = 0.2):
         """Split the data into a training and test set."""
         size_valid = int(self.data.index.size * frac)
-        self.index_valid = np.random.choice(self.data.index, size=size_valid)
+        self.index_valid = np.random.choice(self.data.index, size=size_valid, replace=False)
         self.index_train = np.setdiff1d(self.data.index, self.index_valid, assume_unique=True)
 
     def transform_data(self) -> pd.DataFrame:

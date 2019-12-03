@@ -86,6 +86,8 @@ SCHEMA_MODELER = Schema({
     # Property to predict
     "property": str,
 
+    Optional("fingerprint_size", default=2000): int,
+
     # Whether to use CPU or GPU
     Optional("use_cuda", default=False): bool,
 
