@@ -235,10 +235,10 @@ def train_and_validate_model(opts: dict) -> None:
 def predict_properties(opts: dict) -> Tensor:
     """Use a previous trained model to predict properties."""
     researcher = Modeler(opts)
-    smiles = researcher.data['smiles'].to_numpy()
-    fingerprints = generate_fingerprints(smiles)
+    fingerprints = generate_fingerprints(researcher.data['molecules'])
     tensor = torch.from_numpy(fingerprints).to(researcher.device)
     predicted = researcher.to_numpy_detached(researcher.predict(tensor))
     transformed = np.exp(predicted)
-    df = pd.DataFrame({'smiles': smiles, 'predicted_property': transformed.flatten()})
+    df = pd.DataFrame({'smiles': researcher.data['smiles'].to_numpy(),
+                       'predicted_property': transformed.flatten()})
     print(df)
