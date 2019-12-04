@@ -6,7 +6,7 @@ from torch import Tensor, nn
 class Siamese(nn.Module):
     """Siamese architecture."""
 
-    def __init__(self, n_feature: int, n_hidden: int = 1000):
+    def __init__(self, n_feature: int, n_hidden: int):
         super(Siamese, self).__init__()
         self.net_fingerprints = nn.Sequential(
             nn.Linear(n_feature, n_hidden),
@@ -33,7 +33,7 @@ class Siamese(nn.Module):
 class FullyConnected(nn.Module):
     """Fully connected network for non-linear regression."""
 
-    def __init__(self, n_feature: int, n_hidden: int = 1000):
+    def __init__(self, n_feature: int, n_hidden: int):
         super(FullyConnected, self).__init__()
         self.seq = nn.Sequential(
             nn.Linear(n_feature, n_hidden),
@@ -46,3 +46,8 @@ class FullyConnected(nn.Module):
     def forward(self, tensor: Tensor) -> Tensor:
         """Run the model."""
         return self.seq(tensor)
+
+
+def select_model(opts: dict) -> nn.Module:
+    """Select a model using the input provided by the user."""
+    return FullyConnected(opts.model.fingerprint_size, opts.model.hidden_cells)

@@ -12,7 +12,7 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader, Dataset
 
 from swan.log_config import config_logger
-from swan.models.models import FullyConnected
+from swan.models.models import select_model
 
 from .featurizer import create_molecules, generate_fingerprints
 from .input_validation import validate_input
@@ -100,8 +100,7 @@ class Modeller:
     def create_new_model(self):
         """Configure a new model."""
         # Create an Network architecture
-        self.network = FullyConnected(
-            n_feature=self.opts.fingerprint_size, n_hidden=1000)
+        self.network = select_model(self.opts)
         self.network = self.network.to(self.device)
 
         # Create an optimizer
@@ -119,7 +118,8 @@ class Modeller:
     def create_data_loader(self, indices: np.array) -> DataLoader:
         """Create a DataLoader instance for the data."""
         dataset = LigandsDataset(
-            self.data.loc[indices], 'transformed_labels', self.opts.fingerprint_size)
+            self.data.loc[indices], 'transformed_labels',
+            self.opts.model.fingerprint_size)
         return DataLoader(
             dataset=dataset, batch_size=self.opts.torch_config.batch_size)
 

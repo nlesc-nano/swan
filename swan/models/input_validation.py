@@ -79,6 +79,14 @@ SCHEMA_TORCH = Schema({
 
 })
 
+SCHEMA_MODEL = Schema({
+    Optional("fingerprint_size", default=2000): int,
+
+    Optional("hidden_cells", default=1000): int
+
+})
+MODEL_DEFAULTS = SCHEMA_MODEL.validate({})
+
 SCHEMA_MODELER = Schema({
     # Load the dataset from a file
     "dataset_file": str,
@@ -90,6 +98,8 @@ SCHEMA_MODELER = Schema({
 
     # Whether to use CPU or GPU
     Optional("use_cuda", default=False): bool,
+
+    Optional("model", default=MODEL_DEFAULTS): SCHEMA_MODEL,
 
     # Network and training options options
     Optional("torch_config"): SCHEMA_TORCH,
