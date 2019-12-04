@@ -103,9 +103,6 @@ SCHEMA_MODELER = Schema({
     # Folder to save the models
     Optional("model_path", default="swan_models.pt"): str,
 
-    # Report predicted data
-    Optional('report_predicted', default=True): bool,
-
     # Workdir
     Optional("workdir", default="."): str
 })

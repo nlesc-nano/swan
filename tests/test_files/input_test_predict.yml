@@ -1,0 +1,16 @@
+dataset_file:
+  tests/test_files/smiles.csv
+
+use_cuda: False
+
+property: gammas
+
+torch_config:
+  epochs: 200
+  batch_size: 100
+  featurizer: circularfingerprint
+  optimizer:
+    lr: 0.2
+
+model_path:
+  tests/test_files/swan_models.pt

@@ -1,9 +1,16 @@
 """Test the models funcionality."""
-from swan.models.models import main
-from pathlib import Path
 import argparse
+from pathlib import Path
+
+import os
+import numpy as np
+
+from swan.models import Modeler
+from swan.models.input_validation import validate_input
+from swan.models.models import main, predict_properties
 
 path_input_test = Path("tests/test_files/input_test_train.yml")
+path_trained_model = Path("tests/test_files/input_test_predict.yml")
 
 
 def test_main(mocker):
@@ -13,36 +20,48 @@ def test_main(mocker):
 
     mocker.patch("swan.models.models.predict_properties", return_value=None)
     mocker.patch("swan.models.models.train_and_validate_model", return_value=None)
-
     main()
 
 
-def test_load_data():
-    """Test that the data is loaded correctly."""
-    return True
+def test_split_data():
+    """Check that training and validation set are independent."""
+    opts = validate_input(path_input_test)
+    researcher = Modeler(opts)
+    researcher.split_data()
+    xs = np.intersect1d(researcher.index_train, researcher.index_valid)
+    assert xs.size == 0
 
 
-def test_load_model():
-    """
-    Test that a model is loaded correctly
-    """
-    return True
+def test_train_data(tmp_path):
+    """Test that the dataset is trained properly."""
+    opts = validate_input(path_input_test)
 
+    # Use a temporal folde and train in CPU
+    opts.model_path = os.path.join(tmp_path, "swan_models.pt")
+    opts.use_cuda = False
+
+    # Train for a few epoch
+    opts.torch_config.epochs = 5
+    opts.torch_config.batch_size = 500
+
+    researcher = Modeler(opts)
+    researcher.transform_data()
+    researcher.split_data()
+    researcher.load_data()
+    researcher.train_model()
+    mean_loss = researcher.evaluate_model()
+    assert os.path.exists(opts.model_path)
+    assert mean_loss > 0 and mean_loss < 1e-1
 
 def test_predict_unknown():
-    """
-    Predict data for a some smiles
-    """
-    return True
+    """Predict data for some smiles."""
+    opts = validate_input(path_trained_model)
+    df = predict_properties(opts)
+    assert df['predicted_property'].notna().all()
 
 
 def test_save_dataset(tmp_path):
     """
     Test that the dataset is stored correctly
     """
-    return True
-
-
-def check_predict(model, researcher) -> bool:
-    """Check that the predicted numbers are real. """
     return True

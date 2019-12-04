@@ -1,5 +1,14 @@
 # Change Log
 
+# 0.2.0 [04/12/19]
+
+## New
+* Allow to  train **GPU**.
+
+## Changed
+* Replace [deepchem](https://deepchem.io/) with [pytorch](https://pytorch.org)
+* Use [rdkit](https://www.rdkit.org) to compute the fingerprints.
+
 # 0.1.0
 
 ## New

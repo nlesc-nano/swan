@@ -171,7 +171,7 @@ class Modeler:
 
         return cpu_tensor.numpy()
 
-    def evaluate_model(self):
+    def evaluate_model(self) -> float:
         """Evaluate the model against the validation dataset."""
         LOGGER.info("VALIDATION STEP")
         # Disable any gradient calculation
@@ -186,6 +186,7 @@ class Modeler:
                 val_loss += self.loss_func(y_val, predicted)
             mean_val_loss = val_loss / self.opts.torch_config.batch_size
         LOGGER.info(f"validation loss: {mean_val_loss}")
+        return mean_val_loss
 
     def predict(self, tensor: Tensor):
         """Use a previously trained model to predict."""
@@ -213,6 +214,7 @@ class Modeler:
     def split_data(self, frac: float = 0.2):
         """Split the data into a training and test set."""
         size_valid = int(self.data.index.size * frac)
+        # Sample the indices without replacing
         self.index_valid = np.random.choice(self.data.index, size=size_valid, replace=False)
         self.index_train = np.setdiff1d(self.data.index, self.index_valid, assume_unique=True)
 
@@ -234,6 +236,7 @@ def train_and_validate_model(opts: dict) -> None:
 
 def predict_properties(opts: dict) -> Tensor:
     """Use a previous trained model to predict properties."""
+    LOGGER.info(f"Loading previously trained model from: {opts.model_path}")
     researcher = Modeler(opts)
     fingerprints = generate_fingerprints(researcher.data['molecules'])
     tensor = torch.from_numpy(fingerprints).to(researcher.device)
@@ -241,4 +244,4 @@ def predict_properties(opts: dict) -> Tensor:
     transformed = np.exp(predicted)
     df = pd.DataFrame({'smiles': researcher.data['smiles'].to_numpy(),
                        'predicted_property': transformed.flatten()})
-    print(df)
+    return df
