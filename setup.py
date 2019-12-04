@@ -37,7 +37,7 @@ setup(
     entry_points={
         'console_scripts': [
             'cosmo=swan.cosmo.cosmo:main',
-            'modeler=swan.models.models:main',
+            'modeller=swan.models.models:main',
             'save_dataset_in_db=swan.data.save_data:main'
         ]
     },
