@@ -5,9 +5,9 @@ from pathlib import Path
 import os
 import numpy as np
 
-from swan.models import Modeler
+from swan.models import Modeller
 from swan.models.input_validation import validate_input
-from swan.models.models import main, predict_properties
+from swan.models.modeller import main, predict_properties
 
 path_input_test = Path("tests/test_files/input_test_train.yml")
 path_trained_model = Path("tests/test_files/input_test_predict.yml")
@@ -18,15 +18,15 @@ def test_main(mocker):
     mocker.patch("argparse.ArgumentParser.parse_args", return_value=argparse.Namespace(
         i=path_input_test, w=".", mode="train"))
 
-    mocker.patch("swan.models.models.predict_properties", return_value=None)
-    mocker.patch("swan.models.models.train_and_validate_model", return_value=None)
+    mocker.patch("swan.models.modeller.predict_properties", return_value=None)
+    mocker.patch("swan.models.modeller.train_and_validate_model", return_value=None)
     main()
 
 
 def test_split_data():
     """Check that training and validation set are independent."""
     opts = validate_input(path_input_test)
-    researcher = Modeler(opts)
+    researcher = Modeller(opts)
     researcher.split_data()
     xs = np.intersect1d(researcher.index_train, researcher.index_valid)
     assert xs.size == 0
@@ -44,7 +44,7 @@ def test_train_data(tmp_path):
     opts.torch_config.epochs = 5
     opts.torch_config.batch_size = 500
 
-    researcher = Modeler(opts)
+    researcher = Modeller(opts)
     researcher.transform_data()
     researcher.split_data()
     researcher.load_data()
