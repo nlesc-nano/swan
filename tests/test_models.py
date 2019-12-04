@@ -53,9 +53,11 @@ def test_train_data(tmp_path):
     assert os.path.exists(opts.model_path)
     assert mean_loss > 0 and mean_loss < 1e-1
 
+
 def test_predict_unknown():
     """Predict data for some smiles."""
     opts = validate_input(path_trained_model)
+    opts.use_cuda = False
     df = predict_properties(opts)
     assert df['predicted_property'].notna().all()
 
