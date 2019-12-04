@@ -3,7 +3,7 @@ dataset_file:
   # data/Carboxylic_acids/1E4.csv
 property: gammas
 
-use_cuda: True
+use_cuda: False
 
 fingerprint_size: 2000
 

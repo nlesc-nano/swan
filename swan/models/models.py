@@ -8,11 +8,12 @@ import numpy as np
 import pandas as pd
 import torch
 from torch import Tensor
+from torch import nn
 from torch.autograd import Variable
 from torch.utils.data import DataLoader, Dataset
 
 from swan.log_config import config_logger
-from .featurizer import (create_molecules, generate_fingerprints)
+from .featurizer import (create_molecules, generate_fingerprints, compute_3D_descriptors)
 from .input_validation import validate_input
 from .plot import create_scatter_plot
 
@@ -49,21 +50,49 @@ def main():
         predict_properties(opts)
 
 
-class Net(torch.nn.Module):
-    """Create a Neural network object using Pytorch."""
+class Siamese(nn.Module):
+    """Siamese architecture."""
 
-    def __init__(self, n_feature: int, n_hidden: int, n_output: int):
-        super(Net, self).__init__()
-        self.seq = torch.nn.Sequential(
-            torch.nn.Linear(n_feature, n_hidden),
-            torch.nn.ReLU(),
-            torch.nn.Linear(n_hidden, n_hidden),
-            torch.nn.ReLU(),
-            torch.nn.Linear(n_hidden, n_output),
+    def __init__(self, n_feature: int, n_hidden: int):
+        super(Siamese, self).__init__()
+        self.net_fingerprints = nn.Sequential(
+            nn.Linear(n_feature, n_hidden),
+            nn.ReLU(),
+            nn.Linear(n_hidden, n_hidden),
+            nn.ReLU(),
+            nn.Linear(n_hidden, 1),
+        )
+        self.net_descriptors_3d = nn.Sequential(
+            nn.Linear(2, 4),
+            nn.ReLU(),
+            nn.Linear(4, 4),
+            nn.ReLU(),
+            nn.Linear(4, 1),
+        )
+        self.out = nn.Linear(2, 1)
+
+    def forward(self, tensor_1: Tensor, tensor_2: Tensor):
+        """Run the model."""
+        x = self.net_fingerprints(tensor_1)
+        y = self.net_descriptors_3d(tensor_2)
+        return self.out(torch.abs(x - y))
+
+
+class FullyConnected(nn.Module):
+    """Fully connected network for non-linear regression."""
+
+    def __init__(self, n_feature: int, n_hidden: int):
+        super(FullyConnected, self).__init__()
+        self.seq = nn.Sequential(
+            nn.Linear(n_feature, n_hidden),
+            nn.ReLU(),
+            nn.Linear(n_hidden, n_hidden),
+            nn.ReLU(),
+            nn.Linear(n_hidden, 1),
         )
 
     def forward(self, tensor: Tensor) -> Tensor:
-        """Activation function for hidden layer."""
+        """Run the model."""
         return self.seq(tensor)
 
 
@@ -74,7 +103,8 @@ class LigandsDataset(Dataset):
         molecules = df['molecules']
 
         fingerprints = generate_fingerprints(molecules, bits=fingerprint_size)
-        self.features = torch.from_numpy(fingerprints)
+        # self.descriptors = torch.from_numpy(compute_3D_descriptors(molecules))
+        self.fingerprints = torch.from_numpy(fingerprints)
         labels = df[property_name].to_numpy(np.float32)
         size_labels = labels.size
         self.labels = torch.from_numpy(labels.reshape(size_labels, 1))
@@ -83,7 +113,7 @@ class LigandsDataset(Dataset):
         return self.labels.shape[0]
 
     def __getitem__(self, idx: int):
-        return self.features[idx], self.labels[idx]
+        return self.fingerprints[idx], self.labels[idx]
 
 
 class Modeler:
@@ -116,7 +146,8 @@ class Modeler:
     def create_new_model(self):
         """Configure a new model."""
         # Create an Network architecture
-        self.network = Net(n_feature=self.opts.fingerprint_size, n_hidden=1000, n_output=1)
+        self.network = FullyConnected(
+            n_feature=self.opts.fingerprint_size, n_hidden=1000)
         self.network = self.network.to(self.device)
 
         # Create an optimizer
@@ -124,7 +155,7 @@ class Modeler:
             self.network.parameters(), **self.opts.torch_config.optimizer)
 
         # Create loss function
-        self.loss_func = torch.nn.MSELoss()
+        self.loss_func = nn.MSELoss()
 
     def load_data(self):
         """Create loaders for the train and validation dataset."""
@@ -199,7 +230,7 @@ class Modeler:
     def plot_evaluation(self):
         """Create a scatter plot of the predict values vs the ground true."""
         dataset = self.valid_loader.dataset
-        tensor_features = dataset.features
+        tensor_features = dataset.fingerprints
         if self.opts.use_cuda:
             tensor_features = tensor_features.to('cuda')
         predicted = self.to_numpy_detached(self.network(tensor_features))
