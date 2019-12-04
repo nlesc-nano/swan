@@ -7,13 +7,15 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
-from torch import Tensor
-from torch import nn
+from rdkit.Chem import AllChem
+from torch import Tensor, nn
 from torch.autograd import Variable
 from torch.utils.data import DataLoader, Dataset
 
 from swan.log_config import config_logger
-from .featurizer import (create_molecules, generate_fingerprints, compute_3D_descriptors)
+
+from .featurizer import (compute_3D_descriptors, create_molecules,
+                         generate_fingerprints)
 from .input_validation import validate_input
 from .plot import create_scatter_plot
 
@@ -53,7 +55,7 @@ def main():
 class Siamese(nn.Module):
     """Siamese architecture."""
 
-    def __init__(self, n_feature: int, n_hidden: int):
+    def __init__(self, n_feature: int, n_hidden: int = 1000):
         super(Siamese, self).__init__()
         self.net_fingerprints = nn.Sequential(
             nn.Linear(n_feature, n_hidden),
@@ -63,25 +65,24 @@ class Siamese(nn.Module):
             nn.Linear(n_hidden, 1),
         )
         self.net_descriptors_3d = nn.Sequential(
-            nn.Linear(2, 4),
+            nn.Linear(2, 2),
             nn.ReLU(),
-            nn.Linear(4, 4),
+            nn.Linear(2, 2),
             nn.ReLU(),
-            nn.Linear(4, 1),
+            nn.Linear(2, 1),
         )
-        self.out = nn.Linear(2, 1)
 
     def forward(self, tensor_1: Tensor, tensor_2: Tensor):
         """Run the model."""
         x = self.net_fingerprints(tensor_1)
         y = self.net_descriptors_3d(tensor_2)
-        return self.out(torch.abs(x - y))
+        return torch.abs(x - y)
 
 
 class FullyConnected(nn.Module):
     """Fully connected network for non-linear regression."""
 
-    def __init__(self, n_feature: int, n_hidden: int):
+    def __init__(self, n_feature: int, n_hidden: int = 1000):
         super(FullyConnected, self).__init__()
         self.seq = nn.Sequential(
             nn.Linear(n_feature, n_hidden),
@@ -103,7 +104,7 @@ class LigandsDataset(Dataset):
         molecules = df['molecules']
 
         fingerprints = generate_fingerprints(molecules, bits=fingerprint_size)
-        # self.descriptors = torch.from_numpy(compute_3D_descriptors(molecules))
+        self.descriptors = torch.from_numpy(compute_3D_descriptors(molecules))
         self.fingerprints = torch.from_numpy(fingerprints)
         labels = df[property_name].to_numpy(np.float32)
         size_labels = labels.size
@@ -113,7 +114,8 @@ class LigandsDataset(Dataset):
         return self.labels.shape[0]
 
     def __getitem__(self, idx: int):
-        return self.fingerprints[idx], self.labels[idx]
+        return (self.fingerprints[idx], self.descriptors[idx]), self.labels[idx]
+        # return (self.fingerprints[idx],), self.labels[idx]
 
 
 class Modeler:
@@ -138,15 +140,15 @@ class Modeler:
         # discard nan values
         self.data.dropna(inplace=True)
 
-        # # Create conformers
-        # self.data['molecules'].apply(lambda mol: AllChem.EmbedMolecule(mol))
-        # # Discard molecules that do not have conformer
-        # self.data = self.data[self.data['molecules'].apply(lambda x: x.GetNumConformers()) >= 1]
+        # Create conformers
+        self.data['molecules'].apply(lambda mol: AllChem.EmbedMolecule(mol))
+        # Discard molecules that do not have conformer
+        self.data = self.data[self.data['molecules'].apply(lambda x: x.GetNumConformers()) >= 1]
 
     def create_new_model(self):
         """Configure a new model."""
         # Create an Network architecture
-        self.network = FullyConnected(
+        self.network = Siamese(
             n_feature=self.opts.fingerprint_size, n_hidden=1000)
         self.network = self.network.to(self.device)
 
@@ -180,7 +182,7 @@ class Modeler:
             loss_batch = 0
             for x_batch, y_batch in self.train_loader:
                 if self.opts.use_cuda:
-                    x_batch = x_batch.to('cuda')
+                    x_batch = (x.to('cuda') for x in x_batch)
                     y_batch = y_batch.to('cuda')
                 loss_batch = self.train_batch(x_batch, y_batch)
             mean = loss_batch / self.opts.torch_config.batch_size
@@ -190,9 +192,9 @@ class Modeler:
         # Save the models
         torch.save(self.network.state_dict(), self.opts.model_path)
 
-    def train_batch(self, x_batch: Variable, y_batch: Variable) -> float:
+    def train_batch(self, inputs: tuple, y_batch: Variable) -> float:
         """Train a single batch."""
-        prediction = self.network(x_batch)
+        prediction = self.network(*inputs)
         loss = self.loss_func(prediction, y_batch)
         loss.backward()              # backpropagation, compute gradients
         self.optimizer.step()        # apply gradients
@@ -209,31 +211,33 @@ class Modeler:
         with torch.no_grad():
             self.network.eval()
             val_loss = 0
-            for x_val, y_val in self.valid_loader:
+            for xs_val, y_val in self.valid_loader:
                 if self.opts.use_cuda:
-                    x_val = x_val.to('cuda')
+                    xs_val = (x.to('cuda') for x in xs_val)
                     y_val = y_val.to('cuda')
-                predicted = self.network(x_val)
+                predicted = self.network(*xs_val)
                 val_loss += self.loss_func(y_val, predicted)
             mean_val_loss = val_loss / self.opts.torch_config.batch_size
         LOGGER.info(f"validation loss: {mean_val_loss}")
         return mean_val_loss
 
-    def predict(self, tensor: Tensor):
+    def predict(self, *args):
         """Use a previously trained model to predict."""
         with torch.no_grad():
             self.network.load_state_dict(torch.load(self.opts.model_path))
             self.network.eval()  # Set model to evaluation mode
-            predicted = self.network(tensor)
+            predicted = self.network(*args)
         return predicted
 
     def plot_evaluation(self):
         """Create a scatter plot of the predict values vs the ground true."""
         dataset = self.valid_loader.dataset
-        tensor_features = dataset.fingerprints
+
         if self.opts.use_cuda:
-            tensor_features = tensor_features.to('cuda')
-        predicted = self.to_numpy_detached(self.network(tensor_features))
+            fingerprints = dataset.fingerprints.to('cuda')
+            descriptors = dataset.descriptors.to('cuda')
+        features = (fingerprints, descriptors)
+        predicted = self.to_numpy_detached(self.network(*features))
         expected = np.stack(dataset.labels).flatten()
         create_scatter_plot(predicted, expected)
 
@@ -270,9 +274,12 @@ def predict_properties(opts: dict) -> Tensor:
     LOGGER.info(f"Loading previously trained model from: {opts.model_path}")
     researcher = Modeler(opts)
     fingerprints = generate_fingerprints(researcher.data['molecules'])
-    tensor = torch.from_numpy(fingerprints).to(researcher.device)
-    predicted = researcher.to_numpy_detached(researcher.predict(tensor))
+    descriptors = compute_3D_descriptors(researcher.data['molecules'])
+    tensor_1 = torch.from_numpy(fingerprints).to(researcher.device)
+    tensor_2 = torch.from_numpy(descriptors).to(researcher.device)
+    predicted = researcher.to_numpy_detached(researcher.predict(tensor_1, tensor_2))
     transformed = np.exp(predicted)
     df = pd.DataFrame({'smiles': researcher.data['smiles'].to_numpy(),
                        'predicted_property': transformed.flatten()})
+    print(df)
     return df

@@ -63,7 +63,5 @@ def test_predict_unknown():
 
 
 def test_save_dataset(tmp_path):
-    """
-    Test that the dataset is stored correctly
-    """
+    """Test that the dataset is stored correctly."""
     return True
