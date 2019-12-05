@@ -46,7 +46,7 @@ setup(
         'CAT@git+https://github.com/nlesc-nano/CAT@master',
         'nano-CAT@git+https://github.com/nlesc-nano/nano-CAT@master',
         'data-CAT@git+https://github.com/nlesc-nano/data-CAT@master',
-        'numpy', 'pandas', 'pyyaml>=5.1.1', 'seaborn', 'schema'],
+        'numpy', 'pandas', 'pyyaml>=5.1.1', 'seaborn', 'schema', 'sqalchemy'],
     setup_requires=[
         # dependency for `python setup.py test`
         'pytest-runner',
