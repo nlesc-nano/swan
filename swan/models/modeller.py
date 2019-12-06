@@ -54,10 +54,13 @@ def main():
 class LigandsDataset(Dataset):
     """Read the smiles, properties and compute the fingerprints."""
 
-    def __init__(self, df: pd.DataFrame, property_name: str, fingerprint_size: int) -> tuple:
+    def __init__(
+            self, df: pd.DataFrame, property_name: str, fingerprint: str,
+            fingerprint_size: int) -> tuple:
         molecules = df['molecules']
 
-        fingerprints = generate_fingerprints(molecules, bits=fingerprint_size)
+        fingerprints = generate_fingerprints(
+            molecules, fingerprint, fingerprint_size)
         self.fingerprints = torch.from_numpy(fingerprints)
         labels = df[property_name].to_numpy(np.float32)
         size_labels = labels.size
@@ -119,6 +122,7 @@ class Modeller:
         """Create a DataLoader instance for the data."""
         dataset = LigandsDataset(
             self.data.loc[indices], 'transformed_labels',
+            self.opts.fingerprint,
             self.opts.model.fingerprint_size)
         return DataLoader(
             dataset=dataset, batch_size=self.opts.torch_config.batch_size)
@@ -184,9 +188,7 @@ class Modeller:
     def plot_evaluation(self):
         """Create a scatter plot of the predict values vs the ground true."""
         dataset = self.valid_loader.dataset
-
-        if self.opts.use_cuda:
-            fingerprints = dataset.fingerprints.to('cuda')
+        fingerprints = dataset.fingerprints.to(self.device)
         predicted = self.to_numpy_detached(self.network(fingerprints))
         expected = np.stack(dataset.labels).flatten()
         create_scatter_plot(predicted, expected)
@@ -223,7 +225,8 @@ def predict_properties(opts: dict) -> Tensor:
     """Use a previous trained model to predict properties."""
     LOGGER.info(f"Loading previously trained model from: {opts.model_path}")
     researcher = Modeller(opts)
-    fingerprints = generate_fingerprints(researcher.data['molecules'])
+    fingerprints = generate_fingerprints(
+        researcher.data['molecules'], opts.fingerprint, opts.model.fingerprint_size)
     fingerprints = torch.from_numpy(fingerprints).to(researcher.device)
     predicted = researcher.to_numpy_detached(researcher.predict(fingerprints))
     transformed = np.exp(predicted)

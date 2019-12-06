@@ -5,10 +5,11 @@ use_cuda: False
 
 property: gammas
 
+fingerprint: morgan
+
 torch_config:
-  epochs: 200
+  epochs: 5
   batch_size: 100
-  featurizer: circularfingerprint
   optimizer:
     lr: 0.2
 

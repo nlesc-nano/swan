@@ -1,16 +1,19 @@
 dataset_file:
   tests/test_files/thousand.csv
-  # data/Carboxylic_acids/1E4.csv
+
 property: gammas
 
 use_cuda: False
 
-fingerprint_size: 2000
+fingerprint: atompair
+
+model:
+  fingerprint_size: 2048
+  hidden_cells: 1000
 
 torch_config:
-  epochs: 200
+  epochs: 20
   batch_size: 100
-  featurizer: circularfingerprint
   optimizer:
     lr: 0.2
     

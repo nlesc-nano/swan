@@ -9,26 +9,39 @@ import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import AllChem, Descriptors3D
 
+dictionary_functions = {
+    "morgan": AllChem.GetMorganFingerprintAsBitVect,
+    "atompair": AllChem.GetHashedAtomPairFingerprintAsBitVect
+}
 
-def generate_fingerprints(molecules: pd.Series, radius: int = 2, bits: int = 2000) -> np.ndarray:
+
+def generate_fingerprints(molecules: pd.Series, fingerprint: str, bits: int) -> np.ndarray:
     """Generate the Extended-Connectivity Fingerprints (ECFP).
 
     Use the method described at: https://doi.org/10.1021/ci100050t
     """
     size = len(molecules)
-    chunks = size // cpu_count() if size > cpu_count() else 1
-    worker = partial(compute_fingerprint, molecules, radius, bits)
-    with Pool() as p:
-        it = p.imap(worker, molecules.index, chunks)
-        fingerprints = np.fromiter(chain.from_iterable(it), np.float32)
+    fingerprint_calculator = dictionary_functions[fingerprint]
+    # chunks = size // cpu_count() if size > cpu_count() else 1
+    # worker = partial(compute_fingerprint, molecules, fingerprint_calculator, bits)
+    # # with Pool(1) as p:
+    #     it = p.imap(worker, molecules.index, chunks)
+    #     fingerprints = np.fromiter(chain.from_iterable(it), np.float32)
 
-    # fingerprints = [compute_fingerprint(mol, radius, bits) for mol in molecules]
-    return fingerprints.reshape(size, bits)
+    # return fingerprints.reshape(size, bits)
+    it = (compute_fingerprint(molecules[i], fingerprint_calculator, bits) for i in molecules.index)
+    result = np.fromiter(
+        chain.from_iterable(it),
+        np.float32,
+        size * bits
+    )
+
+    return result.reshape(size, bits)
 
 
-def compute_fingerprint(molecules, radius: int, nBits: int, index: int) -> np.ndarray:
+def compute_fingerprint(molecule, function: callable, nBits: int) -> np.ndarray:
     """Calculate a single fingerprint."""
-    fp = AllChem.GetMorganFingerprintAsBitVect(molecules[index], radius, nBits)
+    fp = function(molecule, nBits)
     return np.fromiter((float(k) for k in fp.ToBitString()), np.float32, nBits)
 
 

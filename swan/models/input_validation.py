@@ -68,9 +68,6 @@ SCHEMA_TORCH = Schema({
 
     Optional("optimizer", default=OPTIMIZER_DEFAULTS): SCHEMA_OPTIMIZER,
 
-    # Method to get the features
-    Optional("featurizer", default='circularfingerprint'): any_lambda(('circularfingerprint')),
-
     # Metric to evaluate the model
     Optional("metric", default='r2_score'): str,
 
@@ -80,7 +77,7 @@ SCHEMA_TORCH = Schema({
 })
 
 SCHEMA_MODEL = Schema({
-    Optional("fingerprint_size", default=2000): int,
+    Optional("fingerprint_size", default=2048): int,
 
     Optional("hidden_cells", default=1000): int
 
@@ -94,7 +91,9 @@ SCHEMA_MODELER = Schema({
     # Property to predict
     "property": str,
 
-    Optional("fingerprint_size", default=2000): int,
+    # Method to get the features
+    Optional("fingerprint", default='atompair'): any_lambda(('morgan', 'atompair')),
+
 
     # Whether to use CPU or GPU
     Optional("use_cuda", default=False): bool,

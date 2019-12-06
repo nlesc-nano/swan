@@ -34,5 +34,5 @@ def test_schema_torch():
     """
     Check input for tensorgraph models
     """
-    d = {"epochs": 100, "featurizer": "circularfingerprint"}
+    d = {"epochs": 100, "batch_size": 100}
     SCHEMA_TORCH.validate(d)
