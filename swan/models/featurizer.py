@@ -11,7 +11,8 @@ from rdkit.Chem import AllChem, Descriptors3D
 
 dictionary_functions = {
     "morgan": AllChem.GetMorganFingerprintAsBitVect,
-    "atompair": AllChem.GetHashedAtomPairFingerprintAsBitVect
+    "atompair": AllChem.GetHashedAtomPairFingerprintAsBitVect,
+    "torsion": AllChem.GetHashedTopologicalTorsionFingerprintAsBitVect
 }
 
 
