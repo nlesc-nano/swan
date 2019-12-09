@@ -92,7 +92,7 @@ SCHEMA_MODELER = Schema({
     "property": str,
 
     # Method to get the features
-    Optional("fingerprint", default='atompair'): any_lambda(('morgan', 'atompair')),
+    Optional("fingerprint", default='atompair'): any_lambda(('morgan', 'atompair', 'torsion')),
 
 
     # Whether to use CPU or GPU
