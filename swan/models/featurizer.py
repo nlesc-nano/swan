@@ -1,19 +1,68 @@
 """Compute the fingerprints of an array of smiles."""
 
-from functools import partial
 from itertools import chain
-from multiprocessing import Pool, cpu_count
 
 import numpy as np
 import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import AllChem, Descriptors3D
 
+from swan.data.atomic_features import (ELEMENTS, BONDS, dict_element_features)
+
 dictionary_functions = {
     "morgan": AllChem.GetMorganFingerprintAsBitVect,
     "atompair": AllChem.GetHashedAtomPairFingerprintAsBitVect,
     "torsion": AllChem.GetHashedTopologicalTorsionFingerprintAsBitVect
 }
+
+
+def generate_molecular_features(mol: Chem.rdchem.Mol) -> tuple:
+    """Generate both atomic and atom-pair features excluding the hydrogens.
+
+    Atom types: C N O F P S Cl Br I.
+
+    Atomic features,
+
+    * Atom type: One hot vector (size 9).
+    * Radius: Van der Waals and Convalent radious (size 2)
+    * Electronegativity (size 1)
+    * Is Aromatic: Whether the atoms is part of an aromatic ring (size 1)
+
+    Bond features,
+
+    * Bond type: One hot vector of {Single,  Aromatic, Double, Triple} (size 4)
+    * Same Ring: Whether the atoms are in the same ring (size 1)
+    * Distance: Euclidean distance between the pair (size 1)
+    """
+    number_atoms = mol.GetNumAtoms()
+    len_elements = len(ELEMENTS)
+    atomic_features = np.zeros((number_atoms, len_elements + 4))
+    for i, atom in enumerate(mol.GetAtoms()):
+        atomic_features[i] = dict_element_features[atom.GetSymbol()]
+        atomic_features[i, -1] = int(atom.GetIsAromatic())
+
+    bond_features = np.zeros((number_atoms, len(BONDS) + 2))
+    for i, bond in enumerate(mol.GetBonds()):
+        bond_features[i] = generate_bond_features(mol, bond)
+
+    return atomic_features, bond_features
+
+
+def generate_bond_features(mol: Chem.rdchem.Mol, bond: Chem.rdchem.Bond) -> np.array:
+    """Compute the features for a given bond."""
+    bond_features = np.zeros(len(BONDS) + 2)
+    bond_type = BONDS.index(bond.GetBondType())
+    bond_features[bond_type] = 1
+
+    # Is the bond in the same ring
+    bond_features[4] = int(bond.IsInRing())
+
+    # Distance
+    begin = bond.GetBeginAtom().GetIdx()
+    end = bond.GetEndAtom().GetIdx()
+    bond_features[5] = Chem.rdMolTransforms.GetBondLength(mol.GetConformer(), begin, end)
+
+    return bond_features
 
 
 def generate_fingerprints(molecules: pd.Series, fingerprint: str, bits: int) -> np.ndarray:
@@ -23,13 +72,7 @@ def generate_fingerprints(molecules: pd.Series, fingerprint: str, bits: int) -> 
     """
     size = len(molecules)
     fingerprint_calculator = dictionary_functions[fingerprint]
-    # chunks = size // cpu_count() if size > cpu_count() else 1
-    # worker = partial(compute_fingerprint, molecules, fingerprint_calculator, bits)
-    # # with Pool(1) as p:
-    #     it = p.imap(worker, molecules.index, chunks)
-    #     fingerprints = np.fromiter(chain.from_iterable(it), np.float32)
 
-    # return fingerprints.reshape(size, bits)
     it = (compute_fingerprint(molecules[i], fingerprint_calculator, bits) for i in molecules.index)
     result = np.fromiter(
         chain.from_iterable(it),

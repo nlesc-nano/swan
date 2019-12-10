@@ -7,13 +7,15 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
+from rdkit.Chem import AllChem
 from torch import Tensor, nn
 from torch.autograd import Variable
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 
 from swan.log_config import config_logger
 from swan.models.models import select_model
 
+from .datasets import FingerprintsDataset
 from .featurizer import create_molecules, generate_fingerprints
 from .input_validation import validate_input
 from .plot import create_scatter_plot
@@ -51,28 +53,6 @@ def main():
         predict_properties(opts)
 
 
-class LigandsDataset(Dataset):
-    """Read the smiles, properties and compute the fingerprints."""
-
-    def __init__(
-            self, df: pd.DataFrame, property_name: str, fingerprint: str,
-            fingerprint_size: int) -> tuple:
-        molecules = df['molecules']
-
-        fingerprints = generate_fingerprints(
-            molecules, fingerprint, fingerprint_size)
-        self.fingerprints = torch.from_numpy(fingerprints)
-        labels = df[property_name].to_numpy(np.float32)
-        size_labels = labels.size
-        self.labels = torch.from_numpy(labels.reshape(size_labels, 1))
-
-    def __len__(self):
-        return self.labels.shape[0]
-
-    def __getitem__(self, idx: int):
-        return self.fingerprints[idx], self.labels[idx]
-
-
 class Modeller:
     """Object to create statistical models."""
 
@@ -95,10 +75,10 @@ class Modeller:
         # discard nan values
         self.data.dropna(inplace=True)
 
-        # # Create conformers
-        # self.data['molecules'].apply(lambda mol: AllChem.EmbedMolecule(mol))
-        # # Discard molecules that do not have conformer
-        # self.data = self.data[self.data['molecules'].apply(lambda x: x.GetNumConformers()) >= 1]
+        # Create conformers
+        self.data['molecules'].apply(lambda mol: AllChem.EmbedMolecule(mol))
+        # Discard molecules that do not have conformer
+        self.data = self.data[self.data['molecules'].apply(lambda x: x.GetNumConformers()) >= 1]
 
     def create_new_model(self):
         """Configure a new model."""
@@ -120,7 +100,7 @@ class Modeller:
 
     def create_data_loader(self, indices: np.array) -> DataLoader:
         """Create a DataLoader instance for the data."""
-        dataset = LigandsDataset(
+        dataset = FingerprintsDataset(
             self.data.loc[indices], 'transformed_labels',
             self.opts.fingerprint,
             self.opts.model.fingerprint_size)
@@ -232,5 +212,4 @@ def predict_properties(opts: dict) -> Tensor:
     transformed = np.exp(predicted)
     df = pd.DataFrame({'smiles': researcher.data['smiles'].to_numpy(),
                        'predicted_property': transformed.flatten()})
-    print(df)
     return df
