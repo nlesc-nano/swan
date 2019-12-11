@@ -16,12 +16,12 @@ from torch.utils.data import DataLoader
 from swan.log_config import config_logger
 from swan.models.models import select_model
 
-from .datasets import FingerprintsDataset
+from .datasets import FingerprintsDataset, MolecularGraphDataset
 from .featurizer import create_molecules, generate_fingerprints
 from .input_validation import validate_input
 from .plot import create_scatter_plot
 
-__all__ = ["FingerprintModeller", "Modeller"]
+__all__ = ["FingerprintModeller", "GraphModeller", "Modeller"]
 
 # Starting logger
 LOGGER = logging.getLogger(__name__)
@@ -51,7 +51,8 @@ def main():
     if args.mode == "train":
         train_and_validate_model(opts)
     else:
-        predict_properties(opts)
+        rs = predict_properties(opts)
+        print(rs)
 
 
 class Modeller:
@@ -63,7 +64,7 @@ class Modeller:
         self.data = pd.read_csv(opts.dataset_file, index_col=0).reset_index(drop=True)
         self.data['molecules'] = create_molecules(self.data['smiles'].to_numpy())
 
-        if opts.use_cuda:
+        if opts.use_cuda and opts.mode == "train":
             self.device = torch.device("cuda:0")
         else:
             self.device = torch.device("cpu")
@@ -95,10 +96,13 @@ class Modeller:
         # Create loss function
         self.loss_func = nn.MSELoss()
 
-    def load_data(self):
+    def load_data(self, train: bool = True):
         """Create loaders for the train and validation dataset."""
-        self.train_loader = self.create_data_loader(self.index_train)
-        self.valid_loader = self.create_data_loader(self.index_valid)
+        if train:
+            self.train_loader = self.create_data_loader(self.index_train)
+            self.valid_loader = self.create_data_loader(self.index_valid)
+        else:
+            self.predict_loader = self.create_data_loader(self.data.index)
 
     @abstractmethod
     def create_data_loader(self, indices: np.array) -> DataLoader:
@@ -177,7 +181,7 @@ class Modeller:
 
 
 class FingerprintModeller(Modeller):
-    """Object to create statistical models."""
+    """Object to create models using fingerprints."""
 
     def transform_data(self) -> pd.DataFrame:
         """Create a new column with the transformed target."""
@@ -201,6 +205,17 @@ class FingerprintModeller(Modeller):
         create_scatter_plot(predicted, expected)
 
 
+class GraphModeller(Modeller):
+    """Object to create models using molecular graphs."""
+
+    def create_data_loader(self, indices: np.array) -> DataLoader:
+        """Create a DataLoader instance for the data."""
+        dataset = MolecularGraphDataset(
+            self.data.loc[indices], 'transformed_labels')
+        return DataLoader(
+            dataset=dataset, batch_size=self.opts.torch_config.batch_size)
+
+
 def train_and_validate_model(opts: dict) -> None:
     """Train the model usign the data specificied by the user."""
     researcher = FingerprintModeller(opts)
@@ -216,9 +231,10 @@ def predict_properties(opts: dict) -> Tensor:
     """Use a previous trained model to predict properties."""
     LOGGER.info(f"Loading previously trained model from: {opts.model_path}")
     researcher = FingerprintModeller(opts)
+    # Generate features
     fingerprints = generate_fingerprints(
         researcher.data['molecules'], opts.featurizer.fingerprint, opts.model.input_cells)
-    fingerprints = torch.from_numpy(fingerprints).to(researcher.device)
+    fingerprints = torch.from_numpy(fingerprints)
     predicted = researcher.to_numpy_detached(researcher.predict(fingerprints))
     transformed = np.exp(predicted)
     df = pd.DataFrame({'smiles': researcher.data['smiles'].to_numpy(),

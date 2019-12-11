@@ -15,6 +15,11 @@ dictionary_functions = {
     "torsion": AllChem.GetHashedTopologicalTorsionFingerprintAsBitVect
 }
 
+# atom_type(len_elements) + vdw + covalent_radius + electronegativity + is_aromatic
+NUMBER_ATOMIC_GRAPH_FEATURES = len(ELEMENTS) + 4
+# Bond_type(4) + same_ring + distance
+NUMBER_BOND_GRAPH_FEATURES = len(BONDS) + 2
+
 
 def generate_molecular_features(mol: Chem.rdchem.Mol) -> tuple:
     """Generate both atomic and atom-pair features excluding the hydrogens.
@@ -35,13 +40,12 @@ def generate_molecular_features(mol: Chem.rdchem.Mol) -> tuple:
     * Distance: Euclidean distance between the pair (size 1)
     """
     number_atoms = mol.GetNumAtoms()
-    len_elements = len(ELEMENTS)
-    atomic_features = np.zeros((number_atoms, len_elements + 4))
+    atomic_features = np.zeros((number_atoms, NUMBER_ATOMIC_GRAPH_FEATURES))
     for i, atom in enumerate(mol.GetAtoms()):
         atomic_features[i] = dict_element_features[atom.GetSymbol()]
         atomic_features[i, -1] = int(atom.GetIsAromatic())
 
-    bond_features = np.zeros((number_atoms, len(BONDS) + 2))
+    bond_features = np.zeros((number_atoms, NUMBER_BOND_GRAPH_FEATURES))
     for i, bond in enumerate(mol.GetBonds()):
         bond_features[i] = generate_bond_features(mol, bond)
 
@@ -50,7 +54,7 @@ def generate_molecular_features(mol: Chem.rdchem.Mol) -> tuple:
 
 def generate_bond_features(mol: Chem.rdchem.Mol, bond: Chem.rdchem.Bond) -> np.array:
     """Compute the features for a given bond."""
-    bond_features = np.zeros(len(BONDS) + 2)
+    bond_features = np.zeros(NUMBER_BOND_GRAPH_FEATURES)
     bond_type = BONDS.index(bond.GetBondType())
     bond_features[bond_type] = 1
 

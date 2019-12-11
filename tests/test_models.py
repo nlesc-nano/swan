@@ -9,14 +9,15 @@ from swan.models import FingerprintModeller
 from swan.models.input_validation import validate_input
 from swan.models.modeller import main, predict_properties
 
-path_input_test = Path("tests/test_files/input_test_train.yml")
+path_input_test_fingerprints = Path("tests/test_files/input_test_train.yml")
+path_input_test_graph = Path("tests/test_files/input_test_graph_train.yml")
 path_trained_model = Path("tests/test_files/input_test_predict.yml")
 
 
 def test_main(mocker):
     """Test the CLI for the models."""
     mocker.patch("argparse.ArgumentParser.parse_args", return_value=argparse.Namespace(
-        i=path_input_test, w=".", mode="train"))
+        i=path_input_test_fingerprints, w=".", mode="train"))
 
     mocker.patch("swan.models.modeller.predict_properties", return_value=None)
     mocker.patch("swan.models.modeller.train_and_validate_model", return_value=None)
@@ -25,16 +26,16 @@ def test_main(mocker):
 
 def test_split_data():
     """Check that training and validation set are independent."""
-    opts = validate_input(path_input_test)
+    opts = validate_input(path_input_test_fingerprints)
     researcher = FingerprintModeller(opts)
     researcher.split_data()
     xs = np.intersect1d(researcher.index_train, researcher.index_valid)
     assert xs.size == 0
 
 
-def test_train_data(tmp_path):
+def test_train_data_fingerprints(tmp_path):
     """Test that the dataset is trained properly."""
-    opts = validate_input(path_input_test)
+    opts = validate_input(path_input_test_fingerprints)
 
     # Use a temporal folde and train in CPU
     opts.model_path = os.path.join(tmp_path, "swan_models.pt")
@@ -54,7 +55,7 @@ def test_train_data(tmp_path):
     assert mean_loss > 0 and mean_loss < 1e-1
 
 
-def test_predict_unknown():
+def test_predict_unknown_fingerprints():
     """Predict data for some smiles."""
     opts = validate_input(path_trained_model)
     opts.use_cuda = False
@@ -62,6 +63,8 @@ def test_predict_unknown():
     assert df['predicted_property'].notna().all()
 
 
-def test_save_dataset(tmp_path):
-    """Test that the dataset is stored correctly."""
-    return True
+def test_train_molecular_graph():
+    """Test the training of convulution neural network on a molecular graph."""
+    pass
+    # opts = validate_input(path_input_test_fingerprints)
+    # researcher = GraphModeller(opts)
