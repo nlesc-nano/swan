@@ -50,4 +50,4 @@ class FullyConnected(nn.Module):
 
 def select_model(opts: dict) -> nn.Module:
     """Select a model using the input provided by the user."""
-    return FullyConnected(opts.model.fingerprint_size, opts.model.hidden_cells)
+    return FullyConnected(opts.model.input_cells, opts.model.hidden_cells)

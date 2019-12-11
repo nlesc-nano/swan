@@ -1,9 +1,10 @@
 """Module to process dataset."""
-from torch.utils.data import Dataset
-import pandas as pd
 import numpy as np
-from .featurizer import generate_fingerprints
+import pandas as pd
 import torch
+from torch.utils.data import Dataset
+
+from .featurizer import generate_fingerprints
 
 
 class MolecularGraphDataset(Dataset):

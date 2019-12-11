@@ -1,6 +1,7 @@
 """Statistical models."""
 import argparse
 import logging
+from abc import abstractmethod
 from datetime import datetime
 from pathlib import Path
 
@@ -20,7 +21,7 @@ from .featurizer import create_molecules, generate_fingerprints
 from .input_validation import validate_input
 from .plot import create_scatter_plot
 
-__all__ = ["Modeller"]
+__all__ = ["FingerprintModeller", "Modeller"]
 
 # Starting logger
 LOGGER = logging.getLogger(__name__)
@@ -78,6 +79,7 @@ class Modeller:
         # Create conformers
         self.data['molecules'].apply(lambda mol: AllChem.EmbedMolecule(mol))
         # Discard molecules that do not have conformer
+        LOGGER.info("Removing moleculas that don't have any conformer.")
         self.data = self.data[self.data['molecules'].apply(lambda x: x.GetNumConformers()) >= 1]
 
     def create_new_model(self):
@@ -98,14 +100,10 @@ class Modeller:
         self.train_loader = self.create_data_loader(self.index_train)
         self.valid_loader = self.create_data_loader(self.index_valid)
 
+    @abstractmethod
     def create_data_loader(self, indices: np.array) -> DataLoader:
         """Create a DataLoader instance for the data."""
-        dataset = FingerprintsDataset(
-            self.data.loc[indices], 'transformed_labels',
-            self.opts.fingerprint,
-            self.opts.model.fingerprint_size)
-        return DataLoader(
-            dataset=dataset, batch_size=self.opts.torch_config.batch_size)
+        pass
 
     def train_model(self):
         """Train a statistical model."""
@@ -165,14 +163,6 @@ class Modeller:
             predicted = self.network(tensor)
         return predicted
 
-    def plot_evaluation(self):
-        """Create a scatter plot of the predict values vs the ground true."""
-        dataset = self.valid_loader.dataset
-        fingerprints = dataset.fingerprints.to(self.device)
-        predicted = self.to_numpy_detached(self.network(fingerprints))
-        expected = np.stack(dataset.labels).flatten()
-        create_scatter_plot(predicted, expected)
-
     def to_numpy_detached(self, tensor: Tensor):
         """Create a view of a Numpy array in CPU."""
         tensor = tensor.cpu() if self.opts.use_cuda else tensor
@@ -185,14 +175,35 @@ class Modeller:
         self.index_valid = np.random.choice(self.data.index, size=size_valid, replace=False)
         self.index_train = np.setdiff1d(self.data.index, self.index_valid, assume_unique=True)
 
+
+class FingerprintModeller(Modeller):
+    """Object to create statistical models."""
+
     def transform_data(self) -> pd.DataFrame:
         """Create a new column with the transformed target."""
         self.data['transformed_labels'] = np.log(self.data[self.opts.property])
 
+    def create_data_loader(self, indices: np.array) -> DataLoader:
+        """Create a DataLoader instance for the data."""
+        dataset = FingerprintsDataset(
+            self.data.loc[indices], 'transformed_labels',
+            self.opts.featurizer.fingerprint,
+            self.opts.model.input_cells)
+        return DataLoader(
+            dataset=dataset, batch_size=self.opts.torch_config.batch_size)
+
+    def plot_evaluation(self):
+        """Create a scatter plot of the predict values vs the ground true."""
+        dataset = self.valid_loader.dataset
+        fingerprints = dataset.fingerprints.to(self.device)
+        predicted = self.to_numpy_detached(self.network(fingerprints))
+        expected = np.stack(dataset.labels).flatten()
+        create_scatter_plot(predicted, expected)
+
 
 def train_and_validate_model(opts: dict) -> None:
     """Train the model usign the data specificied by the user."""
-    researcher = Modeller(opts)
+    researcher = FingerprintModeller(opts)
     researcher.transform_data()
     researcher.split_data()
     researcher.load_data()
@@ -204,9 +215,9 @@ def train_and_validate_model(opts: dict) -> None:
 def predict_properties(opts: dict) -> Tensor:
     """Use a previous trained model to predict properties."""
     LOGGER.info(f"Loading previously trained model from: {opts.model_path}")
-    researcher = Modeller(opts)
+    researcher = FingerprintModeller(opts)
     fingerprints = generate_fingerprints(
-        researcher.data['molecules'], opts.fingerprint, opts.model.fingerprint_size)
+        researcher.data['molecules'], opts.featurizer.fingerprint, opts.model.input_cells)
     fingerprints = torch.from_numpy(fingerprints).to(researcher.device)
     predicted = researcher.to_numpy_detached(researcher.predict(fingerprints))
     transformed = np.exp(predicted)

@@ -5,7 +5,7 @@ from pathlib import Path
 import os
 import numpy as np
 
-from swan.models import Modeller
+from swan.models import FingerprintModeller
 from swan.models.input_validation import validate_input
 from swan.models.modeller import main, predict_properties
 
@@ -26,7 +26,7 @@ def test_main(mocker):
 def test_split_data():
     """Check that training and validation set are independent."""
     opts = validate_input(path_input_test)
-    researcher = Modeller(opts)
+    researcher = FingerprintModeller(opts)
     researcher.split_data()
     xs = np.intersect1d(researcher.index_train, researcher.index_valid)
     assert xs.size == 0
@@ -44,7 +44,7 @@ def test_train_data(tmp_path):
     opts.torch_config.epochs = 5
     opts.torch_config.batch_size = 500
 
-    researcher = Modeller(opts)
+    researcher = FingerprintModeller(opts)
     researcher.transform_data()
     researcher.split_data()
     researcher.load_data()

@@ -1,18 +1,18 @@
 dataset_file:
   tests/test_files/thousand.csv
-
 property: gammas
 
 use_cuda: False
 
-fingerprint: atompair
+featurizer:
+  fingerprint: atompair
 
 model:
-  fingerprint_size: 2048
+  input_cells: 2048
   hidden_cells: 1000
 
 torch_config:
-  epochs: 20
+  epochs: 5
   batch_size: 100
   optimizer:
     lr: 0.2

@@ -5,7 +5,8 @@ use_cuda: False
 
 property: gammas
 
-fingerprint: morgan
+featurizer:
+  fingerprint: morgan
 
 torch_config:
   epochs: 5

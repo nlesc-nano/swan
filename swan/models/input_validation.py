@@ -77,12 +77,20 @@ SCHEMA_TORCH = Schema({
 })
 
 SCHEMA_MODEL = Schema({
-    Optional("fingerprint_size", default=2048): int,
+    Optional("input_cells", default=2048): int,
 
     Optional("hidden_cells", default=1000): int
 
 })
 MODEL_DEFAULTS = SCHEMA_MODEL.validate({})
+
+SCHEMA_FINGERPRINTS = Schema({
+    Optional("fingerprint", default='atompair'): any_lambda(('morgan', 'atompair', 'torsion'))
+})
+
+SCHEMA_GRAPH = Schema({
+    "graph": dict
+})
 
 SCHEMA_MODELER = Schema({
     # Load the dataset from a file
@@ -92,8 +100,7 @@ SCHEMA_MODELER = Schema({
     "property": str,
 
     # Method to get the features
-    Optional("fingerprint", default='atompair'): any_lambda(('morgan', 'atompair', 'torsion')),
-
+    "featurizer": SCHEMA_FINGERPRINTS or SCHEMA_GRAPH,
 
     # Whether to use CPU or GPU
     Optional("use_cuda", default=False): bool,
