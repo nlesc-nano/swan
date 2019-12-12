@@ -69,6 +69,23 @@ def generate_bond_features(mol: Chem.rdchem.Mol, bond: Chem.rdchem.Bond) -> np.a
     return bond_features
 
 
+def compute_molecular_graph_edges(mol: Chem.rdchem.Mol) -> np.array:
+    """Generate the edges for a molecule represented as a graph.
+
+    The edges are represented as a matrix of dimension 2 X (2 * N).
+    With two edges for each bond to represent an undirectional graph.
+    """
+    number_edges = 2 * mol.GetNumBonds()
+    edges = np.zeros((2, number_edges), dtype=np.int)
+    for k, bond in enumerate(mol.GetBonds()):
+        at_1 = bond.GetBeginAtom().GetIdx()
+        at_2 = bond.GetEndAtom().GetIdx()
+        edges[:, 2 * k] = at_1, at_2
+        edges[:, 2 * k + 1] = at_2, at_1
+
+    return edges
+
+
 def generate_fingerprints(molecules: pd.Series, fingerprint: str, bits: int) -> np.ndarray:
     """Generate the Extended-Connectivity Fingerprints (ECFP).
 
