@@ -1,6 +1,8 @@
+"""Check the input schemas."""
+
 from pathlib import Path
 from schema import SchemaError
-from swan.models.input_validation import (
+from swan.input_validation import (
     SCHEMA_TORCH, validate_input)
 import yaml
 

@@ -6,7 +6,7 @@ import os
 import numpy as np
 
 from swan.models import FingerprintModeller
-from swan.models.input_validation import validate_input
+from swan.input_validation import validate_input
 from swan.models.modeller import main, predict_properties
 
 path_input_test_fingerprints = Path("tests/test_files/input_test_train.yml")

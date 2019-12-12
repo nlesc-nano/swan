@@ -9,16 +9,15 @@ import numpy as np
 import pandas as pd
 import torch
 from rdkit.Chem import AllChem
+from swan.log_config import config_logger
+from swan.models.models import select_model
 from torch import Tensor, nn
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
-from swan.log_config import config_logger
-from swan.models.models import select_model
-
-from .datasets import FingerprintsDataset, MolecularGraphDataset
 from ..features.featurizer import create_molecules, generate_fingerprints
-from .input_validation import validate_input
+from ..input_validation import validate_input
+from .datasets import FingerprintsDataset, MolecularGraphDataset
 from .plot import create_scatter_plot
 
 __all__ = ["FingerprintModeller", "GraphModeller", "Modeller"]

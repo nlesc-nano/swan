@@ -1,4 +1,5 @@
-from swan.models.input_validation import Options
+"""Test the option class."""
+from swan.input_validation import Options
 
 
 data = {'a': 3, 'c': {'d': 42}}
