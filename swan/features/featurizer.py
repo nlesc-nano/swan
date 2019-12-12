@@ -7,7 +7,7 @@ import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import AllChem, Descriptors3D
 
-from swan.data.atomic_features import (ELEMENTS, BONDS, dict_element_features)
+from .atomic_features import (ELEMENTS, BONDS, dict_element_features)
 
 dictionary_functions = {
     "morgan": AllChem.GetMorganFingerprintAsBitVect,

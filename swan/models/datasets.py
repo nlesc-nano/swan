@@ -5,7 +5,7 @@ import torch
 from sklearn.preprocessing import normalize
 from torch.utils.data import Dataset
 
-from .featurizer import generate_fingerprints, generate_molecular_features
+from ..features.featurizer import generate_fingerprints, generate_molecular_features
 
 
 class MolecularDataset(Dataset):

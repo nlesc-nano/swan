@@ -17,7 +17,7 @@ from swan.log_config import config_logger
 from swan.models.models import select_model
 
 from .datasets import FingerprintsDataset, MolecularGraphDataset
-from .featurizer import create_molecules, generate_fingerprints
+from ..features.featurizer import create_molecules, generate_fingerprints
 from .input_validation import validate_input
 from .plot import create_scatter_plot
 
