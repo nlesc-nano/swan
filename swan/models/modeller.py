@@ -17,7 +17,7 @@ from torch.utils.data import DataLoader
 
 from ..features.featurizer import create_molecules, generate_fingerprints
 from ..input_validation import validate_input
-from .datasets import FingerprintsDataset, MolecularGraphDataset
+from .datasets import FingerprintsDataset
 from ..plot import create_scatter_plot
 
 __all__ = ["FingerprintModeller", "GraphModeller", "Modeller"]
@@ -209,10 +209,7 @@ class GraphModeller(Modeller):
 
     def create_data_loader(self, indices: np.array) -> DataLoader:
         """Create a DataLoader instance for the data."""
-        dataset = MolecularGraphDataset(
-            self.data.loc[indices], 'transformed_labels')
-        return DataLoader(
-            dataset=dataset, batch_size=self.opts.torch_config.batch_size)
+        pass
 
 
 def train_and_validate_model(opts: dict) -> None:
