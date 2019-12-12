@@ -18,7 +18,7 @@ from torch.utils.data import DataLoader
 from ..features.featurizer import create_molecules, generate_fingerprints
 from ..input_validation import validate_input
 from .datasets import FingerprintsDataset, MolecularGraphDataset
-from .plot import create_scatter_plot
+from ..plot import create_scatter_plot
 
 __all__ = ["FingerprintModeller", "GraphModeller", "Modeller"]
 
