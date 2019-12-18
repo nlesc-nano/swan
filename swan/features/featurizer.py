@@ -19,6 +19,8 @@ dictionary_functions = {
 NUMBER_ATOMIC_GRAPH_FEATURES = len(ELEMENTS) + 4
 # Bond_type(4) + same_ring + distance
 NUMBER_BOND_GRAPH_FEATURES = len(BONDS) + 2
+# Concatenation of both features set
+NUMBER_GRAPH_FEATURES = NUMBER_ATOMIC_GRAPH_FEATURES + NUMBER_BOND_GRAPH_FEATURES
 
 
 def generate_molecular_features(mol: Chem.rdchem.Mol) -> tuple:
@@ -45,11 +47,11 @@ def generate_molecular_features(mol: Chem.rdchem.Mol) -> tuple:
         atomic_features[i] = dict_element_features[atom.GetSymbol()]
         atomic_features[i, -1] = int(atom.GetIsAromatic())
 
-    bond_features = np.zeros((number_atoms, NUMBER_BOND_GRAPH_FEATURES))
+    bond_features = np.zeros((mol.GetNumBonds(), NUMBER_BOND_GRAPH_FEATURES))
     for i, bond in enumerate(mol.GetBonds()):
         bond_features[i] = generate_bond_features(mol, bond)
 
-    return atomic_features, bond_features
+    return atomic_features.astype(np.float32), bond_features.astype(np.float32)
 
 
 def generate_bond_features(mol: Chem.rdchem.Mol, bond: Chem.rdchem.Bond) -> np.array:
@@ -72,16 +74,14 @@ def generate_bond_features(mol: Chem.rdchem.Mol, bond: Chem.rdchem.Bond) -> np.a
 def compute_molecular_graph_edges(mol: Chem.rdchem.Mol) -> np.array:
     """Generate the edges for a molecule represented as a graph.
 
-    The edges are represented as a matrix of dimension 2 X (2 * N).
-    With two edges for each bond to represent an undirectional graph.
+    The edges are represented as a matrix of dimension 2 X (number_of_bonds).
+    With a sing edges for each bond representing directional graph.
     """
-    number_edges = 2 * mol.GetNumBonds()
+    number_edges = mol.GetNumBonds()
     edges = np.zeros((2, number_edges), dtype=np.int)
     for k, bond in enumerate(mol.GetBonds()):
-        at_1 = bond.GetBeginAtom().GetIdx()
-        at_2 = bond.GetEndAtom().GetIdx()
-        edges[:, 2 * k] = at_1, at_2
-        edges[:, 2 * k + 1] = at_2, at_1
+        edges[0, k] = bond.GetBeginAtom().GetIdx()
+        edges[1, k] = bond.GetEndAtom().GetIdx()
 
     return edges
 

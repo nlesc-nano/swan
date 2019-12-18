@@ -4,7 +4,7 @@ import warnings
 
 import torch
 import yaml
-from schema import And, Optional, Schema, SchemaError, Use
+from schema import And, Optional, Or, Schema, SchemaError, Use
 
 from swan.utils import Options
 
@@ -76,20 +76,19 @@ SCHEMA_TORCH = Schema({
 
 })
 
-SCHEMA_MODEL = Schema({
+SCHEMA_MODEL_FINGERPRINTS = Schema({
     Optional("input_cells", default=2048): int,
 
     Optional("hidden_cells", default=1000): int
-
 })
-MODEL_DEFAULTS = SCHEMA_MODEL.validate({})
+MODEL_DEFAULTS = SCHEMA_MODEL_FINGERPRINTS.validate({})
 
 SCHEMA_FINGERPRINTS = Schema({
     Optional("fingerprint", default='atompair'): any_lambda(('morgan', 'atompair', 'torsion'))
 })
 
 SCHEMA_GRAPH = Schema({
-    "graph": dict
+    "molecular_graph": dict
 })
 
 SCHEMA_MODELER = Schema({
@@ -100,12 +99,12 @@ SCHEMA_MODELER = Schema({
     "property": str,
 
     # Method to get the features
-    "featurizer": SCHEMA_FINGERPRINTS or SCHEMA_GRAPH,
+    "featurizer": Or(SCHEMA_FINGERPRINTS, equal_lambda("molecular_graph")),
 
     # Whether to use CPU or GPU
     Optional("use_cuda", default=False): bool,
 
-    Optional("model", default=MODEL_DEFAULTS): SCHEMA_MODEL,
+    Optional("model", default=MODEL_DEFAULTS): Or(SCHEMA_MODEL_FINGERPRINTS),
 
     # Network and training options options
     Optional("torch_config"): SCHEMA_TORCH,

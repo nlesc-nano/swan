@@ -46,7 +46,7 @@ def test_train_data_fingerprints(tmp_path):
     opts.torch_config.batch_size = 500
 
     researcher = FingerprintModeller(opts)
-    researcher.transform_data()
+    researcher.transform_labels()
     researcher.split_data()
     researcher.load_data()
     researcher.train_model()

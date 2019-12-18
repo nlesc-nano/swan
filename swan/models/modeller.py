@@ -1,6 +1,7 @@
 """Statistical models."""
 import argparse
 import logging
+import tempfile
 from abc import abstractmethod
 from datetime import datetime
 from pathlib import Path
@@ -8,17 +9,19 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
+import torch_geometric as tg
 from rdkit.Chem import AllChem
-from swan.log_config import config_logger
-from swan.models.models import select_model
 from torch import Tensor, nn
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
+from swan.log_config import config_logger
+from swan.models.models import select_model
+
 from ..features.featurizer import create_molecules, generate_fingerprints
 from ..input_validation import validate_input
-from .datasets import FingerprintsDataset
 from ..plot import create_scatter_plot
+from .datasets import FingerprintsDataset, MolGraphDataset
 
 __all__ = ["FingerprintModeller", "GraphModeller", "Modeller"]
 
@@ -95,13 +98,10 @@ class Modeller:
         # Create loss function
         self.loss_func = nn.MSELoss()
 
-    def load_data(self, train: bool = True):
+    def load_data(self):
         """Create loaders for the train and validation dataset."""
-        if train:
-            self.train_loader = self.create_data_loader(self.index_train)
-            self.valid_loader = self.create_data_loader(self.index_valid)
-        else:
-            self.predict_loader = self.create_data_loader(self.data.index)
+        self.train_loader = self.create_data_loader(self.index_train)
+        self.valid_loader = self.create_data_loader(self.index_valid)
 
     @abstractmethod
     def create_data_loader(self, indices: np.array) -> DataLoader:
@@ -178,13 +178,13 @@ class Modeller:
         self.index_valid = np.random.choice(self.data.index, size=size_valid, replace=False)
         self.index_train = np.setdiff1d(self.data.index, self.index_valid, assume_unique=True)
 
+    def transform_labels(self) -> pd.DataFrame:
+        """Create a new column with the transformed target."""
+        self.data['transformed_labels'] = np.log(self.data[self.opts.property])
+
 
 class FingerprintModeller(Modeller):
     """Object to create models using fingerprints."""
-
-    def transform_data(self) -> pd.DataFrame:
-        """Create a new column with the transformed target."""
-        self.data['transformed_labels'] = np.log(self.data[self.opts.property])
 
     def create_data_loader(self, indices: np.array) -> DataLoader:
         """Create a DataLoader instance for the data."""
@@ -209,18 +209,58 @@ class GraphModeller(Modeller):
 
     def create_data_loader(self, indices: np.array) -> DataLoader:
         """Create a DataLoader instance for the data."""
-        pass
+        root = tempfile.mkdtemp(prefix="dataset_")
+        dataset = MolGraphDataset(root, self.data.loc[indices], 'transformed_labels')
+        return tg.data.DataLoader(
+            dataset=dataset, batch_size=self.opts.torch_config.batch_size)
+
+    def train_model(self):
+        """Train a statistical model."""
+        LOGGER.info("TRAINING STEP")
+        # Set the model to training mode
+        self.network.train()
+
+        for epoch in range(self.opts.torch_config.epochs):
+            loss_batch = 0
+            for batch in self.train_loader:
+                # if self.opts.use_cuda:
+                #     batch = batch.to('cuda')
+                print("batch: ", batch)
+                loss_batch = self.train_batch(batch, batch.y)
+                mean = loss_batch / self.opts.torch_config.batch_size
+                if epoch % self.opts.torch_config.frequency_log_epochs == 0:
+                    LOGGER.info(f"Loss: {mean}")
+
+        # Save the models
+        torch.save(self.network.state_dict(), self.opts.model_path)
+
+    def evaluate_model(self) -> float:
+        """Evaluate the model against the validation dataset."""
+        LOGGER.info("VALIDATION STEP")
+        # Disable any gradient calculation
+        with torch.no_grad():
+            self.network.eval()
+            val_loss = 0
+            for batch in self.valid_loader:
+                print("batch: ", batch)
+                predicted = self.network(batch)
+                print("predicted: ", predicted)
+                val_loss += self.loss_func(batch.y, predicted)
+            mean_val_loss = val_loss / self.opts.torch_config.batch_size
+        LOGGER.info(f"validation loss: {mean_val_loss}")
+        return mean_val_loss
 
 
 def train_and_validate_model(opts: dict) -> None:
     """Train the model usign the data specificied by the user."""
-    researcher = FingerprintModeller(opts)
-    researcher.transform_data()
+    modeller = FingerprintModeller if 'fingerprint' in opts.featurizer else GraphModeller
+    researcher = modeller(opts)
+    researcher.transform_labels()
     researcher.split_data()
     researcher.load_data()
     researcher.train_model()
     researcher.evaluate_model()
-    researcher.plot_evaluation()
+    # researcher.plot_evaluation()
 
 
 def predict_properties(opts: dict) -> Tensor:
