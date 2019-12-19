@@ -19,6 +19,9 @@ jobs:
     - run: which python
     - run: conda install rdkit pytorch torchvision cpuonly -c pytorch
 
+    - name: install torch-geometric dependencies
+      run: pip install --verbose --no-cache-dir torch-scatter torch-sparse torch-cluster torch-geometric
+
     - name: Install the package
       run: pip install .[test] -v
       env:
