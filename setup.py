@@ -47,8 +47,8 @@ setup(
         'nano-CAT@git+https://github.com/nlesc-nano/nano-CAT@master',
         'data-CAT@git+https://github.com/nlesc-nano/data-CAT@master',
         'mendeleev', 'numpy', 'pandas', 'pyyaml>=5.1.1',
-        'seaborn', 'schema', 'sklearn', 'sqlalchemy'
-        'torch-cluster', 'torch-geometric', 'torch-sparse', 'torch-scatter', ],
+        'seaborn', 'schema', 'sklearn', 'sqlalchemy',
+        'torch-geometric'],
     setup_requires=[
         # dependency for `python setup.py test`
         'pytest-runner',
