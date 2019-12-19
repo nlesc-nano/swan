@@ -46,14 +46,11 @@ def check_if_cuda_is_available(opts: dict):
 
 
 SCHEMA_OPTIMIZER = Schema({
+
+    Optional("name", default="sgd"): any_lambda(("adam", "sgd")),
+
     # Learning rate
-    Optional("lr", default=0.1): float,
-
-    Optional("momentum", default=0): float,
-
-    Optional("dampening", default=0): float,
-
-    Optional("weight_decay", default=0): float
+    Optional("lr", default=0.1): float
 })
 
 

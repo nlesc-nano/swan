@@ -91,9 +91,11 @@ class Modeller:
         self.network = select_model(self.opts)
         self.network = self.network.to(self.device)
 
-        # Create an optimizer
-        self.optimizer = torch.optim.SGD(
-            self.network.parameters(), **self.opts.torch_config.optimizer)
+        # select an optimizer
+        optimizers = {"sgd": torch.optim.SGD, "adam": torch.optim.Adam}
+        config = self.opts.torch_config.optimizer
+        fun = optimizers[config["name"]]
+        self.optimizer = fun(self.network.parameters(), config["lr"])
 
         # Create loss function
         self.loss_func = nn.MSELoss()
@@ -220,13 +222,14 @@ class GraphModeller(Modeller):
         # Set the model to training mode
         self.network.train()
 
+        print("epochs: ", self.opts.torch_config.epochs)
         for epoch in range(self.opts.torch_config.epochs):
             loss_batch = 0
             for batch in self.train_loader:
                 # if self.opts.use_cuda:
                 #     batch = batch.to('cuda')
-                print("batch: ", batch)
                 loss_batch = self.train_batch(batch, batch.y)
+                print("loss: ", loss_batch)
                 mean = loss_batch / self.opts.torch_config.batch_size
                 if epoch % self.opts.torch_config.frequency_log_epochs == 0:
                     LOGGER.info(f"Loss: {mean}")
@@ -242,9 +245,7 @@ class GraphModeller(Modeller):
             self.network.eval()
             val_loss = 0
             for batch in self.valid_loader:
-                print("batch: ", batch)
                 predicted = self.network(batch)
-                print("predicted: ", predicted)
                 val_loss += self.loss_func(batch.y, predicted)
             mean_val_loss = val_loss / self.opts.torch_config.batch_size
         LOGGER.info(f"validation loss: {mean_val_loss}")

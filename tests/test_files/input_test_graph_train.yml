@@ -1,0 +1,21 @@
+dataset_file:
+  tests/test_files/thousand.csv
+property: gammas
+
+use_cuda: False
+
+featurizer:
+  molecular_graph
+
+torch_config:
+  epochs: 100
+  batch_size: 100
+  optimizer:
+    name: ADAM
+    lr: 0.2
+    
+optimize_hyperparameters:
+  False
+  
+save_dataset:
+  False

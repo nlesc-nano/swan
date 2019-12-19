@@ -5,7 +5,7 @@ from pathlib import Path
 import os
 import numpy as np
 
-from swan.models import FingerprintModeller
+from swan.models import FingerprintModeller, GraphModeller
 from swan.input_validation import validate_input
 from swan.models.modeller import main, predict_properties
 
@@ -63,8 +63,22 @@ def test_predict_unknown_fingerprints():
     assert df['predicted_property'].notna().all()
 
 
-def test_train_molecular_graph():
+def test_train_molecular_graph(tmp_path):
     """Test the training of convulution neural network on a molecular graph."""
-    pass
-    # opts = validate_input(path_input_test_fingerprints)
-    # researcher = GraphModeller(opts)
+    opts = validate_input(path_input_test_graph)
+
+    # Use a temporal folde and train in CPU
+    opts.model_path = os.path.join(tmp_path, "swan_models.pt")
+    opts.use_cuda = False
+
+    opts.torch_config.epochs = 5
+    opts.torch_config.batch_size = 20
+
+    researcher = GraphModeller(opts)
+    researcher.transform_labels()
+    researcher.split_data()
+    researcher.load_data()
+    researcher.train_model()
+    mean_loss = researcher.evaluate_model()
+    assert os.path.exists(opts.model_path)
+    assert mean_loss > 0 and mean_loss < 1

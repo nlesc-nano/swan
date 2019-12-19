@@ -39,7 +39,7 @@ class ChemiNet(nn.Module):
             nn.Linear(NUMBER_BOND_GRAPH_FEATURES, NUMBER_ATOMIC_GRAPH_FEATURES * output_channels),
             nn.ReLU()
         )
-        self.conv1 = NNConv(NUMBER_ATOMIC_GRAPH_FEATURES, output_channels, self.lin)        
+        self.conv1 = NNConv(NUMBER_ATOMIC_GRAPH_FEATURES, output_channels, self.lin)
         self.output_layer = nn.Linear(output_channels, 1)
 
     def forward(self, data: tg.data.Data) -> Tensor:
