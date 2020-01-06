@@ -7,7 +7,7 @@ import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import AllChem, Descriptors3D
 
-from .atomic_features import (ELEMENTS, BONDS, dict_element_features)
+from .atomic_features import (ELEMENTS, BONDS, compute_hybridization_index, dict_element_features)
 
 dictionary_functions = {
     "morgan": AllChem.GetMorganFingerprintAsBitVect,
@@ -15,8 +15,9 @@ dictionary_functions = {
     "torsion": AllChem.GetHashedTopologicalTorsionFingerprintAsBitVect
 }
 
-# atom_type(len_elements) + vdw + covalent_radius + electronegativity + is_aromatic
-NUMBER_ATOMIC_GRAPH_FEATURES = len(ELEMENTS) + 4
+# atom_type(len_elements) + vdw + covalent_radius + electronegativity + hybridization +
+# is_aromatic
+NUMBER_ATOMIC_GRAPH_FEATURES = len(ELEMENTS) + 8
 # Bond_type(4) + same_ring + distance
 NUMBER_BOND_GRAPH_FEATURES = len(BONDS) + 2
 # Concatenation of both features set
@@ -33,6 +34,8 @@ def generate_molecular_features(mol: Chem.rdchem.Mol) -> tuple:
     * Atom type: One hot vector (size 9).
     * Radius: Van der Waals and Convalent radious (size 2)
     * Electronegativity (size 1)
+    * Hybridization: SP, SP2, SP3 (size 3)
+    * Number of hydrogen (size 1)
     * Is Aromatic: Whether the atoms is part of an aromatic ring (size 1)
 
     Bond features,
@@ -43,9 +46,13 @@ def generate_molecular_features(mol: Chem.rdchem.Mol) -> tuple:
     """
     number_atoms = mol.GetNumAtoms()
     atomic_features = np.zeros((number_atoms, NUMBER_ATOMIC_GRAPH_FEATURES))
+    len_elements = len(ELEMENTS)
     for i, atom in enumerate(mol.GetAtoms()):
-        atomic_features[i] = dict_element_features[atom.GetSymbol()]
-        atomic_features[i, -1] = int(atom.GetIsAromatic())
+        atomic_features[i, : len_elements + 3] = dict_element_features[atom.GetSymbol()]
+        hybrid_index = compute_hybridization_index(atom)
+        atomic_features[i, len_elements + 3 + hybrid_index] = 1.0
+        atomic_features[i, len_elements + 6] = float(atom.GetTotalNumHs())
+        atomic_features[i, -1] = float(atom.GetIsAromatic())
 
     bond_features = np.zeros((mol.GetNumBonds(), NUMBER_BOND_GRAPH_FEATURES))
     for i, bond in enumerate(mol.GetBonds()):
