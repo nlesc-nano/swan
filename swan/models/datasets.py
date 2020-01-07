@@ -41,6 +41,7 @@ class MolGraphDataset(tg.data.Dataset):
         self.molecules = data['molecules']
         self.molecules.reset_index(drop=True, inplace=True)
         self.labels = data[property_name].to_numpy(np.float32)
+        self.norm = tg.transforms.NormalizeFeatures()
 
     def _download(self):
         pass
@@ -56,4 +57,4 @@ class MolGraphDataset(tg.data.Dataset):
         """Return the idx dataset element."""
         labels = torch.Tensor([self.labels[idx]]).reshape(1, 1)
         data = create_molecular_graph_data(self.molecules[idx], labels)
-        return data
+        return self.norm(data)

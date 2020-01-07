@@ -50,7 +50,7 @@ def test_train_data_fingerprints(tmp_path):
     researcher.split_data()
     researcher.load_data()
     researcher.train_model()
-    mean_loss = researcher.evaluate_model()
+    mean_loss, _ = researcher.evaluate_model()
     assert os.path.exists(opts.model_path)
     assert mean_loss > 0 and mean_loss < 1e-1
 
@@ -79,6 +79,6 @@ def test_train_molecular_graph(tmp_path):
     researcher.split_data()
     researcher.load_data()
     researcher.train_model()
-    mean_loss = researcher.evaluate_model()
+    mean_loss, _ = researcher.evaluate_model()
     assert os.path.exists(opts.model_path)
     assert mean_loss > 0 and mean_loss < 1

@@ -19,7 +19,7 @@ dictionary_functions = {
 # is_aromatic
 NUMBER_ATOMIC_GRAPH_FEATURES = len(ELEMENTS) + 8
 # Bond_type(4) + same_ring + distance
-NUMBER_BOND_GRAPH_FEATURES = len(BONDS) + 2
+NUMBER_BOND_GRAPH_FEATURES = len(BONDS) + 3
 # Concatenation of both features set
 NUMBER_GRAPH_FEATURES = NUMBER_ATOMIC_GRAPH_FEATURES + NUMBER_BOND_GRAPH_FEATURES
 
@@ -54,26 +54,37 @@ def generate_molecular_features(mol: Chem.rdchem.Mol) -> tuple:
         atomic_features[i, len_elements + 6] = float(atom.GetTotalNumHs())
         atomic_features[i, -1] = float(atom.GetIsAromatic())
 
-    bond_features = np.zeros((mol.GetNumBonds(), NUMBER_BOND_GRAPH_FEATURES))
+    # Represent an undirectional graph using two arrows for each bond
+    bond_features = np.zeros((2 * mol.GetNumBonds(), NUMBER_BOND_GRAPH_FEATURES))
     for i, bond in enumerate(mol.GetBonds()):
-        bond_features[i] = generate_bond_features(mol, bond)
+        feats = generate_bond_features(mol, bond)
+        bond_features[2 * i] = feats
+        bond_features[2 * i + 1] = feats
 
     return atomic_features.astype(np.float32), bond_features.astype(np.float32)
 
 
 def generate_bond_features(mol: Chem.rdchem.Mol, bond: Chem.rdchem.Bond) -> np.array:
-    """Compute the features for a given bond."""
+    """Compute the features for a given bond.
+    
+    * Bond type: One hot vector of {Single,  Aromatic, Double, Triple} (size 4)
+    * Same Ring: Whether the atoms are in the same ring (size 1)
+    * Distance: Euclidean distance between the pair (size 1)    
+    """
     bond_features = np.zeros(NUMBER_BOND_GRAPH_FEATURES)
     bond_type = BONDS.index(bond.GetBondType())
-    bond_features[bond_type] = 1
+    bond_features[bond_type] = 1.0
 
     # Is the bond in the same ring
-    bond_features[4] = int(bond.IsInRing())
+    bond_features[4] = float(bond.IsInRing())
+
+    # Is the bond conjugated
+    bond_features[5] = float(bond.GetIsConjugated())
 
     # Distance
     begin = bond.GetBeginAtom().GetIdx()
     end = bond.GetEndAtom().GetIdx()
-    bond_features[5] = Chem.rdMolTransforms.GetBondLength(mol.GetConformer(), begin, end)
+    bond_features[6] = Chem.rdMolTransforms.GetBondLength(mol.GetConformer(), begin, end)
 
     return bond_features
 
@@ -81,14 +92,16 @@ def generate_bond_features(mol: Chem.rdchem.Mol, bond: Chem.rdchem.Bond) -> np.a
 def compute_molecular_graph_edges(mol: Chem.rdchem.Mol) -> np.array:
     """Generate the edges for a molecule represented as a graph.
 
-    The edges are represented as a matrix of dimension 2 X (number_of_bonds).
-    With a sing edges for each bond representing directional graph.
+    The edges are represented as a matrix of dimension 2 X ( 2 * number_of_bonds).
+    With a two edges for each bond representing a undirectional graph.
     """
-    number_edges = mol.GetNumBonds()
+    number_edges = 2 * mol.GetNumBonds()
     edges = np.zeros((2, number_edges), dtype=np.int)
     for k, bond in enumerate(mol.GetBonds()):
-        edges[0, k] = bond.GetBeginAtom().GetIdx()
-        edges[1, k] = bond.GetEndAtom().GetIdx()
+        edges[0, 2 * k] = bond.GetBeginAtomIdx()
+        edges[1, 2 * k] = bond.GetEndAtomIdx()
+        edges[0, 2 * k + 1] = bond.GetEndAtomIdx()
+        edges[1, 2 * k + 1] = bond.GetBeginAtomIdx()
 
     return edges
 

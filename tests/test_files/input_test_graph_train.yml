@@ -1,21 +1,24 @@
 dataset_file:
   tests/test_files/thousand.csv
+  # data/Carboxylic_acids/1E4.csv
+
 property: gammas
 
-use_cuda: False
+use_cuda: True
 
 featurizer:
   molecular_graph
 
 torch_config:
-  epochs: 100
-  batch_size: 100
+  epochs: 20
+  batch_size: 200
   optimizer:
-    name: ADAM
-    lr: 0.2
+    name: sgd
+    lr: 0.1
     
 optimize_hyperparameters:
   False
   
 save_dataset:
   False
+ 

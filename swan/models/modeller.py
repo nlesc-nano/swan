@@ -82,7 +82,7 @@ class Modeller:
         # Create conformers
         self.data['molecules'].apply(lambda mol: AllChem.EmbedMolecule(mol))
         # Discard molecules that do not have conformer
-        LOGGER.info("Removing moleculas that don't have any conformer.")
+        LOGGER.info("Removing molecules that don't have any conformer.")
         self.data = self.data[self.data['molecules'].apply(lambda x: x.GetNumConformers()) >= 1]
 
     def create_new_model(self):
@@ -98,7 +98,7 @@ class Modeller:
         self.optimizer = fun(self.network.parameters(), config["lr"])
 
         # Create loss function
-        self.loss_func = nn.MSELoss()
+        self.loss_func = nn.SmoothL1Loss() 
 
     def load_data(self):
         """Create loaders for the train and validation dataset."""
@@ -150,15 +150,18 @@ class Modeller:
         with torch.no_grad():
             self.network.eval()
             val_loss = 0
+            results = []
+            expected = []
             for x_val, y_val in self.valid_loader:
                 if self.opts.use_cuda:
                     x_val = x_val.to('cuda')
                     y_val = y_val.to('cuda')
                 predicted = self.network(x_val)
-                val_loss += self.loss_func(y_val, predicted)
-            mean_val_loss = val_loss / self.opts.torch_config.batch_size
-        LOGGER.info(f"validation loss: {mean_val_loss}")
-        return mean_val_loss
+                val_loss = self.loss_func(y_val, predicted)
+                results.append(predicted)
+                expected.append(y_val)
+        LOGGER.info(f"validation loss: {val_loss}")
+        return val_loss, (torch.cat(results), torch.cat(expected))
 
     def predict(self, tensor: Tensor):
         """Use a previously trained model to predict."""
@@ -197,14 +200,6 @@ class FingerprintModeller(Modeller):
         return DataLoader(
             dataset=dataset, batch_size=self.opts.torch_config.batch_size)
 
-    def plot_evaluation(self):
-        """Create a scatter plot of the predict values vs the ground true."""
-        dataset = self.valid_loader.dataset
-        fingerprints = dataset.fingerprints.to(self.device)
-        predicted = self.to_numpy_detached(self.network(fingerprints))
-        expected = np.stack(dataset.labels).flatten()
-        create_scatter_plot(predicted, expected)
-
 
 class GraphModeller(Modeller):
     """Object to create models using molecular graphs."""
@@ -222,17 +217,13 @@ class GraphModeller(Modeller):
         # Set the model to training mode
         self.network.train()
 
-        print("epochs: ", self.opts.torch_config.epochs)
         for epoch in range(self.opts.torch_config.epochs):
             loss_batch = 0
             for batch in self.train_loader:
-                # if self.opts.use_cuda:
-                #     batch = batch.to('cuda')
+                batch.to(self.device)
                 loss_batch = self.train_batch(batch, batch.y)
-                print("loss: ", loss_batch)
-                mean = loss_batch / self.opts.torch_config.batch_size
                 if epoch % self.opts.torch_config.frequency_log_epochs == 0:
-                    LOGGER.info(f"Loss: {mean}")
+                    LOGGER.info(f"Loss: {loss_batch}")
 
         # Save the models
         torch.save(self.network.state_dict(), self.opts.model_path)
@@ -241,15 +232,19 @@ class GraphModeller(Modeller):
         """Evaluate the model against the validation dataset."""
         LOGGER.info("VALIDATION STEP")
         # Disable any gradient calculation
+        results = []
+        expected = []
         with torch.no_grad():
             self.network.eval()
             val_loss = 0
             for batch in self.valid_loader:
+                batch.to(self.device)
                 predicted = self.network(batch)
-                val_loss += self.loss_func(batch.y, predicted)
-            mean_val_loss = val_loss / self.opts.torch_config.batch_size
-        LOGGER.info(f"validation loss: {mean_val_loss}")
-        return mean_val_loss
+                val_loss = self.loss_func(batch.y, predicted)
+                results.append(predicted)
+                expected.append(batch.y)
+        LOGGER.info(f"validation loss: {val_loss}")
+        return val_loss, (torch.cat(results), torch.cat(expected))
 
 
 def train_and_validate_model(opts: dict) -> None:
@@ -260,8 +255,9 @@ def train_and_validate_model(opts: dict) -> None:
     researcher.split_data()
     researcher.load_data()
     researcher.train_model()
-    researcher.evaluate_model()
-    # researcher.plot_evaluation()
+    loss, (predicted, expected) = researcher.evaluate_model()
+    create_scatter_plot(
+        researcher.to_numpy_detached(predicted), researcher.to_numpy_detached(expected))
 
 
 def predict_properties(opts: dict) -> Tensor:
