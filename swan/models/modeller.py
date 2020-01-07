@@ -81,6 +81,7 @@ class Modeller:
 
         # Create conformers
         self.data['molecules'].apply(lambda mol: AllChem.EmbedMolecule(mol))
+
         # Discard molecules that do not have conformer
         LOGGER.info("Removing molecules that don't have any conformer.")
         self.data = self.data[self.data['molecules'].apply(lambda x: x.GetNumConformers()) >= 1]
@@ -98,7 +99,7 @@ class Modeller:
         self.optimizer = fun(self.network.parameters(), config["lr"])
 
         # Create loss function
-        self.loss_func = nn.SmoothL1Loss() 
+        self.loss_func = nn.SmoothL1Loss()
 
     def load_data(self):
         """Create loaders for the train and validation dataset."""
@@ -149,7 +150,6 @@ class Modeller:
         # Disable any gradient calculation
         with torch.no_grad():
             self.network.eval()
-            val_loss = 0
             results = []
             expected = []
             for x_val, y_val in self.valid_loader:
@@ -157,11 +157,9 @@ class Modeller:
                     x_val = x_val.to('cuda')
                     y_val = y_val.to('cuda')
                 predicted = self.network(x_val)
-                val_loss = self.loss_func(y_val, predicted)
                 results.append(predicted)
                 expected.append(y_val)
-        LOGGER.info(f"validation loss: {val_loss}")
-        return val_loss, (torch.cat(results), torch.cat(expected))
+        return torch.cat(results), torch.cat(expected)
 
     def predict(self, tensor: Tensor):
         """Use a previously trained model to predict."""
@@ -218,12 +216,17 @@ class GraphModeller(Modeller):
         self.network.train()
 
         for epoch in range(self.opts.torch_config.epochs):
-            loss_batch = 0
+            total_loss = 0
             for batch in self.train_loader:
                 batch.to(self.device)
-                loss_batch = self.train_batch(batch, batch.y)
-                if epoch % self.opts.torch_config.frequency_log_epochs == 0:
-                    LOGGER.info(f"Loss: {loss_batch}")
+                prediction = self.network(batch)
+                loss = self.loss_func(prediction, batch.y)
+                loss.backward()              # backpropagation, compute gradients
+                self.optimizer.step()        # apply gradients
+                self.optimizer.zero_grad()   # clear gradients for next train
+                total_loss += batch.num_graphs * loss.item()
+
+            LOGGER.info(f"Loss: {total_loss / self.index_train.size}")
 
         # Save the models
         torch.save(self.network.state_dict(), self.opts.model_path)
@@ -236,15 +239,13 @@ class GraphModeller(Modeller):
         expected = []
         with torch.no_grad():
             self.network.eval()
-            val_loss = 0
             for batch in self.valid_loader:
                 batch.to(self.device)
                 predicted = self.network(batch)
-                val_loss = self.loss_func(batch.y, predicted)
                 results.append(predicted)
                 expected.append(batch.y)
-        LOGGER.info(f"validation loss: {val_loss}")
-        return val_loss, (torch.cat(results), torch.cat(expected))
+
+        return torch.cat(results), torch.cat(expected)
 
 
 def train_and_validate_model(opts: dict) -> None:
@@ -255,7 +256,7 @@ def train_and_validate_model(opts: dict) -> None:
     researcher.split_data()
     researcher.load_data()
     researcher.train_model()
-    loss, (predicted, expected) = researcher.evaluate_model()
+    predicted, expected = researcher.evaluate_model()
     create_scatter_plot(
         researcher.to_numpy_detached(predicted), researcher.to_numpy_detached(expected))
 

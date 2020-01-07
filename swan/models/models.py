@@ -38,7 +38,7 @@ class ChemiNet(nn.Module):
         self.output_channels = output_channels
         self.lin1 = nn.Sequential(
             nn.Linear(NUMBER_BOND_GRAPH_FEATURES, NUMBER_ATOMIC_GRAPH_FEATURES * output_channels),
-            nn.ReLU()
+            nn.ReLU(),
         )
         self.conv1 = NNConv(NUMBER_ATOMIC_GRAPH_FEATURES, output_channels, self.lin1)
         # self.conv2 = NNConv(NUMBER_ATOMIC_GRAPH_FEATURES, output_channels, self.lin1, aggr="mean")
@@ -51,11 +51,9 @@ class ChemiNet(nn.Module):
     def forward(self, data) -> Tensor:
         """Run model."""
         # convolution phase
-        x = F.relu(self.conv1(data.x, data.edge_index, data.edge_attr))
+        x = F.leaky_relu(self.conv1(data.x, data.edge_index, data.edge_attr))
         x = self.bn1(x)
-        x = F.dropout(x, p=0.2)
         x = tg.nn.global_add_pool(x, data.batch)
-
         return self.output_layer(x)
 
 

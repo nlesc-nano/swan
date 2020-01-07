@@ -66,10 +66,11 @@ def generate_molecular_features(mol: Chem.rdchem.Mol) -> tuple:
 
 def generate_bond_features(mol: Chem.rdchem.Mol, bond: Chem.rdchem.Bond) -> np.array:
     """Compute the features for a given bond.
-    
+
     * Bond type: One hot vector of {Single,  Aromatic, Double, Triple} (size 4)
     * Same Ring: Whether the atoms are in the same ring (size 1)
-    * Distance: Euclidean distance between the pair (size 1)    
+    * Conjugated: Whether the bond is considered conjugated (size 1)
+    * Distance: Euclidean distance between the pair (size 1)
     """
     bond_features = np.zeros(NUMBER_BOND_GRAPH_FEATURES)
     bond_type = BONDS.index(bond.GetBondType())
