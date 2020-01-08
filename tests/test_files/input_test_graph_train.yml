@@ -1,5 +1,6 @@
 dataset_file:
   tests/test_files/thousand.csv
+  # data/Carboxylic_acids/1E4.csv
 
 property: gammas
 
@@ -9,15 +10,8 @@ featurizer:
   molecular_graph
 
 torch_config:
-  epochs: 20
+  epochs: 10
   batch_size: 500
   optimizer:
     name: adam
-    lr: 0.01
-    
-optimize_hyperparameters:
-  False
-  
-save_dataset:
-  False
- 
+    lr: 0.01 

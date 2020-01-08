@@ -106,12 +106,6 @@ SCHEMA_MODELER = Schema({
     # Network and training options options
     Optional("torch_config"): SCHEMA_TORCH,
 
-    # Search for best hyperparameters
-    Optional("optimize_hyperparameters", default=False): bool,
-
-    # Save the dataset to a file
-    Optional("save_dataset", default=True): bool,
-
     # Folder to save the models
     Optional("model_path", default="swan_models.pt"): str,
 

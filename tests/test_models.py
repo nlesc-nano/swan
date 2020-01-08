@@ -54,7 +54,7 @@ def test_train_data_fingerprints(tmp_path):
     expected, predicted = researcher.evaluate_model()
     err = torch.functional.F.mse_loss(expected, predicted)
     assert os.path.exists(opts.model_path)
-    assert err < 1.0
+    assert err.item() < 1.0
 
 
 def test_predict_unknown_fingerprints():

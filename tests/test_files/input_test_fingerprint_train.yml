@@ -1,5 +1,6 @@
 dataset_file:
   tests/test_files/thousand.csv
+  #data/Carboxylic_acids/1E4.csv
 property: gammas
 
 use_cuda: False
@@ -12,13 +13,7 @@ model:
   hidden_cells: 1000
 
 torch_config:
-  epochs: 5
+  epochs: 10
   batch_size: 100
   optimizer:
     lr: 0.2
-    
-optimize_hyperparameters:
-  False
-  
-save_dataset:
-  False

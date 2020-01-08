@@ -253,7 +253,7 @@ class GraphModeller(Modeller):
                 loss_all += batch.num_graphs * loss.item()
                 results.append(predicted)
                 expected.append(batch.y)
-            LOGGER.info(f"Loss: {loss_all / self.index_valid.size}")
+            LOGGER.info(f"Loss: {loss_all / len(self.valid_loader)}")
 
         return torch.cat(results), torch.cat(expected)
 
@@ -287,3 +287,5 @@ def predict_properties(opts: dict) -> Tensor:
 
 def cross_validate(opts: dict) -> Tensor:
     """Run a cross validation with the given `opts`."""
+    pass
+
