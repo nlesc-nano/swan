@@ -16,7 +16,7 @@ def create_scatter_plot(predicted: np.ndarray, expected: np.ndarray, workdir: st
 
     df = pd.DataFrame({'expected': expected, 'predicted': predicted})
 
-    sns.scatterplot(x='expected', y='predicted', data=df)
+    sns.regplot(x='expected', y='predicted', data=df)
 
     path = os.path.join(workdir, "scatterplot.png")
     plt.savefig(path)

@@ -11,6 +11,7 @@ import pandas as pd
 import torch
 import torch_geometric as tg
 from rdkit.Chem import AllChem
+from sklearn import metrics
 from torch import Tensor, nn
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
@@ -97,9 +98,10 @@ class Modeller:
         config = self.opts.torch_config.optimizer
         fun = optimizers[config["name"]]
         self.optimizer = fun(self.network.parameters(), config["lr"])
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min')
 
         # Create loss function
-        self.loss_func = nn.SmoothL1Loss()
+        self.loss_func = nn.MSELoss()  # nn.SmoothL1Loss()
 
     def load_data(self):
         """Create loaders for the train and validation dataset."""
@@ -215,8 +217,9 @@ class GraphModeller(Modeller):
         # Set the model to training mode
         self.network.train()
 
+        previous_loss = 0  # Check if optimization reaches a plateau
         for epoch in range(self.opts.torch_config.epochs):
-            total_loss = 0
+            loss_all = 0
             for batch in self.train_loader:
                 batch.to(self.device)
                 prediction = self.network(batch)
@@ -224,9 +227,14 @@ class GraphModeller(Modeller):
                 loss.backward()              # backpropagation, compute gradients
                 self.optimizer.step()        # apply gradients
                 self.optimizer.zero_grad()   # clear gradients for next train
-                total_loss += batch.num_graphs * loss.item()
+                self.scheduler.step(loss)    # adjust the LR of the optimizer
+                loss_all += batch.num_graphs * loss.item()
+            relative_loss = loss_all / self.index_train.size
+            if abs(previous_loss - relative_loss) < 1e-4:
+                break  # A plateau has been reached
+            previous_loss = relative_loss
 
-            LOGGER.info(f"Loss: {total_loss / self.index_train.size}")
+            LOGGER.info(f"Loss: {relative_loss}")
 
         # Save the models
         torch.save(self.network.state_dict(), self.opts.model_path)
@@ -239,13 +247,17 @@ class GraphModeller(Modeller):
         expected = []
         with torch.no_grad():
             self.network.eval()
+            loss_all = 0
             for batch in self.valid_loader:
                 batch.to(self.device)
                 predicted = self.network(batch)
+                loss = self.loss_func(predicted, batch.y)
+                loss_all += batch.num_graphs * loss.item()
                 results.append(predicted)
                 expected.append(batch.y)
+            LOGGER.info(f"Loss: {loss_all / self.index_valid.size}")
 
-        return torch.cat(results), torch.cat(expected)
+        return self.to_numpy_detached(torch.cat(results)), self.to_numpy_detached(torch.cat(expected))
 
 
 def train_and_validate_model(opts: dict) -> None:
@@ -257,8 +269,9 @@ def train_and_validate_model(opts: dict) -> None:
     researcher.load_data()
     researcher.train_model()
     predicted, expected = researcher.evaluate_model()
-    create_scatter_plot(
-        researcher.to_numpy_detached(predicted), researcher.to_numpy_detached(expected))
+    err = metrics.mean_squared_error(expected.flatten(), predicted.flatten())
+    LOGGER.info(f"mean squared err: {err}")
+    create_scatter_plot(predicted, expected)
 
 
 def predict_properties(opts: dict) -> Tensor:
