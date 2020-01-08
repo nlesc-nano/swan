@@ -1,12 +1,13 @@
 """Test the models funcionality."""
 import argparse
+import os
 from pathlib import Path
 
-import os
 import numpy as np
+import torch
 
-from swan.models import FingerprintModeller, GraphModeller
 from swan.input_validation import validate_input
+from swan.models import FingerprintModeller, GraphModeller
 from swan.models.modeller import main, predict_properties
 
 path_input_test_fingerprints = Path("tests/test_files/input_test_train.yml")
@@ -50,9 +51,10 @@ def test_train_data_fingerprints(tmp_path):
     researcher.split_data()
     researcher.load_data()
     researcher.train_model()
-    mean_loss, _ = researcher.evaluate_model()
+    expected, predicted = researcher.evaluate_model()
+    err = torch.functional.F.mse_loss(expected, predicted)
     assert os.path.exists(opts.model_path)
-    assert mean_loss > 0 and mean_loss < 1e-1
+    assert err < 1.0
 
 
 def test_predict_unknown_fingerprints():
@@ -79,6 +81,8 @@ def test_train_molecular_graph(tmp_path):
     researcher.split_data()
     researcher.load_data()
     researcher.train_model()
-    mean_loss, _ = researcher.evaluate_model()
+    expected, predicted = researcher.evaluate_model()
     assert os.path.exists(opts.model_path)
-    assert mean_loss > 0 and mean_loss < 1
+    err = torch.functional.F.mse_loss(expected, predicted)
+    assert err.is_floating_point()
+

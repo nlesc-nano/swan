@@ -32,7 +32,7 @@ class ChemiNet(nn.Module):
     Use the convolution reported at: https://arxiv.org/abs/1704.01212
     """
 
-    def __init__(self, output_channels: int = 1000):
+    def __init__(self, output_channels: int = 100):
         """Create the network architecture."""
         super().__init__()
         self.output_channels = output_channels

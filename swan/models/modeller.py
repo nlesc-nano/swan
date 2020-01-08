@@ -11,7 +11,6 @@ import pandas as pd
 import torch
 import torch_geometric as tg
 from rdkit.Chem import AllChem
-from sklearn import metrics
 from torch import Tensor, nn
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
@@ -53,6 +52,8 @@ def main():
 
     if args.mode == "train":
         train_and_validate_model(opts)
+    elif args.mode == "cross":
+        cross_validate(opts)
     else:
         rs = predict_properties(opts)
         print(rs)
@@ -257,7 +258,7 @@ class GraphModeller(Modeller):
                 expected.append(batch.y)
             LOGGER.info(f"Loss: {loss_all / self.index_valid.size}")
 
-        return self.to_numpy_detached(torch.cat(results)), self.to_numpy_detached(torch.cat(expected))
+        return torch.cat(results), torch.cat(expected)
 
 
 def train_and_validate_model(opts: dict) -> None:
@@ -269,9 +270,7 @@ def train_and_validate_model(opts: dict) -> None:
     researcher.load_data()
     researcher.train_model()
     predicted, expected = researcher.evaluate_model()
-    err = metrics.mean_squared_error(expected.flatten(), predicted.flatten())
-    LOGGER.info(f"mean squared err: {err}")
-    create_scatter_plot(predicted, expected)
+    create_scatter_plot(*[researcher.to_numpy_detached(x) for x in (predicted, expected)])
 
 
 def predict_properties(opts: dict) -> Tensor:
@@ -287,3 +286,8 @@ def predict_properties(opts: dict) -> Tensor:
     df = pd.DataFrame({'smiles': researcher.data['smiles'].to_numpy(),
                        'predicted_property': transformed.flatten()})
     return df
+
+
+def cross_validate(opts: dict) -> Tensor:
+    """Run a cross validation with the given `opts`."""
+    pass
