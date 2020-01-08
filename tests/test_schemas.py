@@ -6,9 +6,7 @@ from swan.input_validation import (
     SCHEMA_TORCH, validate_input)
 import yaml
 
-
-path_input_train = Path("tests/test_files/input_test_train.yml")
-
+path_input_train = Path("tests/test_files/input_test_fingerprint_train.yml")
 
 def test_input_validation():
     """Check that the input is validated correctly."""

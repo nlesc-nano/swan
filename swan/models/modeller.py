@@ -99,7 +99,6 @@ class Modeller:
         config = self.opts.torch_config.optimizer
         fun = optimizers[config["name"]]
         self.optimizer = fun(self.network.parameters(), config["lr"])
-        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min')
 
         # Create loss function
         self.loss_func = nn.MSELoss()  # nn.SmoothL1Loss()
@@ -124,13 +123,10 @@ class Modeller:
         for epoch in range(self.opts.torch_config.epochs):
             loss_batch = 0
             for x_batch, y_batch in self.train_loader:
-                if self.opts.use_cuda:
-                    x_batch = x_batch.to('cuda')
-                    y_batch = y_batch.to('cuda')
-                loss_batch = self.train_batch(x_batch, y_batch)
-            mean = loss_batch / self.opts.torch_config.batch_size
-            if epoch % self.opts.torch_config.frequency_log_epochs == 0:
-                LOGGER.info(f"Loss: {mean}")
+                x_batch = x_batch.to(self.device)
+                y_batch = y_batch.to(self.device)
+                loss_batch += self.train_batch(x_batch, y_batch) * len(x_batch)
+            LOGGER.info(f"Loss: {loss_batch / len(self.train_loader)}")
 
         # Save the models
         torch.save(self.network.state_dict(), self.opts.model_path)
@@ -143,9 +139,7 @@ class Modeller:
         self.optimizer.step()        # apply gradients
         self.optimizer.zero_grad()   # clear gradients for next train
 
-        cpu_tensor = loss.data.cpu()
-
-        return cpu_tensor.numpy()
+        return loss.item()
 
     def evaluate_model(self) -> float:
         """Evaluate the model against the validation dataset."""
@@ -155,13 +149,16 @@ class Modeller:
             self.network.eval()
             results = []
             expected = []
+            loss_all = 0
             for x_val, y_val in self.valid_loader:
-                if self.opts.use_cuda:
-                    x_val = x_val.to('cuda')
-                    y_val = y_val.to('cuda')
+                x_val = x_val.to(self.device)
+                y_val = y_val.to(self.device)
                 predicted = self.network(x_val)
+                loss = self.loss_func(predicted, y_val)
+                loss_all += loss.item() * len(x_val)
                 results.append(predicted)
                 expected.append(y_val)
+            LOGGER.info(f"Loss: {loss_all / len(self.valid_loader)}")
         return torch.cat(results), torch.cat(expected)
 
     def predict(self, tensor: Tensor):
@@ -228,7 +225,7 @@ class GraphModeller(Modeller):
                 loss.backward()              # backpropagation, compute gradients
                 self.optimizer.step()        # apply gradients
                 self.optimizer.zero_grad()   # clear gradients for next train
-                self.scheduler.step(loss)    # adjust the LR of the optimizer
+
                 loss_all += batch.num_graphs * loss.item()
             relative_loss = loss_all / self.index_train.size
             if abs(previous_loss - relative_loss) < 1e-4:
@@ -290,4 +287,3 @@ def predict_properties(opts: dict) -> Tensor:
 
 def cross_validate(opts: dict) -> Tensor:
     """Run a cross validation with the given `opts`."""
-    pass

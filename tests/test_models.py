@@ -10,9 +10,9 @@ from swan.input_validation import validate_input
 from swan.models import FingerprintModeller, GraphModeller
 from swan.models.modeller import main, predict_properties
 
-path_input_test_fingerprints = Path("tests/test_files/input_test_train.yml")
+path_input_test_fingerprints = Path("tests/test_files/input_test_fingerprint_train.yml")
 path_input_test_graph = Path("tests/test_files/input_test_graph_train.yml")
-path_trained_model = Path("tests/test_files/input_test_predict.yml")
+path_trained_model = Path("tests/test_files/input_test_fingerprint_predict.yml")
 
 
 def test_main(mocker):
