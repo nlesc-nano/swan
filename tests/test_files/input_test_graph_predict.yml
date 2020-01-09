@@ -3,7 +3,7 @@ dataset_file:
 
 property: gammas
 
-use_cuda: True
+use_cuda: False
 
 featurizer:
   molecular_graph
