@@ -10,8 +10,8 @@ featurizer:
   molecular_graph
 
 torch_config:
-  epochs: 10
-  batch_size: 500
+  epochs: 5
+  batch_size: 100
   optimizer:
     name: adam
-    lr: 0.01 
+    lr: 0.02

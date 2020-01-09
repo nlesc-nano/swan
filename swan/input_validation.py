@@ -73,6 +73,9 @@ SCHEMA_TORCH = Schema({
 
 })
 
+TORCH_DEFAULTS = SCHEMA_TORCH.validate({})
+
+
 SCHEMA_MODEL_FINGERPRINTS = Schema({
     Optional("input_cells", default=2048): int,
 
@@ -104,7 +107,7 @@ SCHEMA_MODELER = Schema({
     Optional("model", default=MODEL_DEFAULTS): Or(SCHEMA_MODEL_FINGERPRINTS),
 
     # Network and training options options
-    Optional("torch_config"): SCHEMA_TORCH,
+    Optional("torch_config", default=TORCH_DEFAULTS): SCHEMA_TORCH,
 
     # Folder to save the models
     Optional("model_path", default="swan_models.pt"): str,

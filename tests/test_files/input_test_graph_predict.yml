@@ -8,10 +8,5 @@ use_cuda: True
 featurizer:
   molecular_graph
 
-torch_config:
-  epochs: 10
-  batch_size: 500
-  optimizer:
-    name: adam
-    lr: 0.01 
-
+model_path:
+  tests/test_files/graph_swan_models.pt

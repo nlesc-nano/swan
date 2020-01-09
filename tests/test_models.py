@@ -15,6 +15,7 @@ path_input_test_graph = Path("tests/test_files/input_test_graph_train.yml")
 path_input_fingerprint_predict = Path("tests/test_files/input_test_fingerprint_predict.yml")
 path_input_graph_predict = Path("tests/test_files/input_test_graph_predict.yml")
 
+
 def test_main(mocker):
     """Test the CLI for the models."""
     mocker.patch("argparse.ArgumentParser.parse_args", return_value=argparse.Namespace(
@@ -54,7 +55,7 @@ def test_train_data_fingerprints(tmp_path):
     expected, predicted = researcher.evaluate_model()
     err = torch.functional.F.mse_loss(expected, predicted)
     assert os.path.exists(opts.model_path)
-    assert err.item() < 1.0
+    assert not np.isnan(err.item())
 
 
 def test_predict_unknown_fingerprints():
@@ -84,7 +85,7 @@ def test_train_molecular_graph(tmp_path):
     expected, predicted = researcher.evaluate_model()
     assert os.path.exists(opts.model_path)
     err = torch.functional.F.mse_loss(expected, predicted)
-    assert err.is_floating_point()
+    assert not np.isnan(err.item())
 
 
 def test_predict_unknown_graph():

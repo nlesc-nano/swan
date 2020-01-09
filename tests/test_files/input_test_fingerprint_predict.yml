@@ -8,11 +8,5 @@ property: gammas
 featurizer:
   fingerprint: morgan
 
-torch_config:
-  epochs: 5
-  batch_size: 100
-  optimizer:
-    lr: 0.2
-
 model_path:
-  tests/test_files/swan_models.pt
+  tests/test_files/fingerprint_swan_models.pt
