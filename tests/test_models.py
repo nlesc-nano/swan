@@ -12,8 +12,8 @@ from swan.models.modeller import main, predict_properties
 
 path_input_test_fingerprints = Path("tests/test_files/input_test_fingerprint_train.yml")
 path_input_test_graph = Path("tests/test_files/input_test_graph_train.yml")
-path_trained_model = Path("tests/test_files/input_test_fingerprint_predict.yml")
-
+path_input_fingerprint_predict = Path("tests/test_files/input_test_fingerprint_predict.yml")
+path_input_graph_predict = Path("tests/test_files/input_test_graph_predict.yml")
 
 def test_main(mocker):
     """Test the CLI for the models."""
@@ -59,7 +59,7 @@ def test_train_data_fingerprints(tmp_path):
 
 def test_predict_unknown_fingerprints():
     """Predict data for some smiles."""
-    opts = validate_input(path_trained_model)
+    opts = validate_input(path_input_fingerprint_predict)
     opts.use_cuda = False
     df = predict_properties(opts)
     assert df['predicted_property'].notna().all()
@@ -86,3 +86,10 @@ def test_train_molecular_graph(tmp_path):
     err = torch.functional.F.mse_loss(expected, predicted)
     assert err.is_floating_point()
 
+
+def test_predict_unknown_graph():
+    """Predict properties using the graph model."""
+    opts = validate_input(path_input_graph_predict)
+    opts.use_cuda = False
+    df = predict_properties(opts)
+    assert df['predicted_property'].notna().all()

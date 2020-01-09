@@ -9,7 +9,7 @@ from ..features.featurizer import (compute_molecular_graph_edges,
                                    generate_molecular_features)
 
 
-def create_molecular_graph_data(mol: Chem.rdchem.Mol, label: Tensor) -> Data:
+def create_molecular_graph_data(mol: Chem.rdchem.Mol, label: Tensor = None) -> Data:
     """Create a torch-geometry data object representing a graph.
 
     See torch-geometry documentation:

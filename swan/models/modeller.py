@@ -144,11 +144,12 @@ class Modeller:
     def evaluate_model(self) -> float:
         """Evaluate the model against the validation dataset."""
         LOGGER.info("VALIDATION STEP")
+        results = []
+        expected = []
+
         # Disable any gradient calculation
         with torch.no_grad():
             self.network.eval()
-            results = []
-            expected = []
             loss_all = 0
             for x_val, y_val in self.valid_loader:
                 x_val = x_val.to(self.device)
@@ -176,7 +177,7 @@ class Modeller:
 
     def split_data(self, frac: float = 0.2):
         """Split the data into a training and test set."""
-        size_valid = int(self.data.index.size * frac)
+        size_valid = int(len(self.data.index) * frac)
         # Sample the indices without replacing
         self.index_valid = np.random.choice(self.data.index, size=size_valid, replace=False)
         self.index_train = np.setdiff1d(self.data.index, self.index_valid, assume_unique=True)
@@ -220,14 +221,9 @@ class GraphModeller(Modeller):
             loss_all = 0
             for batch in self.train_loader:
                 batch.to(self.device)
-                prediction = self.network(batch)
-                loss = self.loss_func(prediction, batch.y)
-                loss.backward()              # backpropagation, compute gradients
-                self.optimizer.step()        # apply gradients
-                self.optimizer.zero_grad()   # clear gradients for next train
-
-                loss_all += batch.num_graphs * loss.item()
-            relative_loss = loss_all / self.index_train.size
+                loss_batch = self.train_batch(batch, batch.y)
+                loss_all += batch.num_graphs * loss_batch
+            relative_loss = loss_all / len(self.index_train)
             if abs(previous_loss - relative_loss) < 1e-4:
                 break  # A plateau has been reached
             previous_loss = relative_loss
@@ -273,12 +269,23 @@ def train_and_validate_model(opts: dict) -> None:
 def predict_properties(opts: dict) -> Tensor:
     """Use a previous trained model to predict properties."""
     LOGGER.info(f"Loading previously trained model from: {opts.model_path}")
-    researcher = FingerprintModeller(opts)
+    modeller = FingerprintModeller if 'fingerprint' in opts.featurizer else GraphModeller
+    researcher = modeller(opts)
     # Generate features
-    fingerprints = generate_fingerprints(
-        researcher.data['molecules'], opts.featurizer.fingerprint, opts.model.input_cells)
-    fingerprints = torch.from_numpy(fingerprints)
-    predicted = researcher.to_numpy_detached(researcher.predict(fingerprints))
+    if 'fingerprint' in opts.featurizer:
+        features = generate_fingerprints(
+            researcher.data['molecules'], opts.featurizer.fingerprint, opts.model.input_cells)
+        features = torch.from_numpy(features).to(researcher.device)
+    else:
+        # Create a single minibatch with the data to predict
+        dataset = MolGraphDataset(tempfile.mkdtemp(prefix="dataset_"), researcher.data)
+        data_loader = tg.data.DataLoader(
+            dataset=dataset, batch_size=len(researcher.data['molecules']))
+        features = next(iter(data_loader))
+        features.to(researcher.device)
+
+    # Predict the property value and report
+    predicted = researcher.to_numpy_detached(researcher.predict(features))
     transformed = np.exp(predicted)
     df = pd.DataFrame({'smiles': researcher.data['smiles'].to_numpy(),
                        'predicted_property': transformed.flatten()})
@@ -288,4 +295,3 @@ def predict_properties(opts: dict) -> Tensor:
 def cross_validate(opts: dict) -> Tensor:
     """Run a cross validation with the given `opts`."""
     pass
-

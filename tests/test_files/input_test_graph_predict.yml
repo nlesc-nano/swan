@@ -1,0 +1,17 @@
+dataset_file:
+  tests/test_files/smiles.csv
+
+property: gammas
+
+use_cuda: True
+
+featurizer:
+  molecular_graph
+
+torch_config:
+  epochs: 10
+  batch_size: 500
+  optimizer:
+    name: adam
+    lr: 0.01 
+

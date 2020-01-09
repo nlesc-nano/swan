@@ -35,14 +35,17 @@ class FingerprintsDataset(Dataset):
 class MolGraphDataset(tg.data.Dataset):
     """Dataset for molecular graphs."""
 
-    def __init__(self, root: str, data: pd.DataFrame, property_name: str):
+    def __init__(self, root: str, data: pd.DataFrame, property_name: str = None):
         """Generate Molecular graph dataset."""
         super().__init__(root)
         self.molecules = data['molecules']
         self.molecules.reset_index(drop=True, inplace=True)
-        self.labels = data[property_name].to_numpy(np.float32)
         self.norm = tg.transforms.NormalizeFeatures()
-
+        if property_name is not None:
+            self.labels = data[property_name].to_numpy(np.float32)
+        else:
+            self.labels = None
+        
     def _download(self):
         pass
 
@@ -51,10 +54,13 @@ class MolGraphDataset(tg.data.Dataset):
 
     def __len__(self):
         """Return dataset length."""
-        return self.labels.shape[0]
+        return len(self.molecules)
 
     def __getitem__(self, idx):
         """Return the idx dataset element."""
-        labels = torch.Tensor([self.labels[idx]]).reshape(1, 1)
+        if self.labels is not None:
+            labels = torch.Tensor([self.labels[idx]]).reshape(1, 1)
+        else:
+            labels = None
         data = create_molecular_graph_data(self.molecules[idx], labels)
         return self.norm(data)
