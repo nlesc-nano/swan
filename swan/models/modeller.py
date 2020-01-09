@@ -120,19 +120,14 @@ class Modeller:
         # Set the model to training mode
         self.network.train()
 
-        previous_loss = 0  # Check if optimization reaches a plateau
         for epoch in range(self.opts.torch_config.epochs):
             loss_all = 0
             for x_batch, y_batch in self.train_loader:
                 x_batch = x_batch.to(self.device)
                 y_batch = y_batch.to(self.device)
                 loss_all += self.train_batch(x_batch, y_batch) * len(x_batch)
-            relative_loss = loss_all / len(self.index_train)
-            if abs(previous_loss - relative_loss) < 1e-4:
-                break  # A plateau has been reached
-            previous_loss = relative_loss
 
-            LOGGER.info(f"Loss: {relative_loss / len(self.train_loader)}")
+            LOGGER.info(f"Loss: {loss_all / len(self.index_train)}")
 
         # Save the models
         torch.save(self.network.state_dict(), self.opts.model_path)
@@ -165,7 +160,8 @@ class Modeller:
                 loss_all += loss.item() * len(x_val)
                 results.append(predicted)
                 expected.append(y_val)
-            LOGGER.info(f"Loss: {loss_all / len(self.valid_loader)}")
+            LOGGER.info(f"Loss: {loss_all / len(self.index_valid)}")
+            print("validation loss: ", loss_all / len(self.index_valid))
         return torch.cat(results), torch.cat(expected)
 
     def predict(self, tensor: Tensor):
@@ -222,19 +218,14 @@ class GraphModeller(Modeller):
         # Set the model to training mode
         self.network.train()
 
-        previous_loss = 0  # Check if optimization reaches a plateau
         for epoch in range(self.opts.torch_config.epochs):
             loss_all = 0
             for batch in self.train_loader:
                 batch.to(self.device)
                 loss_batch = self.train_batch(batch, batch.y)
                 loss_all += batch.num_graphs * loss_batch
-            relative_loss = loss_all / len(self.index_train)
-            if abs(previous_loss - relative_loss) < 1e-4:
-                break  # A plateau has been reached
-            previous_loss = relative_loss
 
-            LOGGER.info(f"Loss: {relative_loss}")
+            LOGGER.info(f"Loss: {loss_all / len(self.index_train)}")
 
         # Save the models
         torch.save(self.network.state_dict(), self.opts.model_path)
