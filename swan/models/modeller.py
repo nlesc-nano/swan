@@ -98,7 +98,12 @@ class Modeller:
         optimizers = {"sgd": torch.optim.SGD, "adam": torch.optim.Adam}
         config = self.opts.torch_config.optimizer
         fun = optimizers[config["name"]]
-        self.optimizer = fun(self.network.parameters(), config["lr"])
+        if config["name"] == "sgd":
+            self.optimizer = fun(self.network.parameters(), lr=config["lr"],
+                 momentum=config["momentum"], nesterov=config["nesterov"])
+        else:
+            self.optimizer = fun(self.network.parameters(), lr=config["lr"])
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer)
 
         # Create loss function
         self.loss_func = nn.MSELoss()
@@ -224,6 +229,7 @@ class GraphModeller(Modeller):
                 batch.to(self.device)
                 loss_batch = self.train_batch(batch, batch.y)
                 loss_all += batch.num_graphs * loss_batch
+            self.scheduler.step(loss_all / len(self.index_train))
 
             LOGGER.info(f"Loss: {loss_all / len(self.index_train)}")
 

@@ -50,7 +50,14 @@ SCHEMA_OPTIMIZER = Schema({
     Optional("name", default="sgd"): any_lambda(("adam", "sgd")),
 
     # Learning rate
-    Optional("lr", default=0.1): float
+    Optional("lr", default=0.1): float,
+
+    # Momentum
+    Optional("momentum", default=0): float,
+
+    # Nesterov accelerated gradient
+    Optional("nesterov", default=False): bool
+
 })
 
 
@@ -63,14 +70,7 @@ SCHEMA_TORCH = Schema({
 
     Optional("batch_size", default=100): int,
 
-    Optional("optimizer", default=OPTIMIZER_DEFAULTS): SCHEMA_OPTIMIZER,
-
-    # Metric to evaluate the model
-    Optional("metric", default='r2_score'): str,
-
-    # Frequency to log the ressult between epochs
-    Optional("frequency_log_epochs", default=10): int,
-
+    Optional("optimizer", default=OPTIMIZER_DEFAULTS): SCHEMA_OPTIMIZER
 })
 
 TORCH_DEFAULTS = SCHEMA_TORCH.validate({})
