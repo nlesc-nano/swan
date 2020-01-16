@@ -63,3 +63,6 @@ swan_models
 
 # plots
 scatterplot.png
+
+# Local data
+data/*
