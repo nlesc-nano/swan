@@ -6,6 +6,7 @@ from abc import abstractmethod
 from datetime import datetime
 from pathlib import Path
 
+import horovod.torch as hvd
 import numpy as np
 import pandas as pd
 import torch
@@ -69,7 +70,11 @@ class Modeller:
         self.data['molecules'] = create_molecules(self.data['smiles'].to_numpy())
 
         if opts.use_cuda and opts.mode == "train":
-            self.device = torch.device("cuda:0")
+            self.device = torch.device("cuda")
+
+            # Initialize Horovod
+            hvd.init()
+            torch.cuda.set_device(hvd.local_rank())
         else:
             self.device = torch.device("cpu")
 
@@ -92,7 +97,6 @@ class Modeller:
         """Configure a new model."""
         # Create an Network architecture
         self.network = select_model(self.opts)
-        self.network = self.network.to(self.device)
 
         # select an optimizer
         optimizers = {"sgd": torch.optim.SGD, "adam": torch.optim.Adam}
@@ -100,10 +104,15 @@ class Modeller:
         fun = optimizers[config["name"]]
         if config["name"] == "sgd":
             self.optimizer = fun(self.network.parameters(), lr=config["lr"],
-                 momentum=config["momentum"], nesterov=config["nesterov"])
+                                 momentum=config["momentum"], nesterov=config["nesterov"])
         else:
             self.optimizer = fun(self.network.parameters(), lr=config["lr"])
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer)
+
+        if self.opts.use_cuda:
+            self.network.cuda()
+            # Add Horovod Distributed Optimizer
+            self.optimizer = hvd.DistributedOptimizer(self.optimizer, named_parameters=self.network.named_parameters())
 
         # Create loss function
         self.loss_func = nn.MSELoss()
@@ -124,6 +133,10 @@ class Modeller:
 
         # Set the model to training mode
         self.network.train()
+
+        # Broadcast parameters using Horovod
+        if self.opts.use_cuda:
+            hvd.broadcast_parameters(self.network.state_dict(), root_rank=0)
 
         for epoch in range(self.opts.torch_config.epochs):
             loss_all = 0
@@ -166,7 +179,6 @@ class Modeller:
                 results.append(predicted)
                 expected.append(y_val)
             LOGGER.info(f"Loss: {loss_all / len(self.index_valid)}")
-            print("validation loss: ", loss_all / len(self.index_valid))
         return torch.cat(results), torch.cat(expected)
 
     def predict(self, tensor: Tensor):
@@ -203,8 +215,16 @@ class FingerprintModeller(Modeller):
             self.data.loc[indices], 'transformed_labels',
             self.opts.featurizer.fingerprint,
             self.opts.model.input_cells)
+
+        # Partition dataset among workers using DistributedSampler
+        if self.opts.use_cuda:
+            sampler = torch.utils.data.distributed.DistributedSampler(
+                dataset, num_replicas=hvd.size(), rank=hvd.rank())
+        else:
+            sampler = None
+
         return DataLoader(
-            dataset=dataset, batch_size=self.opts.torch_config.batch_size)
+            dataset=dataset, batch_size=self.opts.torch_config.batch_size, sampler=sampler)
 
 
 class GraphModeller(Modeller):
@@ -214,14 +234,24 @@ class GraphModeller(Modeller):
         """Create a DataLoader instance for the data."""
         root = tempfile.mkdtemp(prefix="dataset_")
         dataset = MolGraphDataset(root, self.data.loc[indices], 'transformed_labels')
+        if self.opts.use_cuda:
+            sampler = torch.utils.data.distributed.DistributedSampler(
+                dataset, num_replicas=hvd.size(), rank=hvd.rank())
+        else:
+            sampler = None
+
         return tg.data.DataLoader(
-            dataset=dataset, batch_size=self.opts.torch_config.batch_size)
+            dataset=dataset, batch_size=self.opts.torch_config.batch_size, sampler=sampler)
 
     def train_model(self):
         """Train a statistical model."""
         LOGGER.info("TRAINING STEP")
         # Set the model to training mode
         self.network.train()
+
+        # Broadcast parameters using Horovod
+        if self.opts.use_cuda:
+            hvd.broadcast_parameters(self.network.state_dict(), root_rank=0)
 
         for epoch in range(self.opts.torch_config.epochs):
             loss_all = 0
