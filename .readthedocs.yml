@@ -5,3 +5,15 @@ formats: all
 
 python:
   version: 3.7
+
+conda:
+  environment: environment.yml
+
+build:
+  image: latest
+
+sphinx:
+  builder: html
+  configuration: conf.py
+  fail_on_warning: false  
+  
