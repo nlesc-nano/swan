@@ -1,9 +1,10 @@
 # Change Log
 
-# 0.2.0 [04/12/19]
+# 0.2.0 [25/02/2020]
 
 ## New
-* Allow to  train **GPU**.
+* Allow to  train in **GPU**.
+* Use [Pytorch-geometric](https://github.com/rusty1s/pytorch_geometric) to create molecular graph convolutional networks.
 
 ## Changed
 * Replace [deepchem](https://deepchem.io/) with [pytorch](https://pytorch.org)
