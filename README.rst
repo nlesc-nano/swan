@@ -14,7 +14,7 @@
 Screening Workflows And Nanomaterials
 ################################################################################
 
-Workflows and statistical models to predict numerical properties for nanomaterials. See Documentation_.
+**Swan** is a Python pacakge to create statistical models to predict molecular properties. See Documentation_.
 
 
 Installation
