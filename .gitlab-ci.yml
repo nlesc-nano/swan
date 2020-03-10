@@ -8,5 +8,3 @@ job build:
     # Install packages
     - cd swan && pip install -e .[test]
     - pytest --cov=swan tests -p no:warnings
-  tags:
-    - nlescjcer
