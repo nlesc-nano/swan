@@ -33,6 +33,7 @@ setup(
         'Natural Language :: English',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
     ],
     entry_points={
         'console_scripts': [
@@ -41,7 +42,6 @@ setup(
             'save_dataset_in_db=swan.data.save_data:main'
         ]
     },
-    test_suite='tests',
     install_requires=[
         'CAT@git+https://github.com/nlesc-nano/CAT@master',
         'nano-CAT@git+https://github.com/nlesc-nano/nano-CAT@master',
@@ -49,21 +49,10 @@ setup(
         'mendeleev', 'numpy', 'pandas', 'pyyaml>=5.1.1',
         'seaborn', 'schema', 'sqlalchemy',
         'torch-geometric'],
-    setup_requires=[
-        # dependency for `python setup.py test`
-        'pytest-runner',
-        # dependencies for `python setup.py build_sphinx`
-        'sphinx',
-        'sphinx_rtd_theme',
-        'recommonmark'
-    ],
-    tests_require=[
-        'pytest',
-        'pytest-cov',
-        'pycodestyle',
-    ],
+
     extras_require={
         'test': ['coverage', 'pycodestyle', 'pytest>=3.9', 'pytest-cov', 'pytest-mock'],
-        'doc': ['sphinx', 'sphinx-autodoc-typehints', 'sphinx_rtd_theme', 'nbsphinx']
+        'doc': ['sphinx', 'sphinx-autodoc-typehints', 'sphinx_rtd_theme',
+                'nbsphinx']
     }
 )
