@@ -45,7 +45,7 @@ Using the conda environment the following packages should be installed:
 
 - install RDKit_ and H5PY:
 
-  - `conda install -y -q -c conda-forge -c h5py rdkit`
+  - `conda install -y -q -c conda-forge h5py rdkit`
 
 - install Pytorch_ according to this_ recipe
 
