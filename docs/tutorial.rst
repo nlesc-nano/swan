@@ -1,7 +1,7 @@
 Tutorial
 =========
 In this tutorial we explore how to create and train statistical models to predict
-molecular properties using the deepchem_ library. We will use smiles_ to represent the molecules
+molecular properties using the Pytorch_ library. We will use smiles_ to represent the molecules
 and use the csv_ file format to manipulate the molecules and their properties.
 
 As an example, we will predict the `activity coefficient_` for a subset of carboxylic acids taken
@@ -20,7 +20,7 @@ A peek into the file will show you something like: ::
 Where the first column contains the index of the row, the second the solvation energy and finally the
 `activity coefficients_` denoted as *gammas*. Once we have the data we can start exploring different statistical methods.
 
-`swan` offers a thin interface to deepchem_. It takes yaml_ file as input and either train an statistical model or
+`swan` offers a thin interface to Pytorch_. It takes yaml_ file as input and either train an statistical model or
 generates a prediction using a previously trained model. Let's briefly explore the `swan` input.
 
 Simulation input
@@ -28,45 +28,39 @@ Simulation input
 A typical `swan` input file looks like: ::
 
   dataset_file:
-  "tests/test_files/thousand.csv"
+    tests/test_files/thousand.csv
+  property: gammas
 
-  tasks:
-    - gammas
+  use_cuda: True
 
   featurizer:
-    circularfingerprint
+    fingerprint: atompair
 
-  interface:
-    name:
-      sklearn
-    model:
-      randomforest
+  model:
+    input_cells: 2048
+    hidden_cells: 1000
 
-  optimize_hyperparameters:
-    False
-
-  save_dataset:
-    True
+  torch_config:
+    epochs: 100
+    batch_size: 100
+    optimizer:
+      name: sgd
+      lr: 0.2
 
    
 **dataset_file**: Could be either a csv_ file with the smiles_ and other molecular properties or
 a *joblib* file that is binary format to load a previous used dataset (see the `save_dataset` keyword).
 
-**tasks**: the columns names of hte csv_ file representing the molecular properties to fit.
+**property**: the columns names of hte csv_ file representing the molecular properties to fit.
 
-**featurizer**: The type of transformation to apply to the smiles_ to generates the features_. For more information of the available features_ see: `deepchem.feat_`.
+**featurizer**: The type of transformation to apply to the smiles_ to generates the features_. Could be either **fingerprint** or **molecular_graph**.
 
-**interface**: deepchem_ statistical models belong to either the SKlearn_ or Tensorgraph_ classes. Therefore, `name` should be one of the two. Also, the `model` key is the name of the concrete model.
-
-**optimize_hyperparameters**: Most machine learning models required some tweaking of their hyperparameters. This option allow to search for the best hyperparameters using a predefined set of values define in the `metadata module_`.
- 
-**save_dataset**: Save the data (and its preprocessing) for future reuse.
  
 Training a model
 ****************
 In order to run the training, run the following command: ::
 
-  modeler --mode train -i input.yml
+  modeller --mode train -i input.yml
 
 `swan` will generate a log file called  `output.log` with a timestamp for the different steps during the training.
 Finally, you can see in your `cwd` a folder called *swan_models* containing the parameters of your statistical model.
@@ -86,7 +80,7 @@ Then run the command: ::
 
   modeler --mode predict -i input.yml
 
-`swan` will look for a *swan_model* folder with thre previously trained model and will load it.
+`swan` will look for a *swan_model.pt* file with the previously trained model and will load it.
 
 Finally, you will find a file called "predicted.csv" with the predicted values for the activity coefficients.
 
@@ -95,12 +89,9 @@ Finally, you will find a file called "predicted.csv" with the predicted values f
 .. _activity coefficient: https://en.wikipedia.org/wiki/Activity_coefficient
 .. _GDB-13 database_`: https://pubs.acs.org/doi/abs/10.1021/ja902302h
 .. _COSMO approach: https://www.scm.com/doc/ADF/Input/COSMO.html
-.. _deepchem.feat: https://deepchem.io/docs/deepchem.feat.html
 .. _thousand.csv: https://github.com/nlesc-nano/swan/blob/master/tests/test_files/thousand.csv
 .. _features: https://en.wikipedia.org/wiki/Feature_(machine_learning)
-.. _SKlearn: https://deepchem.io/docs/deepchem.models.sklearn_models.html
-.. _Tensorgraph: https://deepchem.io/docs/deepchem.models.tensorgraph.models.html
-.. _metadata module: https://github.com/nlesc-nano/swan/blob/master/swan/models/metadata_models.py
 .. _smiles.csv: https://github.com/nlesc-nano/swan/blob/master/tests/test_files/smiles.csv
 .. _yaml: https://yaml.org
 .. _csv: https://en.wikipedia.org/wiki/Comma-separated_values
+.. _Pytorch: https://pytorch.org
