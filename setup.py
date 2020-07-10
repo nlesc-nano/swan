@@ -46,7 +46,7 @@ setup(
         'CAT@git+https://github.com/nlesc-nano/CAT@master',
         'nano-CAT@git+https://github.com/nlesc-nano/nano-CAT@master',
         'data-CAT@git+https://github.com/nlesc-nano/data-CAT@master',
-        'mendeleev', 'numpy', 'pandas', 'pyyaml>=5.1.1',
+        'horovod', 'mendeleev', 'numpy', 'pandas', 'pyyaml>=5.1.1',
         'seaborn', 'schema', 'sqlalchemy',
         'torch-geometric'],
 

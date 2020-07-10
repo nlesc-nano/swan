@@ -26,7 +26,7 @@ jobs:
         conda-channels: anaconda, conda-forge
     - run: conda --version
     - run: which python
-    - run: conda install rdkit pytorch torchvision cpuonly -c pytorch
+    - run: conda install openmpi rdkit pytorch torchvision cpuonly -c pytorch
 
     - name: install torch-geometric dependencies
       run: pip install --verbose --no-cache-dir torch-scatter torch-sparse torch-cluster torch-geometric
