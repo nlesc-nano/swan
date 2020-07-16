@@ -16,6 +16,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+import datetime
 import os
 import sys
 
@@ -32,7 +33,10 @@ sys.path.insert(0, os.path.abspath(os.path.join(here, '..')))
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.napoleon']
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.napoleon']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -47,9 +51,10 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'SWAN'
-copyright = u'2019, Netherlands eScience Center'
-author = u"Felipe Zapata"
+project = 'SWAN'
+author = "Felipe Zapata, Netherlands eScience Center"
+year = str(datetime.datetime.now().year)
+copyright = f'{year}, {author}'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -152,7 +157,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'swan.tex', u'Screening Workflows And Nanomaterials Documentation',
+    (master_doc, 'swan.tex', 'Screening Workflows And Nanomaterials Documentation',
      u"Felipe Zapata", 'manual'),
 ]
 
@@ -162,7 +167,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'swan', u'Screening Workflows And Nanomaterials Documentation',
+    (master_doc, 'swan', 'Screening Workflows And Nanomaterials Documentation',
      [author], 1)
 ]
 
@@ -173,7 +178,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'swan', u'Screening Workflows And Nanomaterials Documentation',
+    (master_doc, 'swan', 'Screening Workflows And Nanomaterials Documentation',
      author, 'swan', "",
      'Miscellaneous'),
 ]
