@@ -87,22 +87,24 @@ def apply_filter(opts: Options) -> None:
         "functional_groups": filter_by_functional_group}
 
     for key in opts.filters.keys():
-        available_filters[key](molecules, opts)
+        if key in available_filters:
+            available_filters[key](molecules, opts)
     
     # write candidates to file
 
 
 
-def filter_by_functional_group(molecules: pd.DataFrame, functional_groups: List[str], target: str = "candidates") -> pd.DataFrame:
+def filter_by_functional_group(molecules: pd.DataFrame, functional_groups: List[str], target: str = "candidates") -> None:
     """Search for a set of functional_groups."""
     # Transform functional_groups to rkdit molecules
     patterns = tuple((Chem.MolFromSmiles(f) for f in functional_groups))
 
-    # Check if the functional_groups are in the molecules
-    molecules['functional_groups'] =     mols.apply(
-        lambda m: any(m.HasSubstructMatch(p) for p in patterns))
+    # Get the index of the potential candidates
+    ids = molecules.index[molecules["is_candidate"]]
 
-    return molecules
+    # Check if the functional_groups are in the molecules
+    molecules['is_candidate'] = molecules["rdkit_molecules"].apply(
+        lambda m: False if m.name not in ids else any(m.HasSubstructMatch(p) for p in patterns))
 
 
 def main():
