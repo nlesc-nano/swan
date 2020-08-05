@@ -131,11 +131,6 @@ def compute_fingerprint(molecule, function: callable, nBits: int) -> np.ndarray:
     return np.fromiter((float(k) for k in fp.ToBitString()), np.float32, nBits)
 
 
-def create_molecules(smiles: np.array) -> list:
-    """Create a list of RDKit molecules."""
-    return [Chem.MolFromSmiles(s) for s in smiles]
-
-
 def compute_3D_descriptors(molecules: list) -> np.array:
     """Compute the Asphericity and Eccentricity for an array of molecules."""
     asphericity = np.fromiter((Descriptors3D.Asphericity(m) for m in molecules), np.float32)

@@ -20,10 +20,10 @@ from pathlib import Path
 import pandas as pd
 import yaml
 from rdkit import Chem
+from rdkit.Chem import PandasTools
 from schema import Optional, Or, Schema, SchemaError
 
 from ..utils import Options
-from ..features.featurizer import create_molecules
 
 #: Schema to validate the ordering keywords
 SCHEMA_ORDERING = Or(
@@ -81,7 +81,7 @@ def apply_filters(opts: Options) -> None:
     molecules["is_candidate"] = True
 
     # Create rdkit representations
-    molecules["rdkit_molecules"] = create_molecules(molecules['smiles'].to_numpy())
+    PandasTools.AddMoleculeColumnToFrame(molecules, smilesCol='smiles', molCol='rdkit_molecules')
 
     # Apply all the filters
     available_filters = {

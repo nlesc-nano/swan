@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import torch
 import torch_geometric as tg
-from rdkit.Chem import AllChem
+from rdkit.Chem import AllChem, PandasTools
 from torch import Tensor, nn
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
@@ -19,7 +19,7 @@ from torch.utils.data import DataLoader
 from swan.log_config import config_logger
 from swan.models.models import select_model
 
-from ..features.featurizer import create_molecules, generate_fingerprints
+from ..features.featurizer import generate_fingerprints
 from ..input_validation import validate_input
 from ..plot import create_scatter_plot
 from .datasets import FingerprintsDataset, MolGraphDataset
@@ -67,7 +67,8 @@ class Modeller:
         """Set up a modeler object."""
         self.opts = opts
         self.data = pd.read_csv(opts.dataset_file, index_col=0).reset_index(drop=True)
-        self.data['molecules'] = create_molecules(self.data['smiles'].to_numpy())
+        # Generate rdkit molecules
+        PandasTools.AddMoleculeColumnToFrame(self.data, smilesCol='smiles', molCol='molecules')
 
         if opts.use_cuda and opts.mode == "train":
             self.device = torch.device("cuda")
