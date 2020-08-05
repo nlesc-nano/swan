@@ -1,12 +1,16 @@
 smiles_file:
   tests/test_files/functional_groups.csv
 
+core:
+  "Cd68Se55.xyz"
+
 filters:
   functional_groups:
     - "C(=O)O"
   bulkiness:
     lower_than:
       42
+
   SA_score:
     greater_than:
       3.14

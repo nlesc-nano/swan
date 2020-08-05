@@ -38,6 +38,7 @@ SCHEMA_FILTERS = Schema({
 
     # Select smiles >, < or = to some value
     Optional("bulkiness"): SCHEMA_ORDERING,
+
     Optional("SA_score"): SCHEMA_ORDERING
 })
 
@@ -48,6 +49,9 @@ SCHEMA_SCREEN = Schema({
 
     # Constrains to filter
     "filters": SCHEMA_FILTERS,
+
+    # path to the molecular coordinates of the Core to attach the ligands
+    Optional("core"): str,
 
     # File to print the final candidates
     Optional("output_file", default="candidates.csv"): str

@@ -5,21 +5,31 @@ import shutil
 import os
 import tempfile
 import numpy as np
+import pandas as pd
 import CAT
+from CAT.base import prep
 from nanoCAT.ligand_solvation import get_solv
 from scm.plams import (CRSJob, Settings)
+from typing import Mapping, TypeVar
 import scm.plams.interfaces.molecule.rdkit as molkit
 from .functions import run_command
 
+VT = TypeVar("VT")
 
 # Starting logger
 LOGGER = logging.getLogger(__name__)
 
 
+def call_cat(config: Mapping[str, VT]) -> pd.DataFrame:
+    """Call cat with a given `config` and returns a dataframe with the results."""
+    inp = Settings(config)
+    prep(inp)
+
+
 def call_mopac(smile: str, solvents=["Toluene.coskf"]) -> float:
-    """
-    Use the COsMO-RS to compute the activity coefficient, see:
-    https://www.scm.com/doc/COSMO-RS/Fast_Sigma_QSPR_COSMO_sigma-profiles.html
+    """Use the COsMO-RS to compute the activity coefficient.
+
+    see https://www.scm.com/doc/COSMO-RS/Fast_Sigma_QSPR_COSMO_sigma-profiles.html
     """
     # Call fast sigma
     fast_sigma = Path(os.environ['ADFBIN']) / 'fast_sigma'
