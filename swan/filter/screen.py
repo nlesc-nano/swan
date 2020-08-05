@@ -16,7 +16,6 @@ API
 import argparse
 from numbers import Real
 from pathlib import Path
-from typing import List
 
 import pandas as pd
 import yaml
@@ -30,8 +29,7 @@ from ..features.featurizer import create_molecules
 SCHEMA_ORDERING = Or(
     Schema({"greater_than": Real}),
     Schema({"lower_than": Real}),
-    Schema({"equal": Real})
-    )
+    Schema({"equal": Real}))
 
 #: Schema to validate the filters to apply for screening
 SCHEMA_FILTERS = Schema({
@@ -49,7 +47,10 @@ SCHEMA_SCREEN = Schema({
     "smiles_file": str,
 
     # Constrains to filter
-    "filters": SCHEMA_FILTERS
+    "filters": SCHEMA_FILTERS,
+
+    # File to print the final candidates
+    Optional("output_file", default="candidates.csv"): str
 })
 
 
@@ -71,12 +72,12 @@ def validate_input(file_input: str) -> Options:
         raise
 
 
-def apply_filter(opts: Options) -> None:
+def apply_filters(opts: Options) -> None:
     """Apply a set of filters to the given smiles."""
     # Read molecules into a pandas dataframe
     molecules = read_molecules(opts.smiles_file)
 
-    # Create a new column that will contain the label of the screened candidates
+    # Create a new column that will contain the labels of the screened candidates
     molecules["is_candidate"] = True
 
     # Create rdkit representations
@@ -89,22 +90,28 @@ def apply_filter(opts: Options) -> None:
     for key in opts.filters.keys():
         if key in available_filters:
             available_filters[key](molecules, opts)
-    
+
     # write candidates to file
+    final_candidates = molecules[molecules["is_candidate"]]
+    final_candidates.to_csv(opts.output_file, columns=["smiles"])
+    print(f"The filtered candidates has been written to the {opts.output_file} file!")
 
 
-
-def filter_by_functional_group(molecules: pd.DataFrame, functional_groups: List[str], target: str = "candidates") -> None:
+def filter_by_functional_group(molecules: pd.DataFrame, opts: Options) -> None:
     """Search for a set of functional_groups."""
     # Transform functional_groups to rkdit molecules
+    functional_groups = opts["filters"]["functional_groups"]
     patterns = tuple((Chem.MolFromSmiles(f) for f in functional_groups))
 
-    # Get the index of the potential candidates
-    ids = molecules.index[molecules["is_candidate"]]
+    # Get Candidates
+    candidates = molecules[molecules["is_candidate"]]
 
     # Check if the functional_groups are in the molecules
-    molecules['is_candidate'] = molecules["rdkit_molecules"].apply(
-        lambda m: False if m.name not in ids else any(m.HasSubstructMatch(p) for p in patterns))
+    has_pattern = candidates["rdkit_molecules"].apply(
+        lambda m: any(m.HasSubstructMatch(p) for p in patterns))
+
+    # Update the candidates
+    molecules.loc[candidates.index, "is_candidate"] = has_pattern
 
 
 def main():
@@ -117,7 +124,7 @@ def main():
 
     options = validate_input(args.i)
 
-    apply_filter(options)
+    apply_filters(options)
 
 
 if __name__ == "__main__":

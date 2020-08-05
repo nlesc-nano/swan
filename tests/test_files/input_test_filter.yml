@@ -1,5 +1,5 @@
 smiles_file:
-  tests/test_files/thousand.csv
+  tests/test_files/functional_groups.csv
 
 filters:
   functional_groups:
