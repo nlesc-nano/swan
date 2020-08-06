@@ -19,8 +19,25 @@ from ..utils import Options
 LOGGER = logging.getLogger(__name__)
 
 
-def call_cat(molecules: pd.DataFrame, opts: Options) -> pd.DataFrame:
-    """Call cat with a given `config` and returns a dataframe with the results."""
+def call_cat(molecules: pd.DataFrame, opts: Options) -> Path:
+    """Call cat with a given `config` and returns a dataframe with the results.
+
+    Parameters
+    ----------
+    molecules
+        Dataframe with the molecules to compute
+    opts
+        Options for the computation
+
+    Returns
+    -------
+    Path to the HDF5 file with the results
+
+    Raises
+    ------
+    RuntimeError
+        If the Cat calculation fails
+    """
     # create workdir for cat
     path_workdir_cat = Path(opts.workdir) / "cat_workdir"
     path_workdir_cat.mkdir()
@@ -47,6 +64,13 @@ optional:
 
     inp = Settings(input_cat)
     prep(inp)
+
+    path_hdf5 = path_workdir_cat / "database" / "structures.hdf5"
+
+    if not path_hdf5.exists():
+        raise RuntimeError(f"There is not hdf5 file at:{path_hdf5}")
+    else:
+        return path_hdf5
 
 
 def call_mopac(smile: str, solvents=["Toluene.coskf"]) -> float:
