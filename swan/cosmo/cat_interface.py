@@ -7,22 +7,45 @@ import tempfile
 import numpy as np
 import pandas as pd
 import CAT
+import yaml
 from CAT.base import prep
 from nanoCAT.ligand_solvation import get_solv
 from scm.plams import (CRSJob, Settings)
-from typing import Mapping, TypeVar
 import scm.plams.interfaces.molecule.rdkit as molkit
 from .functions import run_command
-
-VT = TypeVar("VT")
+from ..utils import Options
 
 # Starting logger
 LOGGER = logging.getLogger(__name__)
 
 
-def call_cat(config: Mapping[str, VT]) -> pd.DataFrame:
+def call_cat(molecules: pd.DataFrame, opts: Options) -> pd.DataFrame:
     """Call cat with a given `config` and returns a dataframe with the results."""
-    inp = Settings(config)
+    # create workdir for cat
+    path_workdir_cat = Path(opts.workdir) / "cat_workdir"
+    path_workdir_cat.mkdir()
+
+    path_smiles = (Path(opts.workdir) / "smiles.csv").absolute().as_posix()
+
+    # Save smiles of the candidates
+    molecules.to_csv(path_smiles, columns=["smiles"], index=False, header=False)
+
+    input_cat = yaml.load(f"""
+path: {path_workdir_cat.absolute().as_posix()}
+
+input_cores:
+    - {opts.core}:
+        guess_bonds: False
+
+input_ligands:
+    - {path_smiles}
+
+optional:
+    qd:
+       bulkiness: true
+""", Loader=yaml.FullLoader)
+
+    inp = Settings(input_cat)
     prep(inp)
 
 

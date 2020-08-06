@@ -18,18 +18,20 @@ from numbers import Real
 from pathlib import Path
 
 import pandas as pd
+import tempfile
 import yaml
 from rdkit import Chem
 from rdkit.Chem import PandasTools
 from schema import Optional, Or, Schema, SchemaError
 
 from ..utils import Options
+from ..cosmo.cat_interface import call_cat
+
 
 #: Schema to validate the ordering keywords
 SCHEMA_ORDERING = Or(
     Schema({"greater_than": Real}),
-    Schema({"lower_than": Real}),
-    Schema({"equal": Real}))
+    Schema({"lower_than": Real}))
 
 #: Schema to validate the filters to apply for screening
 SCHEMA_FILTERS = Schema({
@@ -52,6 +54,9 @@ SCHEMA_SCREEN = Schema({
 
     # path to the molecular coordinates of the Core to attach the ligands
     Optional("core"): str,
+
+    # path to the workdir
+    Optional("workdir", default=tempfile.mkdtemp(prefix="swan_workdir_")): str,
 
     # File to print the final candidates
     Optional("output_file", default="candidates.csv"): str
@@ -114,8 +119,50 @@ def filter_by_functional_group(molecules: pd.DataFrame, opts: Options) -> None:
     has_pattern = candidates["rdkit_molecules"].apply(
         lambda m: any(m.HasSubstructMatch(p) for p in patterns))
 
-    # Update the candidates
-    molecules.loc[candidates.index, "is_candidate"] = has_pattern
+    update_candidates(molecules, candidates.index, has_pattern)
+
+
+def filter_by_bulkiness(molecules: pd.DataFrame, opts: Options) -> None:
+    """Filter the ligands that have a given bulkiness.
+
+    The bulkiness is computed using the CAT library: https://github.com/nlesc-nano/CAT
+    The user must specify whether the bulkiness should be lower_than, greater_than
+    or equal than a given value.
+    """
+    if opts.core is None:
+        raise RuntimeError("A core molecular geometry is needed to compute bulkiness")
+
+    bulkiness = opts.filters["bulkiness"]
+    predicate = next(iter(bulkiness.keys()))
+    value = bulkiness[predicate]
+
+    # Get Candidates and compute bulkiness for them
+    candidates = molecules[molecules["is_candidate"]]
+    candidates["bulkiness"] = compute_bulkiness(candidates)
+
+    # Check if the candidates fulfill the bulkiness predicate
+    if predicate == "lower_than":
+        has_pattern = candidates["bulkiness"] <= value
+    elif predicate == "greater_than":
+        has_pattern = candidates["bulkiness"] >= value
+
+    update_candidates(molecules, candidates.index, has_pattern)
+
+
+def update_candidates(molecules: pd.DataFrame, indices: pd.Index, has_pattern: pd.Series) -> None:
+    """Mark current candidates as valid or not for the next step."""
+    molecules.loc[indices, "is_candidate"] = has_pattern
+
+
+def compute_bulkiness(molecules: pd.DataFrame, opts: Options) -> pd.Series:
+    """Compute the bulkiness for the candidates."""
+    call_cat(molecules, opts)
+
+    # read cat results
+    #  dtype = {'hdf5 index': int, 'settings': str, 'opt': bool}
+    # df = pd.read_csv(p, index_col=[0, 1, 2, 3], header=[0, 1], dtype=dtype)
+    # idx_tups = [(i, '') if 'Unnamed' in j else (i, j) for i, j in df.columns]
+    # df.columns = pd.MultiIndex.from_tuples(idx_tups, names=df.columns.names)
 
 
 def main():
