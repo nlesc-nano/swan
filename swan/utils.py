@@ -57,6 +57,6 @@ def retrieve_hdf5_data(path_hdf5: Path, paths_to_prop: str) -> np.ndarray:
     except KeyError:
         msg = f"There is not {paths_to_prop} stored in the HDF5\n"
         raise KeyError(msg)
-    except FileNotFoundError:
-        msg = "there is not HDF5 file containing the numerical results"
-        raise RuntimeError(msg)
+    except OSError:
+        msg = f"there is no {path_hdf5} file!"
+        raise OSError(msg)
