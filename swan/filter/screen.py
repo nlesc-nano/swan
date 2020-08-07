@@ -17,9 +17,12 @@ import argparse
 from numbers import Real
 from pathlib import Path
 
+import h5py
 import pandas as pd
 import tempfile
 import yaml
+
+from dataCAT import prop_to_dataframe
 from rdkit import Chem
 from rdkit.Chem import PandasTools
 from schema import Optional, Or, Schema, SchemaError
@@ -51,6 +54,9 @@ SCHEMA_SCREEN = Schema({
 
     # Constrains to filter
     "filters": SCHEMA_FILTERS,
+
+    # Functional group use as anchor
+    Optional("anchor", default="C(=O)O"): str,
 
     # path to the molecular coordinates of the Core to attach the ligands
     Optional("core"): str,
@@ -92,9 +98,13 @@ def apply_filters(opts: Options) -> None:
     # Create rdkit representations
     PandasTools.AddMoleculeColumnToFrame(molecules, smilesCol='smiles', molCol='rdkit_molecules')
 
+    # Convert smiles to the standard representation
+    molecules.smiles = molecules.rdkit_molecules.apply(lambda mol: Chem.MolToSmiles(mol))
+
     # Apply all the filters
     available_filters = {
-        "functional_groups": filter_by_functional_group}
+        "functional_groups": filter_by_functional_group,
+        "bulkiness": filter_by_bulkiness}
 
     for key in opts.filters.keys():
         if key in available_filters:
@@ -138,7 +148,7 @@ def filter_by_bulkiness(molecules: pd.DataFrame, opts: Options) -> None:
 
     # Get Candidates and compute bulkiness for them
     candidates = molecules[molecules["is_candidate"]]
-    candidates["bulkiness"] = compute_bulkiness(candidates)
+    candidates["bulkiness"] = compute_bulkiness(candidates, opts)
 
     # Check if the candidates fulfill the bulkiness predicate
     if predicate == "lower_than":
@@ -156,13 +166,26 @@ def update_candidates(molecules: pd.DataFrame, indices: pd.Index, has_pattern: p
 
 def compute_bulkiness(molecules: pd.DataFrame, opts: Options) -> pd.Series:
     """Compute the bulkiness for the candidates."""
-    call_cat(molecules, opts)
+    path_hdf5 = call_cat(molecules, opts)
+    with h5py.File(path_hdf5, 'r') as f:
+        dset = f['qd/properties/V_bulk']
+        df = prop_to_dataframe(dset)
 
-    # read cat results
-    #  dtype = {'hdf5 index': int, 'settings': str, 'opt': bool}
-    # df = pd.read_csv(p, index_col=[0, 1, 2, 3], header=[0, 1], dtype=dtype)
-    # idx_tups = [(i, '') if 'Unnamed' in j else (i, j) for i, j in df.columns]
-    # df.columns = pd.MultiIndex.from_tuples(idx_tups, names=df.columns.names)
+    # Extract the bulkiness
+    df = df.reset_index()
+    df.ligand = df.ligand.str.replace("[O-]", "O", regex=False)
+
+    # TODO: Filter out the values computed for the ligands in the 
+    # position that are different of the target functional group
+    # print("molecules:\n", molecules["smiles"])
+    # print("output:\n", df["ligand"], df["V_bulk"])
+    # print(pd.merge(molecules, df, left_on="smiles", right_on="ligand"))
+
+    bulkiness = pd.merge(molecules, df, left_on="smiles", right_on="ligand")["V_bulk"]
+
+    print(molecules.smiles)
+    print(bulkiness)
+    raise RuntimeError("BOOM!")
 
 
 def main():

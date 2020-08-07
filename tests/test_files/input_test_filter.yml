@@ -9,7 +9,7 @@ filters:
     - "C(=O)O"
   bulkiness:
     lower_than:
-      42
+      20
 
   SA_score:
     greater_than:

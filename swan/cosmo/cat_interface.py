@@ -42,7 +42,7 @@ def call_cat(molecules: pd.DataFrame, opts: Options) -> Path:
     path_workdir_cat = Path(opts.workdir) / "cat_workdir"
     path_workdir_cat.mkdir()
 
-    path_smiles = (Path(opts.workdir) / "smiles.csv").absolute().as_posix()
+    path_smiles = (Path(opts.workdir) / "smiles.txt").absolute().as_posix()
 
     # Save smiles of the candidates
     molecules.to_csv(path_smiles, columns=["smiles"], index=False, header=False)
@@ -62,6 +62,7 @@ optional:
        bulkiness: true
 """, Loader=yaml.FullLoader)
 
+    print("CAT:\n", input_cat)
     inp = Settings(input_cat)
     prep(inp)
 
