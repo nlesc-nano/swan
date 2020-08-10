@@ -55,8 +55,8 @@ SCHEMA_SCREEN = Schema({
     # Constrains to filter
     "filters": SCHEMA_FILTERS,
 
-    # Functional group use as anchor
-    Optional("anchor", default="C(=O)O"): str,
+    # Functional group used as anchor
+    Optional("anchor", default="O(C=O)[H]"): str,
 
     # path to the molecular coordinates of the Core to attach the ligands
     Optional("core"): str,
@@ -147,8 +147,9 @@ def filter_by_bulkiness(molecules: pd.DataFrame, opts: Options) -> None:
     value = bulkiness[predicate]
 
     # Get Candidates and compute bulkiness for them
-    candidates = molecules[molecules["is_candidate"]]
-    candidates["bulkiness"] = compute_bulkiness(candidates, opts)
+    candidates = molecules[molecules["is_candidate"]].copy()
+    indices = candidates.index
+    candidates.loc[(indices, "bulkiness")] = compute_bulkiness(candidates, opts)
 
     # Check if the candidates fulfill the bulkiness predicate
     if predicate == "lower_than":
@@ -174,18 +175,8 @@ def compute_bulkiness(molecules: pd.DataFrame, opts: Options) -> pd.Series:
     # Extract the bulkiness
     df = df.reset_index()
     df.ligand = df.ligand.str.replace("[O-]", "O", regex=False)
-
-    # TODO: Filter out the values computed for the ligands in the 
-    # position that are different of the target functional group
-    # print("molecules:\n", molecules["smiles"])
-    # print("output:\n", df["ligand"], df["V_bulk"])
-    # print(pd.merge(molecules, df, left_on="smiles", right_on="ligand"))
-
     bulkiness = pd.merge(molecules, df, left_on="smiles", right_on="ligand")["V_bulk"]
-
-    print(molecules.smiles)
-    print(bulkiness)
-    raise RuntimeError("BOOM!")
+    return bulkiness.to_numpy()
 
 
 def main():

@@ -1,13 +1,15 @@
 """Interface with CAT/PLAMS Packages."""
+from contextlib import redirect_stderr
 from pathlib import Path
 import logging
-import shutil
 import os
+import shutil
 import tempfile
 import numpy as np
 import pandas as pd
 import CAT
 import yaml
+
 from CAT.base import prep
 from nanoCAT.ligand_solvation import get_solv
 from scm.plams import (CRSJob, Settings)
@@ -15,8 +17,13 @@ import scm.plams.interfaces.molecule.rdkit as molkit
 from .functions import run_command
 from ..utils import Options
 
+
 # Starting logger
-LOGGER = logging.getLogger(__name__)
+# logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logger = logging.getLogger('CAT')
+logger.propagate = False
+handler = logging.FileHandler("cat_output.log")
+logger.addHandler(handler)
 
 
 def call_cat(molecules: pd.DataFrame, opts: Options) -> Path:
@@ -60,11 +67,15 @@ input_ligands:
 optional:
     qd:
        bulkiness: true
+    ligand:
+       functional_groups:
+          ['{opts.anchor}']
 """, Loader=yaml.FullLoader)
 
-    print("CAT:\n", input_cat)
     inp = Settings(input_cat)
-    prep(inp)
+    with open("cat_output.log", 'a') as f:
+        with redirect_stderr(f):
+            prep(inp)
 
     path_hdf5 = path_workdir_cat / "database" / "structures.hdf5"
 
@@ -90,7 +101,7 @@ def call_mopac(smile: str, solvents=["Toluene.coskf"]) -> float:
             return np.nan, np.nan
         return call_cat_mopac(Path(tmp), smile, solvents)
     except ValueError:
-        LOGGER.warning(f"Error reading smile: {smile}")
+        print(f"Error reading smile: {smile}")
         return np.nan, np.nan
 
     finally:
