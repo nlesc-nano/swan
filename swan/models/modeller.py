@@ -16,12 +16,12 @@ from torch import Tensor, nn
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
-from swan.log_config import config_logger
-from swan.models.models import select_model
-
 from ..features.featurizer import generate_fingerprints
 from ..input_validation import validate_input
+from ..log_config import config_logger
 from ..plot import create_scatter_plot
+from ..utils import Options
+from .models import select_model
 from .datasets import FingerprintsDataset, MolGraphDataset
 
 __all__ = ["FingerprintModeller", "GraphModeller", "Modeller"]
@@ -63,7 +63,7 @@ def main():
 class Modeller:
     """Object to create statistical models."""
 
-    def __init__(self, opts: dict):
+    def __init__(self, opts: Options):
         """Set up a modeler object."""
         self.opts = opts
         self.data = pd.read_csv(opts.dataset_file, index_col=0).reset_index(drop=True)
