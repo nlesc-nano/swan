@@ -27,7 +27,7 @@ setup(
     license="Apache Software License 2.0",
     zip_safe=False,
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: Apache Software License',
         'Natural Language :: English',
@@ -39,7 +39,8 @@ setup(
         'console_scripts': [
             'cosmo=swan.cosmo.cosmo:main',
             'modeller=swan.models.modeller:main',
-            'save_dataset_in_db=swan.data.save_data:main'
+            'save_dataset_in_db=swan.data.save_data:main',
+            'smiles_screener=swan.filter.screen:main'
         ]
     },
     install_requires=[
@@ -51,7 +52,8 @@ setup(
         'torch-geometric'],
 
     extras_require={
-        'test': ['coverage', 'pycodestyle', 'pytest>=3.9', 'pytest-cov', 'pytest-mock'],
+        'test': ['coverage', 'pycodestyle', 'pytest>=3.9', 'pytest-cov',
+                 'pytest-mock'],
         'doc': ['sphinx', 'sphinx-autodoc-typehints', 'sphinx_rtd_theme',
                 'nbsphinx']
     }

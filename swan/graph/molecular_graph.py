@@ -1,4 +1,16 @@
-"""Generation of molecular graphs."""
+"""Generation of molecular graphs.
+
+Index
+-----
+.. currentmodule:: swan.graph.molecular_graph
+.. autosummary::
+    create_molecular_graph_data
+
+
+API
+---
+.. autofunction:: create_molecular_graph_data
+"""
 import numpy as np
 import torch
 from rdkit import Chem

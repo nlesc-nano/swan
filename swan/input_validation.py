@@ -33,7 +33,7 @@ def validate_input(file_input: str) -> Options:
         return opts
 
     except SchemaError as err:
-        msg = "There was an error in the input yaml provided:\n{}".format(err)
+        msg = f"There was an error in the input yaml provided:\n{err}"
         print(msg)
         raise
 

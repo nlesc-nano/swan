@@ -1,0 +1,18 @@
+smiles_file:
+  tests/test_files/smiles_functional_groups.csv
+
+core:
+  "tests/test_files/Cd68Se55.xyz"
+
+anchor:
+  "O(C=O)[H]"
+
+filters:
+  functional_groups:
+    - "C(=O)O"
+  bulkiness:
+    lower_than:
+      20
+  SA_score:
+    greater_than:
+      3.14
