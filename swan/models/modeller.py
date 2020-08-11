@@ -116,7 +116,7 @@ class Modeller:
             self.optimizer = hvd.DistributedOptimizer(self.optimizer, named_parameters=self.network.named_parameters())
 
         # Create loss function
-        self.loss_func = nn.MSELoss()
+        self.loss_func = getattr(nn, self.opts.torch_config.loss_function)()
 
     def load_data(self):
         """Create loaders for the train and validation dataset."""

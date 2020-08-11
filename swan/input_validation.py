@@ -70,6 +70,8 @@ SCHEMA_TORCH = Schema({
 
     Optional("batch_size", default=100): int,
 
+    Optional("loss_function", default="MSELoss"): str,
+
     Optional("optimizer", default=OPTIMIZER_DEFAULTS): SCHEMA_OPTIMIZER
 })
 

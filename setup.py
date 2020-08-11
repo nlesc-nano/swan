@@ -49,7 +49,8 @@ setup(
         'data-CAT@git+https://github.com/nlesc-nano/data-CAT@master',
         'horovod', 'mendeleev', 'numpy', 'pandas', 'pyyaml>=5.1.1',
         'seaborn', 'schema', 'sqlalchemy',
-        'torch-geometric'],
+        'torch-geometric',
+        'typing-extensions'],
 
     extras_require={
         'test': ['coverage', 'pycodestyle', 'pytest>=3.9', 'pytest-cov',
