@@ -196,12 +196,23 @@ def compute_bulkiness(molecules: pd.DataFrame, opts: Options) -> pd.Series:
         dset = f['qd/properties/V_bulk']
         df = prop_to_dataframe(dset)
 
-    # Extract the bulkiness
+    # flat the dataframe and remove duplicates
     df = df.reset_index()
+
+    # make anchor atom neutral to compare with the original
+    # TODO make it more general
     df.ligand = df.ligand.str.replace("[O-]", "O", regex=False)
+
+    # remove duplicates
+    df.drop_duplicates(subset=['ligand'], keep='first', inplace=True)
+
+    # Extract the bulkiness
     bulkiness = pd.merge(molecules, df, left_on="smiles", right_on="ligand")["V_bulk"]
 
-    assert len(molecules.index) == len(bulkiness)
+    if len(molecules.index) != len(bulkiness):
+        msg = "There is an incongruence in the bulkiness computed by CAT!"
+        raise RuntimeError(msg)
+
     return bulkiness.to_numpy()
 
 
