@@ -5,9 +5,19 @@ from itertools import chain
 import numpy as np
 import pandas as pd
 from rdkit import Chem
-from rdkit.Chem import AllChem, Descriptors3D
+from rdkit.Chem import AllChem
+from rdkit.DataStructs.cDataStructs import ExplicitBitVect
+from typing import Any, Tuple
+from typing_extensions import Protocol
 
 from .atomic_features import (ELEMENTS, BONDS, compute_hybridization_index, dict_element_features)
+
+
+class FingerPrintCalculator(Protocol):
+    """Type representing the function to compute the fingerprint."""
+    def __call__(self, mol: Chem.rdchem.Mol, radious: int, nbits: int = 1024, **kwargs: Any) -> ExplicitBitVect:
+        ...
+
 
 dictionary_functions = {
     "morgan": AllChem.GetMorganFingerprintAsBitVect,
@@ -24,7 +34,7 @@ NUMBER_BOND_GRAPH_FEATURES = len(BONDS) + 3
 NUMBER_GRAPH_FEATURES = NUMBER_ATOMIC_GRAPH_FEATURES + NUMBER_BOND_GRAPH_FEATURES
 
 
-def generate_molecular_features(mol: Chem.rdchem.Mol) -> tuple:
+def generate_molecular_features(mol: Chem.rdchem.Mol) -> Tuple[np.ndarray, np.ndarray]:
     """Generate both atomic and atom-pair features excluding the hydrogens.
 
     Atom types: C N O F P S Cl Br I.
@@ -64,7 +74,7 @@ def generate_molecular_features(mol: Chem.rdchem.Mol) -> tuple:
     return atomic_features.astype(np.float32), bond_features.astype(np.float32)
 
 
-def generate_bond_features(mol: Chem.rdchem.Mol, bond: Chem.rdchem.Bond) -> np.array:
+def generate_bond_features(mol: Chem.rdchem.Mol, bond: Chem.rdchem.Bond) -> np.ndarray:
     """Compute the features for a given bond.
 
     * Bond type: One hot vector of {Single,  Aromatic, Double, Triple} (size 4)
@@ -90,7 +100,7 @@ def generate_bond_features(mol: Chem.rdchem.Mol, bond: Chem.rdchem.Bond) -> np.a
     return bond_features
 
 
-def compute_molecular_graph_edges(mol: Chem.rdchem.Mol) -> np.array:
+def compute_molecular_graph_edges(mol: Chem.rdchem.Mol) -> np.ndarray:
     """Generate the edges for a molecule represented as a graph.
 
     The edges are represented as a matrix of dimension 2 X ( 2 * number_of_bonds).
@@ -110,9 +120,13 @@ def compute_molecular_graph_edges(mol: Chem.rdchem.Mol) -> np.array:
 def generate_fingerprints(molecules: pd.Series, fingerprint: str, bits: int) -> np.ndarray:
     """Generate the Extended-Connectivity Fingerprints (ECFP).
 
-    Use the method described at: https://doi.org/10.1021/ci100050t
+    Available fingerprints:
+    * morgan https://doi.org/10.1021/ci100050t
+    * atompair
+    * torsion
     """
     size = len(molecules)
+    # Select the fingerprint calculator
     fingerprint_calculator = dictionary_functions[fingerprint]
 
     it = (compute_fingerprint(molecules[i], fingerprint_calculator, bits) for i in molecules.index)
@@ -125,15 +139,7 @@ def generate_fingerprints(molecules: pd.Series, fingerprint: str, bits: int) -> 
     return result.reshape(size, bits)
 
 
-def compute_fingerprint(molecule, function: callable, nBits: int) -> np.ndarray:
+def compute_fingerprint(molecule, function: FingerPrintCalculator, nbits: int) -> np.ndarray:
     """Calculate a single fingerprint."""
-    fp = function(molecule, nBits)
-    return np.fromiter((float(k) for k in fp.ToBitString()), np.float32, nBits)
-
-
-def compute_3D_descriptors(molecules: list) -> np.array:
-    """Compute the Asphericity and Eccentricity for an array of molecules."""
-    asphericity = np.fromiter((Descriptors3D.Asphericity(m) for m in molecules), np.float32)
-    eccentricity = np.fromiter((Descriptors3D.Eccentricity(m) for m in molecules), np.float32)
-
-    return np.stack((asphericity, eccentricity)).T
+    bit_vector = function(molecule, nbits)
+    return np.fromiter((float(k) for k in bit_vector.ToBitString()), np.float32, nbits)

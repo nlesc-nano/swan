@@ -8,7 +8,7 @@ anchor:
   "O(C=O)[H]"
 
 filters:
-  functional_groups:
+  include_functional_groups:
     - "C(=O)O"
   bulkiness:
     lower_than:

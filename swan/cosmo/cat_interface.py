@@ -1,6 +1,7 @@
 """Interface with CAT/PLAMS Packages."""
 from contextlib import redirect_stderr
 from pathlib import Path
+from typing import Tuple
 import logging
 import os
 import shutil
@@ -85,7 +86,7 @@ optional:
         return path_hdf5
 
 
-def call_mopac(smile: str, solvents=["Toluene.coskf"]) -> float:
+def call_mopac(smile: str, solvents=["Toluene.coskf"]) -> Tuple[float, float]:
     """Use the COsMO-RS to compute the activity coefficient.
 
     see https://www.scm.com/doc/COSMO-RS/Fast_Sigma_QSPR_COSMO_sigma-profiles.html
@@ -126,7 +127,7 @@ def call_cat_mopac(tmp: Path, smile: str, solvents: list):
 
     # Call Cosmo
     E_solv, gamma = get_solv(
-        mol, solvents, coskf.as_posix(), job=CRSJob, s=s, keep_files=False)
+        mol, solvents, coskf.as_posix(), job=CRSJob, s=s)
 
     return tuple(map(check_output, (E_solv, gamma)))
 

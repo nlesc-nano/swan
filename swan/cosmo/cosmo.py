@@ -1,10 +1,13 @@
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
+from typing import List
+
+from more_itertools import chunked
 from scm.plams import init, finish
 from swan.log_config import config_logger
 from swan.cosmo.cat_interface import call_mopac
-from swan.cosmo.functions import (chunks_of, run_command)
+from swan.cosmo.functions import run_command
 from swan.utils import Options
 
 import argparse
@@ -44,7 +47,7 @@ def main():
     finish()
 
 
-def compute_activity_coefficient(opt: dict):
+def compute_activity_coefficient(opt: Options):
     """
     Call the ADf-Cosmo method to compute the activation coefficient:
     https://www.scm.com/doc/COSMO-RS/UNIFAC_program/Input_formatting.html?highlight=smiles
@@ -59,12 +62,12 @@ def compute_activity_coefficient(opt: dict):
 
     fun = partial(call_cosmo_on_chunk, opt.data)
     with Pool(processes=opt.processes) as p:
-        files = p.starmap(fun, enumerate(chunks_of(smiles, size)))
+        files = p.starmap(fun, enumerate(chunked(smiles, size)))
 
     return files
 
 
-def call_cosmo_on_chunk(data: pd.DataFrame, k: int, smiles: list) -> str:
+def call_cosmo_on_chunk(data: pd.DataFrame, k: int, smiles: List[str]) -> str:
     """
     Call chunk `k` containing the list of string given by `smiles`
     """
@@ -83,7 +86,7 @@ def call_cosmo_on_chunk(data: pd.DataFrame, k: int, smiles: list) -> str:
     return name
 
 
-def call_unifac(opt: dict, smile: str) -> float:
+def call_unifac(opt: Options, smile: str) -> float:
     """
     Call the Unifac executable from ADF
     """

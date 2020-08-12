@@ -1,10 +1,11 @@
 # Change Log
 
-# 0.3.0 [11/08/2020]
+# 0.3.0 [date]
 
 ## New
 * Introduce Pipeline to filter ligands (#26)
 * Use [Horovod](https://github.com/horovod/horovod) to distribute the training 
+* Add [mypy](http://mypy-lang.org/) test
 
 # 0.2.0 [25/02/2020]
 

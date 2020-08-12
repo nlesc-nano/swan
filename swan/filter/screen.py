@@ -38,8 +38,9 @@ SCHEMA_ORDERING = Or(
 
 #: Schema to validate the filters to apply for screening
 SCHEMA_FILTERS = Schema({
-    # Select or or more functional group using smile
-    Optional("functional_groups"): Schema([str]),
+    # Include or exclude one or more functional group using smiles
+    Optional("include_functional_groups"): Schema([str]),
+    Optional("exclude_functional_groups"): Schema([str]),
 
     # Select smiles >, < or = to some value
     Optional("bulkiness"): SCHEMA_ORDERING,
@@ -71,8 +72,10 @@ SCHEMA_SCREEN = Schema({
 
 def read_molecules(input_file: Path) -> pd.DataFrame:
     """Read smiles from a csv-like file."""
-    return pd.read_csv(input_file, index_col=0).reset_index(drop=True)
-
+    df = pd.read_csv(input_file).reset_index(drop=True)
+    # remove unnamed columns
+    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+    return df
 
 def validate_input(file_input: str) -> Options:
     """Check the input validation against an schema."""
@@ -99,11 +102,16 @@ def apply_filters(opts: Options) -> None:
     PandasTools.AddMoleculeColumnToFrame(molecules, smilesCol='smiles', molCol='rdkit_molecules')
 
     # Convert smiles to the standard representation
-    molecules.smiles = molecules.rdkit_molecules.apply(lambda mol: Chem.MolToSmiles(mol))
+    mols = molecules.rdkit_molecules
+    molecules.smiles = mols[mols.notnull()].apply(lambda mol: Chem.MolToSmiles(mol))
+
+    # Create a new column that will contain the labels of the screened candidates
+    molecules["is_candidate"] = mols.notnull()
 
     # Apply all the filters
     available_filters = {
-        "functional_groups": filter_by_functional_group,
+        "include_functional_groups": include_functional_groups,
+        "exclude_functional_groups": exclude_functional_groups,
         "bulkiness": filter_by_bulkiness}
 
     for key in opts.filters.keys():
@@ -116,18 +124,33 @@ def apply_filters(opts: Options) -> None:
     print(f"The filtered candidates has been written to the {opts.output_file} file!")
 
 
-def filter_by_functional_group(molecules: pd.DataFrame, opts: Options) -> None:
+def include_functional_groups(molecules: pd.DataFrame, opts: Options) -> None:
+    """Check that the molecules contain some functional groups."""
+    filter_by_functional_group(molecules, opts, "include_functional_groups", False)
+
+
+def exclude_functional_groups(molecules: pd.DataFrame, opts: Options) -> None:
+    """Check that the molecules do not contain some functional groups."""
+    filter_by_functional_group(molecules, opts, "exclude_functional_groups", True)
+
+
+def filter_by_functional_group(molecules: pd.DataFrame, opts: Options, key: str,
+                               exclude: bool) -> None:
     """Search for a set of functional_groups."""
     # Transform functional_groups to rkdit molecules
-    functional_groups = opts["filters"]["functional_groups"]
+    functional_groups = opts["filters"][key]
     patterns = tuple((Chem.MolFromSmiles(f) for f in functional_groups))
 
     # Get Candidates
     candidates = molecules[molecules["is_candidate"]]
 
     # Check if the functional_groups are in the molecules
-    has_pattern = candidates["rdkit_molecules"].apply(
-        lambda m: any(m.HasSubstructMatch(p) for p in patterns))
+    if exclude:
+        has_pattern = candidates["rdkit_molecules"].apply(
+            lambda m: not any(m.HasSubstructMatch(p) for p in patterns))
+    else:
+        has_pattern = candidates["rdkit_molecules"].apply(
+            lambda m: any(m.HasSubstructMatch(p) for p in patterns))
 
     update_candidates(molecules, candidates.index, has_pattern)
 
@@ -149,7 +172,8 @@ def filter_by_bulkiness(molecules: pd.DataFrame, opts: Options) -> None:
     # Get Candidates and compute bulkiness for them
     candidates = molecules[molecules["is_candidate"]].copy()
     indices = candidates.index
-    candidates.loc[(indices, "bulkiness")] = compute_bulkiness(candidates, opts)
+    values = compute_bulkiness(candidates, opts)
+    candidates.loc[(indices, "bulkiness")] = values
 
     # Check if the candidates fulfill the bulkiness predicate
     if predicate == "lower_than":
@@ -172,10 +196,23 @@ def compute_bulkiness(molecules: pd.DataFrame, opts: Options) -> pd.Series:
         dset = f['qd/properties/V_bulk']
         df = prop_to_dataframe(dset)
 
-    # Extract the bulkiness
+    # flat the dataframe and remove duplicates
     df = df.reset_index()
+
+    # make anchor atom neutral to compare with the original
+    # TODO make it more general
     df.ligand = df.ligand.str.replace("[O-]", "O", regex=False)
+
+    # remove duplicates
+    df.drop_duplicates(subset=['ligand'], keep='first', inplace=True)
+
+    # Extract the bulkiness
     bulkiness = pd.merge(molecules, df, left_on="smiles", right_on="ligand")["V_bulk"]
+
+    if len(molecules.index) != len(bulkiness):
+        msg = "There is an incongruence in the bulkiness computed by CAT!"
+        raise RuntimeError(msg)
+
     return bulkiness.to_numpy()
 
 

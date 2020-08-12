@@ -5,6 +5,7 @@ from torch.nn import BatchNorm1d
 import torch_geometric as tg
 import torch.nn.functional as F
 from ..features.featurizer import NUMBER_ATOMIC_GRAPH_FEATURES, NUMBER_BOND_GRAPH_FEATURES
+from ..utils import Options
 
 
 class FullyConnected(nn.Module):
@@ -55,7 +56,7 @@ class ChemiNet(nn.Module):
         self.bn1 = BatchNorm1d(output_channels)
         self.bn2 = BatchNorm1d(output_channels // 2)
 
-    def forward(self, data) -> Tensor:
+    def forward(self, data: tg.data.Dataset) -> Tensor:
         """Run model."""
         x = F.relu(self.conv1(data.x, data.edge_index, data.edge_attr))
         x = self.bn1(x)
@@ -65,7 +66,7 @@ class ChemiNet(nn.Module):
         return self.output_layer(x)
 
 
-def select_model(opts: dict) -> nn.Module:
+def select_model(opts: Options) -> nn.Module:
     """Select a model using the input provided by the user."""
     if 'fingerprint' in opts.featurizer:
         return FullyConnected(opts.model.input_cells, opts.model.hidden_cells)
