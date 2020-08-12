@@ -71,8 +71,10 @@ SCHEMA_SCREEN = Schema({
 
 def read_molecules(input_file: Path) -> pd.DataFrame:
     """Read smiles from a csv-like file."""
-    return pd.read_csv(input_file, index_col=0).reset_index(drop=True)
-
+    df = pd.read_csv(input_file).reset_index(drop=True)
+    # remove unnamed columns
+    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+    return df
 
 def validate_input(file_input: str) -> Options:
     """Check the input validation against an schema."""
