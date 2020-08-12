@@ -5,6 +5,7 @@ import warnings
 import torch
 import yaml
 from schema import And, Optional, Or, Schema, SchemaError, Use
+from typing import Iterable
 
 from swan.utils import Options
 
@@ -15,7 +16,7 @@ def equal_lambda(name: str):
         str, Use(str.lower), lambda s: s == name)
 
 
-def any_lambda(array: iter):
+def any_lambda(array: Iterable[str]):
     """Create an schema checking that the keyword matches one of the expected values."""
     return And(
         str, Use(str.lower), lambda s: s in array)
@@ -38,7 +39,7 @@ def validate_input(file_input: str) -> Options:
         raise
 
 
-def check_if_cuda_is_available(opts: dict):
+def check_if_cuda_is_available(opts: Options):
     """Check that a CUDA device is available, otherwise turnoff the option."""
     if not torch.cuda.is_available():
         opts.use_cuda = False

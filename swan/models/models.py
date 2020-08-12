@@ -8,29 +8,6 @@ from ..features.featurizer import NUMBER_ATOMIC_GRAPH_FEATURES, NUMBER_BOND_GRAP
 from ..utils import Options
 
 
-class SCScore(nn.Module):
-    """NN to compute the SCScore.
-
-    see: https://pubs.acs.org/doi/10.1021/acs.jcim.7b00622
-    """
-
-    def __init__(self, n_feature: int = 1024, n_hidden: int = 300):
-        """Create a feedwork network using the parameters cited in the paper."""
-        super().__init__()
-        self.seq = nn.Sequential(
-            nn.Linear(n_feature, n_hidden),
-            nn.ReLU(),
-            nn.Linear(n_hidden, n_hidden),
-            nn.ReLU(),
-            nn.Linear(n_hidden, n_hidden),
-            nn.ReLU(),
-            nn.Linear(n_hidden, n_hidden),
-            nn.ReLU(),
-            nn.Linear(n_hidden, n_hidden),
-            nn.Sigmoid()
-        )
-
-
 class FullyConnected(nn.Module):
     """Fully connected network for non-linear regression."""
 

@@ -5,6 +5,7 @@ import tempfile
 from abc import abstractmethod
 from datetime import datetime
 from pathlib import Path
+from typing import Optional, Tuple
 
 import horovod.torch as hvd
 import numpy as np
@@ -13,7 +14,6 @@ import torch
 import torch_geometric as tg
 from rdkit.Chem import AllChem, PandasTools
 from torch import Tensor, nn
-from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
 from ..features.featurizer import generate_fingerprints
@@ -151,7 +151,7 @@ class Modeller:
         # Save the models
         torch.save(self.network.state_dict(), self.opts.model_path)
 
-    def train_batch(self, tensor: Tensor, y_batch: Variable) -> float:
+    def train_batch(self, tensor: Tensor, y_batch: Tensor) -> float:
         """Train a single batch."""
         prediction = self.network(tensor)
         loss = self.loss_func(prediction, y_batch)
@@ -161,7 +161,7 @@ class Modeller:
 
         return loss.item()
 
-    def evaluate_model(self) -> float:
+    def evaluate_model(self) -> Tuple[Tensor, Tensor]:
         """Evaluate the model against the validation dataset."""
         LOGGER.info("VALIDATION STEP")
         results = []
@@ -210,7 +210,7 @@ class Modeller:
 class FingerprintModeller(Modeller):
     """Object to create models using fingerprints."""
 
-    def create_data_loader(self, indices: np.array) -> DataLoader:
+    def create_data_loader(self, indices: np.ndarray) -> DataLoader:
         """Create a DataLoader instance for the data."""
         dataset = FingerprintsDataset(
             self.data.loc[indices], 'transformed_labels',
@@ -218,6 +218,7 @@ class FingerprintModeller(Modeller):
             self.opts.model.input_cells)
 
         # Partition dataset among workers using DistributedSampler
+        sampler: Optional[torch.utils.data.distributed.DistributedSampler]
         if self.opts.use_cuda:
             sampler = torch.utils.data.distributed.DistributedSampler(
                 dataset, num_replicas=hvd.size(), rank=hvd.rank())
@@ -231,10 +232,14 @@ class FingerprintModeller(Modeller):
 class GraphModeller(Modeller):
     """Object to create models using molecular graphs."""
 
-    def create_data_loader(self, indices: np.array) -> DataLoader:
+    def create_data_loader(self, indices: np.ndarray) -> DataLoader:
         """Create a DataLoader instance for the data."""
         root = tempfile.mkdtemp(prefix="dataset_")
         dataset = MolGraphDataset(root, self.data.loc[indices], 'transformed_labels')
+
+        # Partition dataset among workers using DistributedSampler
+        sampler: Optional[torch.utils.data.distributed.DistributedSampler]
+
         if self.opts.use_cuda:
             sampler = torch.utils.data.distributed.DistributedSampler(
                 dataset, num_replicas=hvd.size(), rank=hvd.rank())
@@ -267,7 +272,7 @@ class GraphModeller(Modeller):
         # Save the models
         torch.save(self.network.state_dict(), self.opts.model_path)
 
-    def evaluate_model(self) -> float:
+    def evaluate_model(self) -> Tuple[Tensor, Tensor]:
         """Evaluate the model against the validation dataset."""
         LOGGER.info("VALIDATION STEP")
         # Disable any gradient calculation
@@ -289,7 +294,7 @@ class GraphModeller(Modeller):
         return torch.cat(results), torch.cat(expected)
 
 
-def train_and_validate_model(opts: dict) -> None:
+def train_and_validate_model(opts: Options) -> None:
     """Train the model usign the data specificied by the user."""
     modeller = FingerprintModeller if 'fingerprint' in opts.featurizer else GraphModeller
     researcher = modeller(opts)
@@ -301,7 +306,7 @@ def train_and_validate_model(opts: dict) -> None:
     create_scatter_plot(*[researcher.to_numpy_detached(x) for x in (predicted, expected)])
 
 
-def predict_properties(opts: dict) -> Tensor:
+def predict_properties(opts: Options) -> Tensor:
     """Use a previous trained model to predict properties."""
     LOGGER.info(f"Loading previously trained model from: {opts.model_path}")
     modeller = FingerprintModeller if 'fingerprint' in opts.featurizer else GraphModeller
@@ -327,6 +332,6 @@ def predict_properties(opts: dict) -> Tensor:
     return df
 
 
-def cross_validate(opts: dict) -> Tensor:
+def cross_validate(opts: Options) -> Tensor:
     """Run a cross validation with the given `opts`."""
     pass

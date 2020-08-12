@@ -16,7 +16,7 @@ hybridization = {rdchem.HybridizationType.SP: 0,
                  rdchem.HybridizationType.SP3: 2}
 
 
-def generate_atomic_features(symbol: str) -> np.array:
+def generate_atomic_features(symbol: str) -> np.ndarray:
     """Get the features for a single atom."""
     len_elements = len(ELEMENTS)
     features = np.zeros(len_elements + 3)

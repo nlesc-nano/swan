@@ -2,12 +2,13 @@ from subprocess import (PIPE, Popen)
 import logging
 import pandas as pd
 from pathlib import Path
+from typing import Tuple
 
 # Starting logger
 logger = logging.getLogger(__name__)
 
 
-def run_command(cmd: str, workdir: str = "."):
+def run_command(cmd: str, workdir: str = ".") -> Tuple[bytes, bytes]:
     """
     Run a bash command using subprocess
     """
@@ -19,12 +20,6 @@ def run_command(cmd: str, workdir: str = "."):
         logger.error("COMMAND ERROR: {}".format(rs[1].decode()))
 
     return rs
-
-
-def chunks_of(xs: list, n: int):
-    """Yield successive n-sized chunks from xs"""
-    for i in range(0, len(xs), n):
-        yield xs[i:i + n]
 
 
 def merge_csv(path: str, output: str, patt: str = "Gamma*.csv") -> pd.DataFrame:
