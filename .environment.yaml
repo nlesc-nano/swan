@@ -2,6 +2,7 @@
 
 channels:
     - conda-forge
+    - pytorch
 
 dependencies:
     - pip
@@ -9,3 +10,4 @@ dependencies:
     - h5py
     - rdkit
     - openmpi
+    - pytorch
