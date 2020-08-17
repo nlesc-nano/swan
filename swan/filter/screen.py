@@ -14,17 +14,19 @@ API
 """
 
 import argparse
+from functools import partial
 from numbers import Real
 from pathlib import Path
+from typing import FrozenSet
 
 import h5py
+import numpy as np
 import pandas as pd
 import tempfile
 import yaml
 
 from dataCAT import prop_to_dataframe
 from rdkit import Chem
-from rdkit.Chem import PandasTools
 from schema import Optional, Or, Schema, SchemaError
 
 from ..utils import Options
@@ -77,6 +79,7 @@ def read_molecules(input_file: Path) -> pd.DataFrame:
     df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
     return df
 
+
 def validate_input(file_input: str) -> Options:
     """Check the input validation against an schema."""
     with open(file_input, 'r') as f:
@@ -99,11 +102,13 @@ def apply_filters(opts: Options) -> None:
     molecules["is_candidate"] = True
 
     # Create rdkit representations
-    PandasTools.AddMoleculeColumnToFrame(molecules, smilesCol='smiles', molCol='rdkit_molecules')
+    converter = np.vectorize(Chem.MolFromSmiles)
+    back_converter = np.vectorize(Chem.MolToSmiles)
+    molecules["rdkit_molecules"] = converter(molecules.smiles)
 
     # Convert smiles to the standard representation
     mols = molecules.rdkit_molecules
-    molecules.smiles = mols[mols.notnull()].apply(lambda mol: Chem.MolToSmiles(mol))
+    molecules.smiles = back_converter(mols[mols.notnull()])
 
     # Create a new column that will contain the labels of the screened candidates
     molecules["is_candidate"] = mols.notnull()
@@ -131,7 +136,7 @@ def include_functional_groups(molecules: pd.DataFrame, opts: Options) -> None:
 
 def exclude_functional_groups(molecules: pd.DataFrame, opts: Options) -> None:
     """Check that the molecules do not contain some functional groups."""
-    filter_by_functional_group(molecules, opts, "exclude_functional_groups", True)
+    return filter_by_functional_group(molecules, opts, "exclude_functional_groups", True)
 
 
 def filter_by_functional_group(molecules: pd.DataFrame, opts: Options, key: str,
@@ -139,20 +144,26 @@ def filter_by_functional_group(molecules: pd.DataFrame, opts: Options, key: str,
     """Search for a set of functional_groups."""
     # Transform functional_groups to rkdit molecules
     functional_groups = opts["filters"][key]
-    patterns = tuple((Chem.MolFromSmiles(f) for f in functional_groups))
+    patterns = {Chem.MolFromSmiles(f) for f in functional_groups}
 
     # Get Candidates
     candidates = molecules[molecules["is_candidate"]]
 
+    # Function to apply predicate
+    pattern_check = np.vectorize(partial(has_substructure, exclude, patterns))
+
     # Check if the functional_groups are in the molecules
-    if exclude:
-        has_pattern = candidates["rdkit_molecules"].apply(
-            lambda m: not any(m.HasSubstructMatch(p) for p in patterns))
-    else:
-        has_pattern = candidates["rdkit_molecules"].apply(
-            lambda m: any(m.HasSubstructMatch(p) for p in patterns))
+    has_pattern = pattern_check(candidates["rdkit_molecules"])
 
     update_candidates(molecules, candidates.index, has_pattern)
+
+
+def has_substructure(exclude: bool, patterns: FrozenSet, mol: Chem.Mol) -> bool:
+    """Check if there is any element of `pattern` in `mol`."""
+    result = any(mol.HasSubstructMatch(p) for p in patterns)
+    if exclude:
+        return not result
+    return result
 
 
 def filter_by_bulkiness(molecules: pd.DataFrame, opts: Options) -> None:
