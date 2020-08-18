@@ -99,16 +99,11 @@ def apply_filters(opts: Options) -> None:
     molecules = read_molecules(opts.smiles_file)
 
     # Create rdkit representations
-    converter = np.vectorize(Chem.MolFromSmiles)
-    back_converter = np.vectorize(Chem.MolToSmiles)
-    molecules["rdkit_molecules"] = converter(molecules.smiles)
+    molecules["rdkit_molecules"] = [Chem.MolFromSmiles(x) for x in molecules.smiles]
 
     # Convert smiles to the standard representation
     mols = molecules.rdkit_molecules
-    molecules.smiles = back_converter(mols[mols.notnull()])
-
-    # Create a new column that will contain the labels of the screened candidates
-    molecules["is_candidate"] = mols.notnull()
+    molecules.smiles = [Chem.MolToSmiles(x) for x in mols[mols.notnull()]]
 
     # Apply all the filters
     available_filters = {
@@ -140,11 +135,6 @@ def filter_by_functional_group(molecules: pd.DataFrame, opts: Options, key: str,
     # Transform functional_groups to rkdit molecules
     functional_groups = opts["filters"][key]
     patterns = {Chem.MolFromSmiles(f) for f in functional_groups}
-
-    # Create rdkit representations
-    converter = np.vectorize(Chem.MolFromSmiles)
-    # back_converter = np.vectorize(Chem.MolToSmiles)
-    molecules["rdkit_molecules"] = converter(molecules.smiles)
 
     # Function to apply predicate
     pattern_check = np.vectorize(partial(has_substructure, exclude, patterns))
