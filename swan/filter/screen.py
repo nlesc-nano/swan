@@ -19,6 +19,7 @@ from numbers import Real
 from pathlib import Path
 from typing import FrozenSet
 
+# import dask.dataframe as dd
 import h5py
 import numpy as np
 import pandas as pd
@@ -99,11 +100,13 @@ def apply_filters(opts: Options) -> None:
     molecules = read_molecules(opts.smiles_file)
 
     # Create rdkit representations
-    molecules["rdkit_molecules"] = [Chem.MolFromSmiles(x) for x in molecules.smiles]
+    converter = np.vectorize(Chem.MolFromSmiles)
+    molecules["rdkit_molecules"] = converter(molecules.smiles)
 
     # Convert smiles to the standard representation
     mols = molecules.rdkit_molecules
-    molecules.smiles = [Chem.MolToSmiles(x) for x in mols[mols.notnull()]]
+    back_converter = np.vectorize(Chem.MolToSmiles)
+    molecules.smiles = back_converter(mols[mols.notnull()])
 
     # Apply all the filters
     available_filters = {
@@ -114,7 +117,7 @@ def apply_filters(opts: Options) -> None:
     for key in opts.filters.keys():
         if key in available_filters:
             molecules = available_filters[key](molecules, opts)
-
+    
     molecules.to_csv(opts.output_file, columns=["smiles"])
     print(f"The filtered candidates has been written to the {opts.output_file} file!")
 
