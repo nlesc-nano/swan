@@ -67,7 +67,7 @@ SCHEMA_SCREEN = Schema({
     Optional("batch_size", default=1000): int,
 
     # File to print the final candidates
-    Optional("output_file", default="candidates.csv"): str
+    Optional("output_path", default="results"): str
 })
 
 
@@ -92,10 +92,30 @@ def validate_input(file_input: str) -> Options:
         raise
 
 
-def apply_filters(opts: Options) -> None:
-    """Apply a set of filters to the given smiles."""
+def split_filter_in_batches(opts: Options) -> None:
+    """Split the computations into smaller batches that fit into memory."""
     # Read molecules into a pandas dataframe
     molecules = read_molecules(opts.smiles_file)
+
+    # Create folder to store the output
+    result_path = Path(opts.output_path)
+    result_path.mkdir(exist_ok=True, parents=True)
+
+    # Compute the number of batches and split
+    nsmiles = len(molecules)
+    number_of_batches = nsmiles // opts.batch_size
+    number_of_batches = number_of_batches if number_of_batches > 0 else 1
+
+    for k, batch in enumerate(np.array_split(molecules, number_of_batches)):
+        parent = result_path / f"batch_{k}"
+        parent.mkdir(exist_ok=True)
+        output_file = parent / "candidates.csv"
+        print("output_file: ", output_file)
+        apply_filters(batch, opts, output_file)
+
+
+def apply_filters(molecules: pd.DataFrame, opts: Options, output_file: Path) -> None:
+    """Apply a set of filters to the given smiles."""
 
     # Create rdkit representations
     converter = np.vectorize(Chem.MolFromSmiles)
@@ -118,8 +138,8 @@ def apply_filters(opts: Options) -> None:
         if key in available_filters:
             molecules = available_filters[key](molecules, opts)
 
-    molecules.to_csv(opts.output_file, columns=["smiles"])
-    print(f"The filtered candidates has been written to the {opts.output_file} file!")
+    molecules.to_csv(output_file, columns=["smiles"])
+    print(f"The filtered candidates has been written to the {output_file} file!")
 
 
 def include_functional_groups(molecules: pd.DataFrame, opts: Options) -> pd.DataFrame:
@@ -191,7 +211,7 @@ def main():
 
     options = validate_input(args.i)
 
-    apply_filters(options)
+    split_filter_in_batches(options)
 
 
 if __name__ == "__main__":
