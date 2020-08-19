@@ -14,25 +14,20 @@ API
 """
 
 import argparse
+import tempfile
 from functools import partial
 from numbers import Real
 from pathlib import Path
 from typing import FrozenSet
 
-# import dask.dataframe as dd
-import h5py
 import numpy as np
 import pandas as pd
-import tempfile
 import yaml
-
-from dataCAT import prop_to_dataframe
 from rdkit import Chem
 from schema import Optional, Or, Schema, SchemaError
 
+from ..cosmo.cat_interface import call_cat_in_parallel
 from ..utils import Options
-from ..cosmo.cat_interface import call_cat
-
 
 #: Schema to validate the ordering keywords
 SCHEMA_ORDERING = Or(
@@ -117,7 +112,7 @@ def apply_filters(opts: Options) -> None:
     for key in opts.filters.keys():
         if key in available_filters:
             molecules = available_filters[key](molecules, opts)
-    
+
     molecules.to_csv(opts.output_file, columns=["smiles"])
     print(f"The filtered candidates has been written to the {opts.output_file} file!")
 
@@ -166,47 +161,19 @@ def filter_by_bulkiness(molecules: pd.DataFrame, opts: Options) -> pd.DataFrame:
     if opts.core is None:
         raise RuntimeError("A core molecular geometry is needed to compute bulkiness")
 
-    # compute bulkiness using CAT
-    molecules["bulkiness"] = compute_bulkiness(molecules, opts)
+    molecules["bulkiness"] = call_cat_in_parallel(molecules.smiles, opts)
 
     # Check if the molecules fulfill the bulkiness predicate
     bulkiness = opts.filters["bulkiness"]
     predicate = next(iter(bulkiness.keys()))
-    value = bulkiness[predicate]
+    limit = bulkiness[predicate]
 
     if predicate == "lower_than":
-        has_pattern = molecules["bulkiness"] <= value
+        has_pattern = molecules["bulkiness"] <= limit
     elif predicate == "greater_than":
-        has_pattern = molecules["bulkiness"] >= value
+        has_pattern = molecules["bulkiness"] >= limit
 
     return molecules[has_pattern]
-
-
-def compute_bulkiness(molecules: pd.DataFrame, opts: Options) -> pd.Series:
-    """Compute the bulkiness for the candidates."""
-    path_hdf5 = call_cat(molecules, opts)
-    with h5py.File(path_hdf5, 'r') as f:
-        dset = f['qd/properties/V_bulk']
-        df = prop_to_dataframe(dset)
-
-    # flat the dataframe and remove duplicates
-    df = df.reset_index()
-
-    # make anchor atom neutral to compare with the original
-    # TODO make it more general
-    df.ligand = df.ligand.str.replace("[O-]", "O", regex=False)
-
-    # remove duplicates
-    df.drop_duplicates(subset=['ligand'], keep='first', inplace=True)
-
-    # Extract the bulkiness
-    bulkiness = pd.merge(molecules, df, left_on="smiles", right_on="ligand")["V_bulk"]
-
-    if len(molecules.index) != len(bulkiness):
-        msg = "There is an incongruence in the bulkiness computed by CAT!"
-        raise RuntimeError(msg)
-
-    return bulkiness.to_numpy()
 
 
 def main():

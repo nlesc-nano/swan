@@ -2,6 +2,9 @@
 import h5py
 from pathlib import Path
 import numpy as np
+from typing import Dict, TypeVar
+
+T = TypeVar('T')
 
 
 class Options(dict):
@@ -28,6 +31,13 @@ class Options(dict):
     def __setattr__(self, key, value):
         """ Allow `obj.key = new_value` notation"""
         self.__setitem__(key, value)
+
+    def to_dict(self) -> Dict[str, T]:
+        """Convert to a normal dictionary."""
+        def converter(var):
+            return var.to_dict() if isinstance(var, Options) else var
+
+        return {k: converter(v) for k, v in self.items()}
 
 
 def retrieve_hdf5_data(path_hdf5: Path, paths_to_prop: str) -> np.ndarray:
