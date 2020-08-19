@@ -63,6 +63,9 @@ SCHEMA_SCREEN = Schema({
     # path to the workdir
     Optional("workdir", default=tempfile.mkdtemp(prefix="swan_workdir_")): str,
 
+    # Number of molecules to compute simultaneously
+    Optional("batch_size", default=1000): int,
+
     # File to print the final candidates
     Optional("output_file", default="candidates.csv"): str
 })
@@ -98,10 +101,12 @@ def apply_filters(opts: Options) -> None:
     converter = np.vectorize(Chem.MolFromSmiles)
     molecules["rdkit_molecules"] = converter(molecules.smiles)
 
+    # Remove invalid molecules
+    molecules = molecules[molecules.rdkit_molecules.notnull()]
+
     # Convert smiles to the standard representation
-    mols = molecules.rdkit_molecules
     back_converter = np.vectorize(Chem.MolToSmiles)
-    molecules.smiles = back_converter(mols[mols.notnull()])
+    molecules.smiles = back_converter(molecules.rdkit_molecules)
 
     # Apply all the filters
     available_filters = {
