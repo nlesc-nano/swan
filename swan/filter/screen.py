@@ -14,6 +14,9 @@ API
 """
 
 import argparse
+import logging
+import pkg_resources
+import sys
 import tempfile
 from functools import partial
 from numbers import Real
@@ -27,7 +30,10 @@ from rdkit import Chem
 from schema import Optional, Or, Schema, SchemaError
 
 from ..cosmo.cat_interface import call_cat_in_parallel
+from ..log_config import configure_logger
 from ..utils import Options
+
+logger = logging.getLogger(__name__)
 
 #: Schema to validate the ordering keywords
 SCHEMA_ORDERING = Or(
@@ -107,11 +113,12 @@ def split_filter_in_batches(opts: Options) -> None:
     number_of_batches = number_of_batches if number_of_batches > 0 else 1
 
     for k, batch in enumerate(np.array_split(molecules, number_of_batches)):
-        parent = result_path / f"batch_{k}"
-        parent.mkdir(exist_ok=True)
-        output_file = parent / "candidates.csv"
-        print("output_file: ", output_file)
-        apply_filters(batch, opts, output_file)
+        output_file = create_ouput_file(result_path, k)
+        try:
+            apply_filters(batch, opts, output_file)
+        except:
+            error = next(iter(sys.exc_info()[0]))
+            logger.error(error)
 
 
 def apply_filters(molecules: pd.DataFrame, opts: Options, output_file: Path) -> None:
@@ -139,7 +146,7 @@ def apply_filters(molecules: pd.DataFrame, opts: Options, output_file: Path) -> 
             molecules = available_filters[key](molecules, opts)
 
     molecules.to_csv(output_file, columns=["smiles"])
-    print(f"The filtered candidates has been written to the {output_file} file!")
+    logger.info(f"The filtered candidates has been written to the {output_file} file!")
 
 
 def include_functional_groups(molecules: pd.DataFrame, opts: Options) -> pd.DataFrame:
@@ -199,6 +206,21 @@ def filter_by_bulkiness(molecules: pd.DataFrame, opts: Options) -> pd.DataFrame:
         has_pattern = molecules["bulkiness"] >= limit
 
     return molecules[has_pattern]
+
+
+def create_ouput_file(result_path: Path, k: int) -> Path:
+    """Create path to print the resulting candidates."""
+    parent = result_path / f"batch_{k}"
+    parent.mkdir(exist_ok=True)
+    return parent / "candidates.csv"
+
+
+def start_logger(opts: Options) -> None:
+    """Initial configuration of the logger."""
+    version = pkg_resources.get_distribution('swan').version
+    configure_logger(Path("."))
+    logger.info(f"Using swan version: {version} ")
+    logger.info(f"Working directory is: {opts.workdir}")
 
 
 def main():

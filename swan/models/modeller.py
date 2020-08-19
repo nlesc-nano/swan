@@ -18,7 +18,7 @@ from torch.utils.data import DataLoader
 
 from ..features.featurizer import generate_fingerprints
 from ..input_validation import validate_input
-from ..log_config import config_logger
+from ..log_config import configure_logger
 from ..plot import create_scatter_plot
 from ..utils import Options
 from .models import select_model
@@ -42,7 +42,7 @@ def main():
     args = parser.parse_args()
 
     # start logger
-    config_logger(Path(args.w))
+    configure_logger(Path(args.w))
 
     # log date
     LOGGER.info(f"Starting at: {datetime.now()}")
