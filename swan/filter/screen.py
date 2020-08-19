@@ -113,17 +113,18 @@ def split_filter_in_batches(opts: Options) -> None:
     number_of_batches = number_of_batches if number_of_batches > 0 else 1
 
     for k, batch in enumerate(np.array_split(molecules, number_of_batches)):
+        logger.info(f"computing batch: {k}")
         output_file = create_ouput_file(result_path, k)
         try:
             apply_filters(batch, opts, output_file)
         except:
-            error = next(iter(sys.exc_info()[0]))
+            error = next(iter(sys.exc_info()))
             logger.error(error)
 
 
 def apply_filters(molecules: pd.DataFrame, opts: Options, output_file: Path) -> None:
     """Apply a set of filters to the given smiles."""
-
+    logger.info("converting smiles to rdkit molecules")
     # Create rdkit representations
     converter = np.vectorize(Chem.MolFromSmiles)
     molecules["rdkit_molecules"] = converter(molecules.smiles)
@@ -151,11 +152,15 @@ def apply_filters(molecules: pd.DataFrame, opts: Options, output_file: Path) -> 
 
 def include_functional_groups(molecules: pd.DataFrame, opts: Options) -> pd.DataFrame:
     """Check that the molecules contain some functional groups."""
+    groups = opts["filters"]["include_functional_groups"]
+    logger.info(f"including molecules that contains the groups: {groups}")
     return filter_by_functional_group(molecules, opts, "include_functional_groups", False)
 
 
 def exclude_functional_groups(molecules: pd.DataFrame, opts: Options) -> pd.DataFrame:
     """Check that the molecules do not contain some functional groups."""
+    groups = opts["filters"]["exclude_functional_groups"]
+    logger.info(f"exclude molecules that contains the groups: {groups}")
     return filter_by_functional_group(molecules, opts, "exclude_functional_groups", True)
 
 
@@ -190,6 +195,7 @@ def filter_by_bulkiness(molecules: pd.DataFrame, opts: Options) -> pd.DataFrame:
     The user must specify whether the bulkiness should be lower_than, greater_than
     or equal than a given value.
     """
+    logger.info("Filtering by bulkiness")
     if opts.core is None:
         raise RuntimeError("A core molecular geometry is needed to compute bulkiness")
 
@@ -204,6 +210,8 @@ def filter_by_bulkiness(molecules: pd.DataFrame, opts: Options) -> pd.DataFrame:
         has_pattern = molecules["bulkiness"] <= limit
     elif predicate == "greater_than":
         has_pattern = molecules["bulkiness"] >= limit
+
+    logger.info(f"Keep molecules that have bulkiness {predicate} {limit}")
 
     return molecules[has_pattern]
 

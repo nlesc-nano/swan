@@ -13,7 +13,7 @@ def configure_logger(workdir: Path):
     logging.basicConfig(filename=file_log, level=logging.INFO,
                         format='%(asctime)s  %(message)s',
                         datefmt='[%I:%M:%S]')
-    handler = logging.StreamHandler(sys.stdout)
+    handler = logging.StreamHandler()
     handler.terminator = ""
 
 
