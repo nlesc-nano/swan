@@ -1,13 +1,16 @@
 """Test the screening functionality."""
 
-from pathlib import Path
-from .utils_test import PATH_TEST
-from swan.filter.screen import main, apply_filters, read_molecules
-from swan.utils import Options
-from typing import List, Mapping, TypeVar
 import argparse
+import shutil
+from pathlib import Path
+from typing import List, Mapping, TypeVar
+
 import pandas as pd
-import os
+
+from swan.filter.screen import main, read_molecules, split_filter_in_batches
+from swan.utils import Options
+
+from .utils_test import PATH_TEST
 
 T = TypeVar("T")
 
@@ -16,8 +19,8 @@ path_input_test_filter = PATH_TEST / "input_test_filter.yml"
 
 def run_workflow(opts: Options) -> pd.DataFrame:
     """Apply the filters and read the output."""
-    apply_filters(opts)
-    filter_mols = read_molecules(opts.output_file)
+    split_filter_in_batches(opts)
+    filter_mols = read_molecules("results/batch_0/candidates.csv")
     return filter_mols
 
 
@@ -26,17 +29,18 @@ def create_options(filters: Mapping[str, T], smiles_file: str, tmp_path: str) ->
     opts = Options()
     opts.smiles_file = (PATH_TEST / smiles_file).absolute().as_posix()
     opts.filters = filters
-    opts.output_file = f"{tmp_path}/candidates.csv"
+    opts.output_path = "results"
     opts.workdir = tmp_path
+    opts.batch_size = 100
 
     return opts
 
 
-def remove_output(output_file: str) -> None:
+def remove_output(output_path: str) -> None:
     """Remove the output file if exists."""
-    path = Path(output_file)
+    path = Path(output_path)
     if path.exists():
-        os.remove(path)
+        shutil.rmtree(path)
 
 
 def check_expected(opts: Options, expected: List[str]) -> None:
@@ -48,7 +52,7 @@ def check_expected(opts: Options, expected: List[str]) -> None:
         assert len(computed.smiles) == len(expected)
 
     finally:
-        remove_output(opts.output_file)
+        remove_output(opts.output_path)
 
 
 def test_filter_cli(mocker) -> None:
@@ -56,7 +60,7 @@ def test_filter_cli(mocker) -> None:
     mocker.patch("argparse.ArgumentParser.parse_args", return_value=argparse.Namespace(
         i=path_input_test_filter))
 
-    mocker.patch("swan.filter.screen.apply_filters", return_value=None)
+    mocker.patch("swan.filter.screen.split_filter_in_batches", return_value=None)
     main()
 
 

@@ -1,5 +1,5 @@
 from pathlib import Path
-from swan.log_config import (config_logger, LoggerWriter)
+from swan.log_config import (configure_logger, LoggerWriter)
 import logging
 import sys
 
@@ -7,7 +7,7 @@ import sys
 def test_logger(tmp_path, caplog):
     """Test that the logger is configure properly."""
     workdir = Path(tmp_path)
-    config_logger(workdir)
+    configure_logger(workdir)
 
     # Log some stuff
     log = logging.getLogger()

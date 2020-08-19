@@ -5,7 +5,7 @@ from typing import List
 
 from more_itertools import chunked
 from scm.plams import init, finish
-from swan.log_config import config_logger
+from swan.log_config import configure_logger
 from swan.cosmo.cat_interface import call_mopac
 from swan.cosmo.functions import run_command
 from swan.utils import Options
@@ -39,7 +39,7 @@ def main():
            "processes": args.p, "data": df}
 
     # configure logger
-    config_logger(Path(args.w))
+    configure_logger(Path(args.w))
 
     # compute_activity_coefficient
     init()

@@ -14,22 +14,26 @@ API
 """
 
 import argparse
+import logging
+import pkg_resources
+import sys
+import tempfile
+from functools import partial
 from numbers import Real
 from pathlib import Path
+from typing import FrozenSet
 
-import h5py
+import numpy as np
 import pandas as pd
-import tempfile
 import yaml
-
-from dataCAT import prop_to_dataframe
 from rdkit import Chem
-from rdkit.Chem import PandasTools
 from schema import Optional, Or, Schema, SchemaError
 
+from ..cosmo.cat_interface import call_cat_in_parallel
+from ..log_config import configure_logger
 from ..utils import Options
-from ..cosmo.cat_interface import call_cat
 
+logger = logging.getLogger(__name__)
 
 #: Schema to validate the ordering keywords
 SCHEMA_ORDERING = Or(
@@ -65,8 +69,11 @@ SCHEMA_SCREEN = Schema({
     # path to the workdir
     Optional("workdir", default=tempfile.mkdtemp(prefix="swan_workdir_")): str,
 
+    # Number of molecules to compute simultaneously
+    Optional("batch_size", default=1000): int,
+
     # File to print the final candidates
-    Optional("output_file", default="candidates.csv"): str
+    Optional("output_path", default="results"): str
 })
 
 
@@ -76,6 +83,7 @@ def read_molecules(input_file: Path) -> pd.DataFrame:
     # remove unnamed columns
     df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
     return df
+
 
 def validate_input(file_input: str) -> Options:
     """Check the input validation against an schema."""
@@ -90,23 +98,43 @@ def validate_input(file_input: str) -> Options:
         raise
 
 
-def apply_filters(opts: Options) -> None:
-    """Apply a set of filters to the given smiles."""
+def split_filter_in_batches(opts: Options) -> None:
+    """Split the computations into smaller batches that fit into memory."""
     # Read molecules into a pandas dataframe
     molecules = read_molecules(opts.smiles_file)
 
-    # Create a new column that will contain the labels of the screened candidates
-    molecules["is_candidate"] = True
+    # Create folder to store the output
+    result_path = Path(opts.output_path)
+    result_path.mkdir(exist_ok=True, parents=True)
 
+    # Compute the number of batches and split
+    nsmiles = len(molecules)
+    number_of_batches = nsmiles // opts.batch_size
+    number_of_batches = number_of_batches if number_of_batches > 0 else 1
+
+    for k, batch in enumerate(np.array_split(molecules, number_of_batches)):
+        logger.info(f"computing batch: {k}")
+        output_file = create_ouput_file(result_path, k)
+        try:
+            apply_filters(batch, opts, output_file)
+        except:
+            error = next(iter(sys.exc_info()))
+            logger.error(error)
+
+
+def apply_filters(molecules: pd.DataFrame, opts: Options, output_file: Path) -> None:
+    """Apply a set of filters to the given smiles."""
+    logger.info("converting smiles to rdkit molecules")
     # Create rdkit representations
-    PandasTools.AddMoleculeColumnToFrame(molecules, smilesCol='smiles', molCol='rdkit_molecules')
+    converter = np.vectorize(Chem.MolFromSmiles)
+    molecules["rdkit_molecules"] = converter(molecules.smiles)
+
+    # Remove invalid molecules
+    molecules = molecules[molecules.rdkit_molecules.notnull()]
 
     # Convert smiles to the standard representation
-    mols = molecules.rdkit_molecules
-    molecules.smiles = mols[mols.notnull()].apply(lambda mol: Chem.MolToSmiles(mol))
-
-    # Create a new column that will contain the labels of the screened candidates
-    molecules["is_candidate"] = mols.notnull()
+    back_converter = np.vectorize(Chem.MolToSmiles)
+    molecules.smiles = back_converter(molecules.rdkit_molecules)
 
     # Apply all the filters
     available_filters = {
@@ -116,104 +144,91 @@ def apply_filters(opts: Options) -> None:
 
     for key in opts.filters.keys():
         if key in available_filters:
-            available_filters[key](molecules, opts)
+            molecules = available_filters[key](molecules, opts)
 
-    # write candidates to file
-    final_candidates = molecules[molecules["is_candidate"]]
-    final_candidates.to_csv(opts.output_file, columns=["smiles"])
-    print(f"The filtered candidates has been written to the {opts.output_file} file!")
+    molecules.to_csv(output_file, columns=["smiles"])
+    logger.info(f"The filtered candidates has been written to the {output_file} file!")
 
 
-def include_functional_groups(molecules: pd.DataFrame, opts: Options) -> None:
+def include_functional_groups(molecules: pd.DataFrame, opts: Options) -> pd.DataFrame:
     """Check that the molecules contain some functional groups."""
-    filter_by_functional_group(molecules, opts, "include_functional_groups", False)
+    groups = opts["filters"]["include_functional_groups"]
+    logger.info(f"including molecules that contains the groups: {groups}")
+    return filter_by_functional_group(molecules, opts, "include_functional_groups", False)
 
 
-def exclude_functional_groups(molecules: pd.DataFrame, opts: Options) -> None:
+def exclude_functional_groups(molecules: pd.DataFrame, opts: Options) -> pd.DataFrame:
     """Check that the molecules do not contain some functional groups."""
-    filter_by_functional_group(molecules, opts, "exclude_functional_groups", True)
+    groups = opts["filters"]["exclude_functional_groups"]
+    logger.info(f"exclude molecules that contains the groups: {groups}")
+    return filter_by_functional_group(molecules, opts, "exclude_functional_groups", True)
 
 
 def filter_by_functional_group(molecules: pd.DataFrame, opts: Options, key: str,
-                               exclude: bool) -> None:
+                               exclude: bool) -> pd.DataFrame:
     """Search for a set of functional_groups."""
     # Transform functional_groups to rkdit molecules
     functional_groups = opts["filters"][key]
-    patterns = tuple((Chem.MolFromSmiles(f) for f in functional_groups))
+    patterns = {Chem.MolFromSmiles(f) for f in functional_groups}
 
-    # Get Candidates
-    candidates = molecules[molecules["is_candidate"]]
+    # Function to apply predicate
+    pattern_check = np.vectorize(partial(has_substructure, exclude, patterns))
 
     # Check if the functional_groups are in the molecules
+    has_pattern = pattern_check(molecules["rdkit_molecules"])
+
+    return molecules[has_pattern]
+
+
+def has_substructure(exclude: bool, patterns: FrozenSet, mol: Chem.Mol) -> bool:
+    """Check if there is any element of `pattern` in `mol`."""
+    result = False if mol is None else any(mol.HasSubstructMatch(p) for p in patterns)
     if exclude:
-        has_pattern = candidates["rdkit_molecules"].apply(
-            lambda m: not any(m.HasSubstructMatch(p) for p in patterns))
-    else:
-        has_pattern = candidates["rdkit_molecules"].apply(
-            lambda m: any(m.HasSubstructMatch(p) for p in patterns))
-
-    update_candidates(molecules, candidates.index, has_pattern)
+        return not result
+    return result
 
 
-def filter_by_bulkiness(molecules: pd.DataFrame, opts: Options) -> None:
+def filter_by_bulkiness(molecules: pd.DataFrame, opts: Options) -> pd.DataFrame:
     """Filter the ligands that have a given bulkiness.
 
     The bulkiness is computed using the CAT library: https://github.com/nlesc-nano/CAT
     The user must specify whether the bulkiness should be lower_than, greater_than
     or equal than a given value.
     """
+    logger.info("Filtering by bulkiness")
     if opts.core is None:
         raise RuntimeError("A core molecular geometry is needed to compute bulkiness")
 
+    molecules["bulkiness"] = call_cat_in_parallel(molecules.smiles, opts)
+
+    # Check if the molecules fulfill the bulkiness predicate
     bulkiness = opts.filters["bulkiness"]
     predicate = next(iter(bulkiness.keys()))
-    value = bulkiness[predicate]
+    limit = bulkiness[predicate]
 
-    # Get Candidates and compute bulkiness for them
-    candidates = molecules[molecules["is_candidate"]].copy()
-    indices = candidates.index
-    values = compute_bulkiness(candidates, opts)
-    candidates.loc[(indices, "bulkiness")] = values
-
-    # Check if the candidates fulfill the bulkiness predicate
     if predicate == "lower_than":
-        has_pattern = candidates["bulkiness"] <= value
+        has_pattern = molecules["bulkiness"] <= limit
     elif predicate == "greater_than":
-        has_pattern = candidates["bulkiness"] >= value
+        has_pattern = molecules["bulkiness"] >= limit
 
-    update_candidates(molecules, candidates.index, has_pattern)
+    logger.info(f"Keep molecules that have bulkiness {predicate} {limit}")
 
-
-def update_candidates(molecules: pd.DataFrame, indices: pd.Index, has_pattern: pd.Series) -> None:
-    """Mark current candidates as valid or not for the next step."""
-    molecules.loc[indices, "is_candidate"] = has_pattern
+    return molecules[has_pattern]
 
 
-def compute_bulkiness(molecules: pd.DataFrame, opts: Options) -> pd.Series:
-    """Compute the bulkiness for the candidates."""
-    path_hdf5 = call_cat(molecules, opts)
-    with h5py.File(path_hdf5, 'r') as f:
-        dset = f['qd/properties/V_bulk']
-        df = prop_to_dataframe(dset)
+def create_ouput_file(result_path: Path, k: int) -> Path:
+    """Create path to print the resulting candidates."""
+    parent = result_path / f"batch_{k}"
+    parent.mkdir(exist_ok=True)
+    return parent / "candidates.csv"
 
-    # flat the dataframe and remove duplicates
-    df = df.reset_index()
 
-    # make anchor atom neutral to compare with the original
-    # TODO make it more general
-    df.ligand = df.ligand.str.replace("[O-]", "O", regex=False)
-
-    # remove duplicates
-    df.drop_duplicates(subset=['ligand'], keep='first', inplace=True)
-
-    # Extract the bulkiness
-    bulkiness = pd.merge(molecules, df, left_on="smiles", right_on="ligand")["V_bulk"]
-
-    if len(molecules.index) != len(bulkiness):
-        msg = "There is an incongruence in the bulkiness computed by CAT!"
-        raise RuntimeError(msg)
-
-    return bulkiness.to_numpy()
+def start_logger(opts: Options) -> None:
+    """Initial configuration of the logger."""
+    version = pkg_resources.get_distribution('swan').version
+    configure_logger(Path("."))
+    logger.info(f"Using swan version: {version} ")
+    logger.info(f"Working directory is: {opts.workdir}")
 
 
 def main():
@@ -226,7 +241,7 @@ def main():
 
     options = validate_input(args.i)
 
-    apply_filters(options)
+    split_filter_in_batches(options)
 
 
 if __name__ == "__main__":

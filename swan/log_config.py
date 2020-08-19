@@ -4,20 +4,17 @@ from pathlib import Path
 import logging
 import sys
 
+__all__ = ["configure_logger"]
 
-def config_logger(workdir: Path):
+
+def configure_logger(workdir: Path):
     """Set the logging infrasctucture."""
-    file_log = workdir / 'output.log'
+    file_log = workdir / 'swan_output.log'
     logging.basicConfig(filename=file_log, level=logging.INFO,
                         format='%(asctime)s  %(message)s',
                         datefmt='[%I:%M:%S]')
-    handler = logging.StreamHandler(sys.stdout)
+    handler = logging.StreamHandler()
     handler.terminator = ""
-
-    # # capture stdout and stderr
-    # log = logging.getLogger(__name__)
-    # sys.stdout = LoggerWriter(log.info)
-    # sys.stderr = LoggerWriter(log.warning)
 
 
 class LoggerWriter:

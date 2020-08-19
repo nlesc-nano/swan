@@ -1,0 +1,17 @@
+{
+    "creators": [
+        {
+            "name": "Zapata, Felipe",
+            "orcid": "0000-0001-8286-677X"
+        }
+    ],
+    "description": "Workflows and statistical models to predict numerical properties for nanomaterials",
+    "keywords": [
+        "quantum-chemistry",
+        "materials-science",
+        "machine-learning"
+    ],
+    "license": {
+        "id": "Apache-2.0"
+    }
+}
