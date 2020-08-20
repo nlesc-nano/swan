@@ -31,7 +31,7 @@ from schema import Optional, Or, Schema, SchemaError
 
 from ..cosmo.cat_interface import call_cat_in_parallel
 from ..log_config import configure_logger
-from ..utils import Options
+from ..utils import Options, read_molecules
 
 logger = logging.getLogger(__name__)
 
@@ -75,14 +75,6 @@ SCHEMA_SCREEN = Schema({
     # File to print the final candidates
     Optional("output_path", default="results"): str
 })
-
-
-def read_molecules(input_file: Path) -> pd.DataFrame:
-    """Read smiles from a csv-like file."""
-    df = pd.read_csv(input_file).reset_index(drop=True)
-    # remove unnamed columns
-    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
-    return df
 
 
 def validate_input(file_input: str) -> Options:

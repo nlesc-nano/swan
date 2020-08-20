@@ -7,14 +7,14 @@ from typing import List, Mapping, TypeVar
 
 import pandas as pd
 
-from swan.filter.screen import main, read_molecules, split_filter_in_batches
-from swan.utils import Options
+from swan.filter.screen import main, split_filter_in_batches
+from swan.utils import Options, read_molecules
 
 from .utils_test import PATH_TEST
 
 T = TypeVar("T")
 
-path_input_test_filter = PATH_TEST / "input_test_filter.yml"
+PATH_INPUT_TEST_FILTER = PATH_TEST / "input_test_filter.yml"
 
 
 def run_workflow(opts: Options) -> pd.DataFrame:
@@ -58,7 +58,7 @@ def check_expected(opts: Options, expected: List[str]) -> None:
 def test_filter_cli(mocker) -> None:
     """Test that the CLI works correctly."""
     mocker.patch("argparse.ArgumentParser.parse_args", return_value=argparse.Namespace(
-        i=path_input_test_filter))
+        i=PATH_INPUT_TEST_FILTER))
 
     mocker.patch("swan.filter.screen.split_filter_in_batches", return_value=None)
     main()

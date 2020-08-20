@@ -143,7 +143,7 @@ def compute_fingerprint(molecule, fingerprint: str, nbits: int, use_chirality: b
     # Select the fingerprint calculator
     fingerprint_calculator = dictionary_functions[fingerprint]
     if fingerprint == "morgan":
-        bit_vector = fingerprint_calculator(molecule, nbits, useChirality=use_chirality)
+        bit_vector = fingerprint_calculator(molecule, 2, nBits=nbits, useChirality=use_chirality)
     else:
-        bit_vector = fingerprint_calculator(molecule, nbits, includeChirality=use_chirality)
+        bit_vector = fingerprint_calculator(molecule, nBits=nbits, includeChirality=use_chirality)
     return np.fromiter(bit_vector.ToBitString(), np.float32, nbits)

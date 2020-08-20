@@ -1,8 +1,10 @@
 """Utility functions."""
-import h5py
 from pathlib import Path
-import numpy as np
 from typing import Dict, TypeVar
+
+import h5py
+import numpy as np
+import pandas as pd
 
 T = TypeVar('T')
 
@@ -70,3 +72,11 @@ def retrieve_hdf5_data(path_hdf5: Path, paths_to_prop: str) -> np.ndarray:
     except OSError:
         msg = f"there is no {path_hdf5} file!"
         raise OSError(msg)
+
+
+def read_molecules(input_file: Path) -> pd.DataFrame:
+    """Read data (e.g. smiles) from a csv-like file."""
+    df = pd.read_csv(input_file).reset_index(drop=True)
+    # remove unnamed columns
+    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+    return df
