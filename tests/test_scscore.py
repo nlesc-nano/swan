@@ -1,11 +1,13 @@
 """Test the SCScore class."""
 
 import numpy as np
-
+import pandas as pd
 from rdkit import Chem
+
 from swan.features.featurizer import generate_fingerprints
 from swan.models.scscore import SCScorer
 from swan.utils import read_molecules
+
 from .utils_test import PATH_TEST
 
 PATH_SMILES = PATH_TEST / "smiles_carboxylic.csv"
@@ -17,15 +19,23 @@ def create_molecules_dataframe():
     converter = np.vectorize(Chem.MolFromSmiles)
     molecules["rdkit_molecules"] = converter(molecules.smiles)
 
-    return molecules
+    return molecules.rdkit_molecules
+
+
+def compute_scores(molecules: pd.Series, name_model: str, nbits: int) -> None:
+    """Predicate score for molecules using `name_model` and `nbits`."""
+    print("model name: ", name_model)
+    fingerprints = generate_fingerprints(molecules, "morgan", nbits, use_chirality=True)
+    print("fingerprints shape: ", fingerprints.shape)
+    scorer = SCScorer(name_model)
+
+    xs = scorer.compute_score(fingerprints)
+    print("scores: ", xs)
+    assert np.all(xs < 2)
 
 
 def test_scscore():
     """Test that the SCScore model is properly load."""
     molecules = create_molecules_dataframe()
-    fingerprints = generate_fingerprints(molecules.rdkit_molecules, "morgan", 1024, use_chirality=True)
-    scorer = SCScorer('1024bool')
-    for k in range(len(molecules)):
-        x = scorer.compute_score(fingerprints[k])
-        # y = scorer.compute_score_optimize(fingerprints[k])
-        print(f"score: {x:.4f} {molecules.smiles[k]}")
+    compute_scores(molecules, '1024bool', 1024)
+    compute_scores(molecules, '2048bool', 2048)

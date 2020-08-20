@@ -13,8 +13,8 @@ import pkg_resources
 logger = logging.getLogger(__name__)
 
 
-def sigmoid(x: float) -> float:
-    return 1 / (1 + math.exp(-x))
+def sigmoid(x: np.ndarray) -> np.ndarray:
+    return 1 / (1 + np.exp(-x))
 
 
 def get_model_data(name: str) -> str:
@@ -46,24 +46,30 @@ class SCScorer():
         self._load_vars(weight_path)
 
     def compute_score(self, x: np.ndarray) -> np.float32:
-        """Use the precomputed model to predict an score."""
+        """Use the precomputed model to predict an score.
+
+        Parameters
+        ----------
+        x
+          Finger prints in matrix format (nmolecules, nbits)
+
+        Returns
+        -------
+          Scores for the given fingerprints
+        """
         for w, b in zip(self.weights, self.biases):
             x = np.matmul(x, w) + b
+            # Apply the ReLU in all the layers except the last one
             if b.shape[0] != 1:
                 x *= (x > 0)  # ReLU
 
-        return 1 + (self.score_scale - 1) * sigmoid(x)
+        result = 1 + (self.score_scale - 1) * sigmoid(x)
+        return result.flatten()
 
     def _load_vars(self, weight_path):
         with gzip.GzipFile(weight_path, 'r') as fin:
             json_bytes = fin.read()  # as UTF-8
 
         variables = json.loads(json_bytes.decode('utf-8'))
-        self.vars = [np.array(x) for x in variables]
-        self.weights = [np.array(x) for x in variables[0:-1:2]]
+        self.weights = [np.array(x) for x in variables[0::2]]
         self.biases = [np.array(x) for x in variables[1::2]]
-
-# 1.4323 <--- CCCOCCC   
-# 1.8913 <--- CCCNc1ccccc1
-# 1.3429 <--- CCCOCCC
-# 1.8087 <--- CCCNc1ccccc1
