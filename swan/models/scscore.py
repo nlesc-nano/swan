@@ -27,6 +27,12 @@ class SCScorer():
     """Load a pretrained SCScore model and makes predictions with it.
 
     The model details can be found at: https://pubs.acs.org/doi/10.1021/acs.jcim.7b00622
+
+    The model consist of:
+        * input layer of either 1024 or 2048 nodes
+        * five hidden layers of 300 nodes each, ReLU activation with bias
+        * Single sigmoid out
+        * Linear scale (1, 5)
     """
 
     def __init__(self, model_name: str, score_scale: int = 5.0):
@@ -40,17 +46,13 @@ class SCScorer():
         self._load_vars(weight_path)
 
     def compute_score(self, x: np.ndarray) -> np.float32:
-        # Each pair of vars is a weight and bias term
-        npairs = len(self.vars)
-        for i in range(0, npairs, 2):
-            last_layer = (i == npairs - 2)
-            w = self.vars[i]
-            b = self.vars[i + 1]
+        """Use the precomputed model to predict an score."""
+        for w, b in zip(self.weights, self.biases):
             x = np.matmul(x, w) + b
-            if not last_layer:
-                x = x * (x > 0)  # ReLU
-        x = 1 + (self.score_scale - 1) * sigmoid(x)
-        return x
+            if b.shape[0] != 1:
+                x *= (x > 0)  # ReLU
+
+        return 1 + (self.score_scale - 1) * sigmoid(x)
 
     def _load_vars(self, weight_path):
         with gzip.GzipFile(weight_path, 'r') as fin:
@@ -58,8 +60,10 @@ class SCScorer():
 
         variables = json.loads(json_bytes.decode('utf-8'))
         self.vars = [np.array(x) for x in variables]
+        self.weights = [np.array(x) for x in variables[0:-1:2]]
+        self.biases = [np.array(x) for x in variables[1::2]]
 
-# 1.4323 <--- CCCOCCC
+# 1.4323 <--- CCCOCCC   
 # 1.8913 <--- CCCNc1ccccc1
 # 1.3429 <--- CCCOCCC
 # 1.8087 <--- CCCNc1ccccc1

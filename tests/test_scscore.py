@@ -27,4 +27,5 @@ def test_scscore():
     scorer = SCScorer('1024bool')
     for k in range(len(molecules)):
         x = scorer.compute_score(fingerprints[k])
-        print(f"score: {x} {molecules.smiles[k]}")
+        # y = scorer.compute_score_optimize(fingerprints[k])
+        print(f"score: {x:.4f} {molecules.smiles[k]}")
