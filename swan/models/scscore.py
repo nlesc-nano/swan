@@ -5,10 +5,13 @@ SCScore model taken from: https://github.com/connorcoley/scscore.
 import gzip
 import json
 import logging
-import math
 
 import numpy as np
 import pkg_resources
+
+
+__all__ = ["SCScorer"]
+
 
 logger = logging.getLogger(__name__)
 
@@ -35,11 +38,11 @@ class SCScorer():
         * Linear scale (1, 5)
     """
 
-    def __init__(self, model_name: str, score_scale: int = 5.0):
+    def __init__(self, model_name: str, score_scale: float = 5.0):
         self.score_scale = score_scale
-        self.load_pretrained_model(model_name)
+        self._load_pretrained_model(model_name)
 
-    def load_pretrained_model(self, model_name: str):
+    def _load_pretrained_model(self, model_name: str):
         """Load the models weights and biases from swan/data/scscore."""
         weight_path = get_model_data(model_name)
         logger.info(f"Loading model data from: {weight_path}")
@@ -66,10 +69,15 @@ class SCScorer():
         result = 1 + (self.score_scale - 1) * sigmoid(x)
         return result.flatten()
 
-    def _load_vars(self, weight_path):
+    def _load_vars(self, weight_path: str):
+        """
+        Load the neural network weights and biases.
+
+        The weights and biases are stored as gz compressed json files.
+        """
         with gzip.GzipFile(weight_path, 'r') as fin:
             json_bytes = fin.read()  # as UTF-8
 
         variables = json.loads(json_bytes.decode('utf-8'))
-        self.weights = [np.array(x) for x in variables[0::2]]
-        self.biases = [np.array(x) for x in variables[1::2]]
+        self.weights = tuple(np.array(x) for x in variables[0::2])
+        self.biases = tuple(np.array(x) for x in variables[1::2])

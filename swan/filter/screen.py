@@ -15,7 +15,6 @@ API
 
 import argparse
 import logging
-import pkg_resources
 import sys
 import tempfile
 from functools import partial
@@ -25,12 +24,15 @@ from typing import FrozenSet
 
 import numpy as np
 import pandas as pd
+import pkg_resources
 import yaml
 from rdkit import Chem
 from schema import Optional, Or, Schema, SchemaError
 
 from ..cosmo.cat_interface import call_cat_in_parallel
+from ..features.featurizer import generate_fingerprints
 from ..log_config import configure_logger
+from ..models.scscore import SCScorer
 from ..utils import Options, read_molecules
 
 logger = logging.getLogger(__name__)
@@ -49,7 +51,7 @@ SCHEMA_FILTERS = Schema({
     # Select smiles >, < or = to some value
     Optional("bulkiness"): SCHEMA_ORDERING,
 
-    Optional("SA_score"): SCHEMA_ORDERING
+    Optional("scscore"): SCHEMA_ORDERING
 })
 
 #: Schema to validate the input for screening
@@ -132,7 +134,8 @@ def apply_filters(molecules: pd.DataFrame, opts: Options, output_file: Path) -> 
     available_filters = {
         "include_functional_groups": include_functional_groups,
         "exclude_functional_groups": exclude_functional_groups,
-        "bulkiness": filter_by_bulkiness}
+        "bulkiness": filter_by_bulkiness,
+        "scscore": filter_by_scscore}
 
     for key in opts.filters.keys():
         if key in available_filters:
@@ -193,17 +196,34 @@ def filter_by_bulkiness(molecules: pd.DataFrame, opts: Options) -> pd.DataFrame:
 
     molecules["bulkiness"] = call_cat_in_parallel(molecules.smiles, opts)
 
+    return apply_predicate(molecules, "bulkiness", opts)
+
+
+def filter_by_scscore(molecules: pd.DataFrame, opts: Options) -> pd.DataFrame:
+    """Compute the `SCScore` for `molecules` and filter those that fulfill the predicate."""
+    logging.info("filtering by scscore")
+
+    scorer = SCScorer("1024bool")
+    fingerprints = generate_fingerprints(molecules.rdkit_molecules, "morgan", 1024, use_chirality=True)
+    molecules["scscore"] = scorer.compute_score(fingerprints)
+
+    return apply_predicate(molecules, "scscore", opts)
+
+
+def apply_predicate(molecules: pd.DataFrame, feature: str, opts: Options) -> pd.Series:
+    """Apply `predicate_type` on `column_name`."""
+
     # Check if the molecules fulfill the bulkiness predicate
-    bulkiness = opts.filters["bulkiness"]
-    predicate = next(iter(bulkiness.keys()))
-    limit = bulkiness[predicate]
+    property_info = opts.filters[feature]
+    predicate_type = next(iter(property_info.keys()))
+    limit = property_info[predicate_type]
 
-    if predicate == "lower_than":
-        has_pattern = molecules["bulkiness"] <= limit
-    elif predicate == "greater_than":
-        has_pattern = molecules["bulkiness"] >= limit
+    if predicate_type == "lower_than":
+        has_pattern = molecules[feature] <= limit
+    elif predicate_type == "greater_than":
+        has_pattern = molecules[feature] >= limit
 
-    logger.info(f"Keep molecules that have bulkiness {predicate} {limit}")
+    logger.info(f"Keep molecules that have {feature} {predicate_type} {limit}")
 
     return molecules[has_pattern]
 

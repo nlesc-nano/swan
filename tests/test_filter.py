@@ -47,7 +47,8 @@ def check_expected(opts: Options, expected: List[str]) -> None:
     """Run a filter workflow using `opts` and check the results."""
     try:
         computed = run_workflow(opts)
-        print(f"candidates:\n{computed}")
+        print("expected:\n", expected)
+        print(f"candidates:\n{computed.smiles.values}")
         assert all(mol in computed.smiles.values for mol in expected)
         assert len(computed.smiles) == len(expected)
 
@@ -95,4 +96,14 @@ def test_filter_bulkiness(tmp_path) -> None:
     opts.anchor = "O(C=O)[H]"
 
     expected = ("CCCCCCCCC=CCCCCCCCC(=O)O", "CC(=O)O", "CC(O)C(=O)O")
+    check_expected(opts, expected)
+
+
+def test_filter_scscore(tmp_path) -> None:
+    """Test that the scscore filter is applied properly."""
+    smiles_file = "smiles_carboxylic.csv"
+    filters = {"scscore": {"lower_than": 1.3}}
+    opts = create_options(filters, smiles_file, tmp_path)
+
+    expected = ("CC(=O)O",)
     check_expected(opts, expected)
