@@ -10,9 +10,11 @@ anchor:
 filters:
   include_functional_groups:
     - "C(=O)O"
+  scscore:
+    lower_than:
+      2.5
   bulkiness:
     lower_than:
       20
-  SA_score:
-    greater_than:
-      3.14
+
+    

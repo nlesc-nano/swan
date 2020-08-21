@@ -23,6 +23,10 @@ setup(
     url='https://github.com/nlesc-nano/swan',
 
     package_dir={'swan': 'swan'},
+    package_data={
+        'swan': ['data/*']
+    },
+
     include_package_data=True,
     license="Apache Software License 2.0",
     zip_safe=False,

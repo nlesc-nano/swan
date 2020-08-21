@@ -7,14 +7,14 @@ from typing import List, Mapping, TypeVar
 
 import pandas as pd
 
-from swan.filter.screen import main, read_molecules, split_filter_in_batches
-from swan.utils import Options
+from swan.filter.screen import main, split_filter_in_batches
+from swan.utils import Options, read_molecules
 
 from .utils_test import PATH_TEST
 
 T = TypeVar("T")
 
-path_input_test_filter = PATH_TEST / "input_test_filter.yml"
+PATH_INPUT_TEST_FILTER = PATH_TEST / "input_test_filter.yml"
 
 
 def run_workflow(opts: Options) -> pd.DataFrame:
@@ -47,7 +47,8 @@ def check_expected(opts: Options, expected: List[str]) -> None:
     """Run a filter workflow using `opts` and check the results."""
     try:
         computed = run_workflow(opts)
-        print(f"candidates:\n{computed}")
+        print("expected:\n", expected)
+        print(f"candidates:\n{computed.smiles.values}")
         assert all(mol in computed.smiles.values for mol in expected)
         assert len(computed.smiles) == len(expected)
 
@@ -58,7 +59,7 @@ def check_expected(opts: Options, expected: List[str]) -> None:
 def test_filter_cli(mocker) -> None:
     """Test that the CLI works correctly."""
     mocker.patch("argparse.ArgumentParser.parse_args", return_value=argparse.Namespace(
-        i=path_input_test_filter))
+        i=PATH_INPUT_TEST_FILTER))
 
     mocker.patch("swan.filter.screen.split_filter_in_batches", return_value=None)
     main()
@@ -95,4 +96,14 @@ def test_filter_bulkiness(tmp_path) -> None:
     opts.anchor = "O(C=O)[H]"
 
     expected = ("CCCCCCCCC=CCCCCCCCC(=O)O", "CC(=O)O", "CC(O)C(=O)O")
+    check_expected(opts, expected)
+
+
+def test_filter_scscore(tmp_path) -> None:
+    """Test that the scscore filter is applied properly."""
+    smiles_file = "smiles_carboxylic.csv"
+    filters = {"scscore": {"lower_than": 1.3}}
+    opts = create_options(filters, smiles_file, tmp_path)
+
+    expected = ("CC(=O)O",)
     check_expected(opts, expected)

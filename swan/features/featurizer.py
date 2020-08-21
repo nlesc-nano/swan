@@ -117,7 +117,8 @@ def compute_molecular_graph_edges(mol: Chem.rdchem.Mol) -> np.ndarray:
     return edges
 
 
-def generate_fingerprints(molecules: pd.Series, fingerprint: str, bits: int) -> np.ndarray:
+def generate_fingerprints(molecules: pd.Series, fingerprint: str, bits: int,
+                          use_chirality: bool = False) -> np.ndarray:
     """Generate the Extended-Connectivity Fingerprints (ECFP).
 
     Available fingerprints:
@@ -126,10 +127,8 @@ def generate_fingerprints(molecules: pd.Series, fingerprint: str, bits: int) -> 
     * torsion
     """
     size = len(molecules)
-    # Select the fingerprint calculator
-    fingerprint_calculator = dictionary_functions[fingerprint]
 
-    it = (compute_fingerprint(molecules[i], fingerprint_calculator, bits) for i in molecules.index)
+    it = (compute_fingerprint(molecules[i], fingerprint, bits, use_chirality) for i in molecules.index)
     result = np.fromiter(
         chain.from_iterable(it),
         np.float32,
@@ -139,7 +138,12 @@ def generate_fingerprints(molecules: pd.Series, fingerprint: str, bits: int) -> 
     return result.reshape(size, bits)
 
 
-def compute_fingerprint(molecule, function: FingerPrintCalculator, nbits: int) -> np.ndarray:
+def compute_fingerprint(molecule, fingerprint: str, nbits: int, use_chirality: bool) -> np.ndarray:
     """Calculate a single fingerprint."""
-    bit_vector = function(molecule, nbits)
-    return np.fromiter((float(k) for k in bit_vector.ToBitString()), np.float32, nbits)
+    # Select the fingerprint calculator
+    fingerprint_calculator = dictionary_functions[fingerprint]
+    if fingerprint == "morgan":
+        bit_vector = fingerprint_calculator(molecule, 2, nBits=nbits, useChirality=use_chirality)
+    else:
+        bit_vector = fingerprint_calculator(molecule, nBits=nbits, includeChirality=use_chirality)
+    return np.fromiter(bit_vector.ToBitString(), np.float32, nbits)

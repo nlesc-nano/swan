@@ -4,6 +4,7 @@
 
 ## New
 * Introduce Pipeline to filter ligands (#26)
+* Use [SCScore](https://pubs.acs.org/doi/10.1021/acs.jcim.7b00622)
 * Use [Horovod](https://github.com/horovod/horovod) to distribute the training 
 * Add [mypy](http://mypy-lang.org/) test
 
