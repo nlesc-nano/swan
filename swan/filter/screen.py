@@ -9,6 +9,9 @@ Index
 
 API
 ---
+.. autofunction:: split_filter_in_batches
+.. autofunction:: apply_filters
+
 {autodata}
 
 """
@@ -112,9 +115,8 @@ def split_filter_in_batches(opts: Options) -> None:
         try:
             apply_filters(batch, opts, output_file)
         except:
-            error, msg, rest = sys.exc_info()
+            error, msg, _ = sys.exc_info()
             logger.error(f"Error processing batch: {k}\n{error} {msg}")
-            logger.error(rest)
 
 
 def apply_filters(molecules: pd.DataFrame, opts: Options, output_file: Path) -> None:

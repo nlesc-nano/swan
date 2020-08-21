@@ -1,4 +1,15 @@
-"""Interface with CAT/PLAMS Packages."""
+"""Interface with CAT/PLAMS Packages.
+
+Index
+-----
+.. currentmodule:: swan.cosmo.cat_interface
+
+API
+---
+
+.. autofunction:: call_mopac
+.. autofunction:: call_cat_in_parallel
+"""
 import logging
 import os
 import shutil
@@ -25,6 +36,9 @@ from nanoCAT.ligand_solvation import get_solv
 
 from ..utils import Options
 from .functions import run_command
+
+__all__ = ["call_cat_in_parallel", "call_mopac"]
+
 
 T = TypeVar('T')
 
@@ -98,7 +112,6 @@ optional:
         return path_hdf5
 
 
-
 def compute_bulkiness_using_cat(smiles: pd.Series, opts: Mapping[str, T], chunk_name: str) -> pd.Series:
     """Compute the bulkiness for the candidates."""
     path_hdf5 = call_cat(smiles, opts, chunk_name=chunk_name)
@@ -140,7 +153,21 @@ def compute_bulkiness(smiles: pd.Series, opts: Mapping[str, T], indices: pd.Inde
 
 
 def call_cat_in_parallel(smiles: pd.Series, opts: Options) -> np.ndarray:
-    """Compute a ligand/quantum dot property using CAT."""
+    """Compute a ligand/quantum dot property using CAT.
+
+    It creates several instances of CAT using multiprocessing.
+
+    Parameters
+    ----------
+    smiles
+        Pandas.Series with the smiles to compute
+    opts
+        Options to call CAT
+
+    Returns
+    -------
+        Numpy array with the computed properties
+    """
     worker = partial(compute_bulkiness, smiles, opts.to_dict())
 
     with Pool() as p:
@@ -148,7 +175,6 @@ def call_cat_in_parallel(smiles: pd.Series, opts: Options) -> np.ndarray:
 
     results = np.concatenate(results)
 
-    print("len smiles: ", len(smiles.index), "len bulkiness: ", results.size)
     if len(smiles.index) != results.size:
         msg = "WWW There is an incongruence in the bulkiness computed by CAT!"
         raise RuntimeError(msg)
@@ -172,7 +198,7 @@ def call_mopac(smile: str, solvents=["Toluene.coskf"]) -> Tuple[float, float]:
             return np.nan, np.nan
         return call_cat_mopac(Path(tmp), smile, solvents)
     except ValueError:
-        print(f"Error reading smile: {smile}")
+        logger.error(f"Error reading smile: {smile}")
         return np.nan, np.nan
 
     finally:
