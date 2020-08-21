@@ -52,7 +52,7 @@ setup(
         'nano-CAT@git+https://github.com/nlesc-nano/nano-CAT@master',
         'data-CAT@git+https://github.com/nlesc-nano/data-CAT@master',
         'horovod', 'mendeleev', 'more_itertools', 'numpy', 'pandas',
-        'pyyaml>=5.1.1', 'seaborn', 'schema', 'sqlalchemy',
+        'pyyaml>=5.1.1', 'retry', 'seaborn', 'schema', 'sqlalchemy',
         'torch-geometric', 'typing-extensions'],
 
     extras_require={

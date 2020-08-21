@@ -1,9 +1,9 @@
 # Change Log
 
-# 0.3.0 [date]
+# 0.3.0 [21/08/2020]
 
 ## New
-* Introduce Pipeline to filter ligands (#26)
+* Introduce Pipeline to filter ligands (#13, #26)
 * Use [SCScore](https://pubs.acs.org/doi/10.1021/acs.jcim.7b00622)
 * Use [Horovod](https://github.com/horovod/horovod) to distribute the training 
 * Add [mypy](http://mypy-lang.org/) test
