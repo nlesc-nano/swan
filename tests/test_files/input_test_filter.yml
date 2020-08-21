@@ -12,9 +12,7 @@ filters:
     - "C(=O)O"
   scscore:
     lower_than:
-      2.5
+      2.0
   bulkiness:
     lower_than:
       20
-
-    

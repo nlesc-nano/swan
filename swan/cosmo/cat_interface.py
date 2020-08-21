@@ -1,4 +1,15 @@
-"""Interface with CAT/PLAMS Packages."""
+"""Interface with CAT/PLAMS Packages.
+
+Index
+-----
+.. currentmodule:: swan.cosmo.cat_interface
+
+API
+---
+
+.. autofunction:: call_mopac
+.. autofunction:: call_cat_in_parallel
+"""
 import logging
 import os
 import shutil
@@ -16,6 +27,7 @@ import scm.plams.interfaces.molecule.rdkit as molkit
 import yaml
 from more_itertools import chunked
 from scm.plams import CRSJob, Settings
+from retry import retry
 
 import CAT
 from CAT.base import prep
@@ -24,6 +36,9 @@ from nanoCAT.ligand_solvation import get_solv
 
 from ..utils import Options
 from .functions import run_command
+
+__all__ = ["call_cat_in_parallel", "call_mopac"]
+
 
 T = TypeVar('T')
 
@@ -35,6 +50,7 @@ handler = logging.FileHandler("cat_output.log")
 logger.addHandler(handler)
 
 
+@retry(FileExistsError, tries=3, delay=1)
 def call_cat(smiles: pd.Series, opts: Mapping[str, T], chunk_name: str = "0") -> Path:
     """Call cat with a given `config` and returns a dataframe with the results.
 
@@ -58,7 +74,7 @@ def call_cat(smiles: pd.Series, opts: Mapping[str, T], chunk_name: str = "0") ->
     """
     # create workdir for cat
     path_workdir_cat = Path(opts["workdir"]) / "cat_workdir" / chunk_name
-    path_workdir_cat.mkdir(parents=True)
+    path_workdir_cat.mkdir(parents=True, exist_ok=True)
 
     path_smiles = (path_workdir_cat / "smiles.txt").absolute().as_posix()
 
@@ -129,20 +145,41 @@ def compute_bulkiness(smiles: pd.Series, opts: Mapping[str, T], indices: pd.Inde
     chunk_name = str(indices[0])
     try:
         values = compute_bulkiness_using_cat(chunk, opts, chunk_name)
-    except RuntimeError:
-        values = np.repeat(np.nan, len(smiles))
+    except (RuntimeError):
+        logger.error(f"There was an error processing:\n{chunk.values}")
+        values = np.repeat(np.nan, len(indices))
 
     return values
 
 
 def call_cat_in_parallel(smiles: pd.Series, opts: Options) -> np.ndarray:
-    """Compute a ligand/quantum dot property using CAT."""
+    """Compute a ligand/quantum dot property using CAT.
+
+    It creates several instances of CAT using multiprocessing.
+
+    Parameters
+    ----------
+    smiles
+        Pandas.Series with the smiles to compute
+    opts
+        Options to call CAT
+
+    Returns
+    -------
+        Numpy array with the computed properties
+    """
     worker = partial(compute_bulkiness, smiles, opts.to_dict())
 
     with Pool() as p:
         results = p.map(worker, chunked(smiles.index, 10))
 
-    return np.concatenate(results)
+    results = np.concatenate(results)
+
+    if len(smiles.index) != results.size:
+        msg = "WWW There is an incongruence in the bulkiness computed by CAT!"
+        raise RuntimeError(msg)
+
+    return results
 
 
 def call_mopac(smile: str, solvents=["Toluene.coskf"]) -> Tuple[float, float]:
@@ -161,7 +198,7 @@ def call_mopac(smile: str, solvents=["Toluene.coskf"]) -> Tuple[float, float]:
             return np.nan, np.nan
         return call_cat_mopac(Path(tmp), smile, solvents)
     except ValueError:
-        print(f"Error reading smile: {smile}")
+        logger.error(f"Error reading smile: {smile}")
         return np.nan, np.nan
 
     finally:

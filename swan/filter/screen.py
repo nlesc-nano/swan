@@ -9,6 +9,9 @@ Index
 
 API
 ---
+.. autofunction:: split_filter_in_batches
+.. autofunction:: apply_filters
+
 {autodata}
 
 """
@@ -112,8 +115,8 @@ def split_filter_in_batches(opts: Options) -> None:
         try:
             apply_filters(batch, opts, output_file)
         except:
-            error = next(iter(sys.exc_info()))
-            logger.error(error)
+            error, msg, _ = sys.exc_info()
+            logger.error(f"Error processing batch: {k}\n{error} {msg}")
 
 
 def apply_filters(molecules: pd.DataFrame, opts: Options, output_file: Path) -> None:
@@ -195,6 +198,7 @@ def filter_by_bulkiness(molecules: pd.DataFrame, opts: Options) -> pd.DataFrame:
         raise RuntimeError("A core molecular geometry is needed to compute bulkiness")
 
     molecules["bulkiness"] = call_cat_in_parallel(molecules.smiles, opts)
+    logger.debug("CAT has been called!")
 
     return apply_predicate(molecules, "bulkiness", opts)
 
