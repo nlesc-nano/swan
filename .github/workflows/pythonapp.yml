@@ -29,7 +29,7 @@ jobs:
     - run: conda install openmpi rdkit pytorch torchvision cpuonly -c pytorch
 
     - name: install torch-geometric dependencies
-      run: pip install pip install torch-scatter==latest+cpu torch-sparse==latest+cpu torch-cluster==latest+cpu torch-spline-conv==latest+cpu -f https://pytorch-geometric.com/whl/torch-1.4.0.html
+      run: pip install pip install torch-scatter==latest+cpu torch-sparse==latest+cpu torch-cluster==latest+cpu torch-spline-conv==latest+cpu -f https://pytorch-geometric.com/whl/torch-1.6.0.html
 
     - name: install torch-geometric
       run:  pip install torch-geometric
