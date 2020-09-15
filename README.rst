@@ -26,9 +26,9 @@ Installation
 
 - Activate the new virtual environment
 
-  - ``source activate swan``
+  - ``conda activate swan``
 
-To exit the virtual environment type  ``source deactivate``.
+To exit the virtual environment type  ``conda deactivate``.
 
 
 .. _dependecies:
