@@ -2,42 +2,35 @@
 
 Index
 -----
-.. currentmodule:: swan.cosmo.cat_interface
+.. currentmodule:: swan.cat_interface
 
 API
 ---
 
-.. autofunction:: call_mopac
 .. autofunction:: call_cat_in_parallel
 """
 import logging
-import os
-import shutil
-import tempfile
 from contextlib import redirect_stderr
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
+from subprocess import PIPE, Popen
 from typing import Mapping, Tuple, TypeVar
 
 import h5py
 import numpy as np
 import pandas as pd
-import scm.plams.interfaces.molecule.rdkit as molkit
 import yaml
 from more_itertools import chunked
-from scm.plams import CRSJob, Settings
 from retry import retry
 
-import CAT
 from CAT.base import prep
 from dataCAT import prop_to_dataframe
-from nanoCAT.ligand_solvation import get_solv
+from scm.plams import Settings
 
-from ..utils import Options
-from .functions import run_command
+from .utils import Options
 
-__all__ = ["call_cat_in_parallel", "call_mopac"]
+__all__ = ["call_cat_in_parallel"]
 
 
 T = TypeVar('T')
@@ -50,7 +43,7 @@ handler = logging.FileHandler("cat_output.log")
 logger.addHandler(handler)
 
 
-@retry(FileExistsError, tries=3, delay=1)
+@retry(FileExistsError, tries=100, delay=0.01)
 def call_cat(smiles: pd.Series, opts: Mapping[str, T], chunk_name: str = "0") -> Path:
     """Call cat with a given `config` and returns a dataframe with the results.
 
@@ -182,54 +175,15 @@ def call_cat_in_parallel(smiles: pd.Series, opts: Options) -> np.ndarray:
     return results
 
 
-def call_mopac(smile: str, solvents=["Toluene.coskf"]) -> Tuple[float, float]:
-    """Use the COsMO-RS to compute the activity coefficient.
-
-    see https://www.scm.com/doc/COSMO-RS/Fast_Sigma_QSPR_COSMO_sigma-profiles.html
+def run_command(cmd: str, workdir: str = ".") -> Tuple[bytes, bytes]:
     """
-    # Call fast sigma
-    fast_sigma = Path(os.environ['ADFBIN']) / 'fast_sigma'
-    cmd = f'{fast_sigma} --smiles "{smile}"'
+    Run a bash command using subprocess
+    """
+    with Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True, cwd=workdir) as p:
+        rs = p.communicate()
 
-    try:
-        tmp = tempfile.mkdtemp(prefix="cat_")
-        rs = run_command(cmd, workdir=tmp)
-        if rs[1]:
-            return np.nan, np.nan
-        return call_cat_mopac(Path(tmp), smile, solvents)
-    except ValueError:
-        logger.error(f"Error reading smile: {smile}")
-        return np.nan, np.nan
+    if rs[1]:
+        logger.info("RUNNING COMMAND: {}".format(cmd))
+        logger.error("COMMAND ERROR: {}".format(rs[1].decode()))
 
-    finally:
-        if Path(tmp).exists():
-            shutil.rmtree(tmp)
-
-
-def call_cat_mopac(tmp: Path, smile: str, solvents: list):
-    """Use the CAT to call MOPAC."""
-    # Call COSMO
-    coskf = tmp / 'CRSKF'
-
-    mol = molkit.from_smiles(smile)
-    s = Settings()
-    s.update(CAT.get_template('qd.yaml')['COSMO-RS activity coefficient'])
-    s.update(CAT.get_template('crs.yaml')['MOPAC PM6'])
-    s.input.Compound.compkffile = ''
-
-    # Prepare the job settings and solvent list
-    coskf_path = Path(CAT.__path__[0]) / 'data' / 'coskf'
-    solvents = [(coskf_path / solv).as_posix() for solv in solvents]
-
-    # Call Cosmo
-    energy_solvation, gamma = get_solv(
-        mol, solvents, coskf.as_posix(), job=CRSJob, s=s)
-
-    return tuple(map(check_output, (energy_solvation, gamma)))
-
-
-def check_output(xs):
-    """Check that there is a valid output in x."""
-    if xs and np.isreal(xs[0]):
-        return xs[0]
-    return np.nan
+    return rs

@@ -32,7 +32,7 @@ import yaml
 from rdkit import Chem
 from schema import Optional, Or, Schema, SchemaError
 
-from ..cosmo.cat_interface import call_cat_in_parallel
+from ..cat_interface import call_cat_in_parallel
 from ..features.featurizer import generate_fingerprints
 from ..log_config import configure_logger
 from ..models.scscore import SCScorer
