@@ -198,6 +198,7 @@ def filter_by_bulkiness(molecules: pd.DataFrame, opts: Options) -> pd.DataFrame:
     if opts.core is None:
         raise RuntimeError("A core molecular geometry is needed to compute bulkiness")
 
+    opts.bulkiness = True
     molecules["bulkiness"] = call_cat_in_parallel(molecules.smiles, opts)
     logger.debug("CAT has been called!")
 

@@ -10,23 +10,24 @@ API
 .. autofunction:: call_cat_in_parallel
 """
 import logging
+from collections import defaultdict
 from contextlib import redirect_stderr
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
 from subprocess import PIPE, Popen
-from typing import Mapping, Tuple, TypeVar
+from typing import DefaultDict, Mapping, Tuple, TypeVar
 
 import h5py
 import numpy as np
 import pandas as pd
 import yaml
-from more_itertools import chunked
-from retry import retry
-
 from CAT.base import prep
-from dataCAT import prop_to_dataframe
+from more_itertools import chunked
 from scm.plams import Settings
+
+from dataCAT import prop_to_dataframe
+from retry import retry
 
 from .utils import Options
 
@@ -44,7 +45,8 @@ logger.addHandler(handler)
 
 
 @retry(FileExistsError, tries=100, delay=0.01)
-def call_cat(smiles: pd.Series, opts: Mapping[str, T], chunk_name: str = "0") -> Path:
+def call_cat(smiles: pd.Series, opts: Mapping[str, T], cat_properties: DefaultDict[str, bool],
+             chunk_name: str = "0") -> Path:
     """Call cat with a given `config` and returns a dataframe with the results.
 
     Parameters
@@ -53,6 +55,8 @@ def call_cat(smiles: pd.Series, opts: Mapping[str, T], chunk_name: str = "0") ->
         Pandas Series with the smiles to compute
     opts
         Options for the computation
+    cat_properties
+        Dictionary with the name of the properties to compute
     chunk
         Name of the chunk (frame) being computed
 
@@ -86,8 +90,9 @@ input_ligands:
 
 optional:
     qd:
-       bulkiness: true
+       bulkiness: {cat_properties['bulkiness']}
     ligand:
+       cosmo-rs: {cat_properties['cosmo-rs']}
        functional_groups:
           ['{opts["anchor"]}']
 """, Loader=yaml.FullLoader)
@@ -107,7 +112,12 @@ optional:
 
 def compute_bulkiness_using_cat(smiles: pd.Series, opts: Mapping[str, T], chunk_name: str) -> pd.Series:
     """Compute the bulkiness for the candidates."""
-    path_hdf5 = call_cat(smiles, opts, chunk_name=chunk_name)
+    # Properties to compute using cat
+    cat_properties = defaultdict(bool)
+    cat_properties["bulkiness"] = True
+
+    # run cat
+    path_hdf5 = call_cat(smiles, opts, cat_properties, chunk_name=chunk_name)
     with h5py.File(path_hdf5, 'r') as f:
         dset = f['qd/properties/V_bulk']
         df = prop_to_dataframe(dset)
@@ -169,7 +179,7 @@ def call_cat_in_parallel(smiles: pd.Series, opts: Options) -> np.ndarray:
     results = np.concatenate(results)
 
     if len(smiles.index) != results.size:
-        msg = "WWW There is an incongruence in the bulkiness computed by CAT!"
+        msg = "There is an incongruence in the bulkiness computed by CAT!"
         raise RuntimeError(msg)
 
     return results
@@ -183,7 +193,7 @@ def run_command(cmd: str, workdir: str = ".") -> Tuple[bytes, bytes]:
         rs = p.communicate()
 
     if rs[1]:
-        logger.info("RUNNING COMMAND: {}".format(cmd))
-        logger.error("COMMAND ERROR: {}".format(rs[1].decode()))
+        logger.info(f"RUNNING COMMAND: {cmd}")
+        logger.error("COMMAND ERROR: {rs[1].decode()}")
 
     return rs
