@@ -43,9 +43,9 @@ Dependencies installation
 Using the conda environment the following packages should be installed:
 
 
-- install RDKit_ and H5PY:
+- install OpenMPI_, RDKit_ and H5PY_:
 
-  - `conda install -y -q -c conda-forge h5py rdkit`
+  - `conda install -y -q -c conda-forge openmpi h5py rdkit`
 
 - install Pytorch_ according to this_ recipe
 
@@ -59,7 +59,7 @@ Package installation
 Finally install the package:
 
 - Install **swan** using pip:
-  - ``pip install git+https://github.com/nlesc-nano/swan@master``
+  - ``pip install swan@git+https://github.com/nlesc-nano/swan@master``
 
 Now you are ready to use *swan*.
 
@@ -77,3 +77,4 @@ Now you are ready to use *swan*.
 .. _RDKit: https://www.rdkit.org
 .. _H5PY: https://www.h5py.org/
 .. _this: https://pytorch.org/get-started/locally/
+.. _OpenMPI: https://www.open-mpi.org/

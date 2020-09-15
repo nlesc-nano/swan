@@ -11,3 +11,4 @@ dependencies:
     - rdkit
     - openmpi
     - pytorch
+    - cmake
