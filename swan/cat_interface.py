@@ -15,8 +15,7 @@ from contextlib import redirect_stderr
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
-from subprocess import PIPE, Popen
-from typing import DefaultDict, Mapping, Tuple, TypeVar
+from typing import DefaultDict, Mapping, TypeVar
 
 import h5py
 import numpy as np
@@ -183,17 +182,3 @@ def call_cat_in_parallel(smiles: pd.Series, opts: Options) -> np.ndarray:
         raise RuntimeError(msg)
 
     return results
-
-
-def run_command(cmd: str, workdir: str = ".") -> Tuple[bytes, bytes]:
-    """
-    Run a bash command using subprocess
-    """
-    with Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True, cwd=workdir) as p:
-        rs = p.communicate()
-
-    if rs[1]:
-        logger.info(f"RUNNING COMMAND: {cmd}")
-        logger.error("COMMAND ERROR: {rs[1].decode()}")
-
-    return rs
