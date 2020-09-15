@@ -59,7 +59,7 @@ Package installation
 Finally install the package:
 
 - Install **swan** using pip:
-  - ``pip install git+https://github.com/nlesc-nano/swan@master``
+  - ``pip install swan@git+https://github.com/nlesc-nano/swan@master``
 
 Now you are ready to use *swan*.
 
