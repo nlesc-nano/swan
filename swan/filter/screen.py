@@ -32,7 +32,7 @@ import yaml
 from rdkit import Chem
 from schema import Optional, Or, Schema, SchemaError
 
-from ..cat_interface import call_cat_in_parallel
+from ..cat_interface import compute_bulkiness
 from ..features.featurizer import generate_fingerprints
 from ..log_config import configure_logger
 from ..models.scscore import SCScorer
@@ -199,7 +199,7 @@ def filter_by_bulkiness(molecules: pd.DataFrame, opts: Options) -> pd.DataFrame:
         raise RuntimeError("A core molecular geometry is needed to compute bulkiness")
 
     opts.bulkiness = True
-    molecules["bulkiness"] = call_cat_in_parallel(molecules.smiles, opts, property_name="bulkiness")
+    molecules["bulkiness"] = compute_bulkiness(molecules.smiles, opts)
     logger.debug("CAT has been called!")
 
     return apply_predicate(molecules, "bulkiness", opts)

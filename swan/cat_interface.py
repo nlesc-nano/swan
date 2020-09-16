@@ -7,7 +7,7 @@ Index
 API
 ---
 
-.. autofunction:: call_cat_in_parallel
+.. autofunction:: compute_bulkiness
 """
 import logging
 from collections import defaultdict
@@ -15,25 +15,28 @@ from contextlib import redirect_stderr
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
-from typing import DefaultDict, Mapping, NamedTuple, TypeVar
+from typing import (Callable, DefaultDict, List, Mapping, NamedTuple, TypeVar,
+                    Union)
 
 import h5py
 import numpy as np
 import pandas as pd
 import yaml
 from CAT.base import prep
-from more_itertools import chunked
-from scm.plams import Settings
-
 from dataCAT import prop_to_dataframe
+from more_itertools import chunked
 from retry import retry
+from scm.plams import Settings
 
 from .utils import Options
 
-__all__ = ["call_cat_in_parallel"]
+__all__ = ["compute_bulkiness"]
 
-
+# Long types
 T = TypeVar('T')
+BatchResult = Union[np.ndarray, pd.DataFrame]
+Callback = Callable[[pd.Series, Mapping[str, T], pd.Index], BatchResult]
+Reducer = Callable[[List[BatchResult]], BatchResult]
 
 # Starting logger
 # logging.basicConfig(stream=sys.stdout, level=logging.INFO)
@@ -143,7 +146,7 @@ def compute_property_using_cat(
     return df
 
 
-def compute_bulkiness(smiles: pd.Series, opts: Mapping[str, T], indices: pd.Index) -> pd.Series:
+def compute_batch_bulkiness(smiles: pd.Series, opts: Mapping[str, T], indices: pd.Index) -> pd.Series:
     """Compute bulkiness using CAT."""
     chunk = smiles[indices]
     chunk_name = str(indices[0])
@@ -162,13 +165,31 @@ def compute_bulkiness(smiles: pd.Series, opts: Mapping[str, T], indices: pd.Inde
     return values
 
 
-def compute_cosmo_rs(smiles: pd.Series, opts: Mapping[str, T], indices: pd.Index) -> pd.Series:
-    """Compute bulkiness using CAT."""
+def compute_batch_cosmo_rs(smiles: pd.Series, opts: Mapping[str, T], indices: pd.Index) -> pd.Series:
+    """Compute the cosmo_rs properties of the `smiles` with `indices`."""
+    # chunk = smiles[indices]
+    # chunk_name = str(indices[0])
+
+    # # compute and extract the bulkiness
+    # metadata = PropertyMetadata("gamma", 'qd/properties/V_bulk')
+    # df = compute_property_using_cat(chunk, opts, chunk_name, metadata)
+
     raise NotImplementedError
 
 
-def call_cat_in_parallel(smiles: pd.Series, opts: Options, property_name: str = "bulkiness") -> np.ndarray:
-    """Compute a ligand/quantum dot property using CAT.
+def map_reduce(smiles: pd.Series, opts: Options,
+               callback: Callback, reduce: Reducer) -> BatchResult:
+    """Distribute the properties computation in batches."""
+    worker = partial(callback, smiles, opts.to_dict())
+
+    with Pool() as p:
+        results = p.map(worker, chunked(smiles.index, 10))
+
+    return reduce(results)
+
+
+def compute_bulkiness(smiles: pd.Series, opts: Options) -> np.ndarray:
+    """Compute a ligand/quantum dot bulkiness using CAT.
 
     It creates several instances of CAT using multiprocessing.
 
@@ -183,20 +204,32 @@ def call_cat_in_parallel(smiles: pd.Series, opts: Options, property_name: str = 
     -------
         Numpy array with the computed properties
     """
-    # Property Function to invoke cat
-    property_functions = {"bulkiness": compute_bulkiness,
-                          "cosmo-rs": compute_cosmo_rs}
-    callback_function = property_functions[property_name]
-
-    worker = partial(callback_function, smiles, opts.to_dict())
-
-    with Pool() as p:
-        results = p.map(worker, chunked(smiles.index, 10))
-
-    results = np.concatenate(results)
+    results = map_reduce(smiles, opts, compute_batch_bulkiness, np.concatenate)
 
     if len(smiles.index) != results.size:
         msg = "There is an incongruence in the bulkiness computed by CAT!"
         raise RuntimeError(msg)
+
+    return results
+
+
+def compute_cosmo_rs(smiles: pd.Series, opts: Options) -> pd.DataFrame:
+    """Compute bulkiness using CAT.
+
+    It creates several instances of CAT using multiprocessing.
+
+    Parameters
+    ----------
+    smiles
+        Pandas.Series with the smiles to compute
+    opts
+        Options to call CAT
+
+    Returns
+    -------
+        DataFrame with the properties values
+
+    """
+    results = map_reduce(smiles, opts, compute_batch_cosmo_rs, pd.concat)
 
     return results
