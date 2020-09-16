@@ -15,7 +15,7 @@ from contextlib import redirect_stderr
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
-from typing import DefaultDict, Mapping, TypeVar
+from typing import DefaultDict, Mapping, NamedTuple, TypeVar
 
 import h5py
 import numpy as np
@@ -41,6 +41,13 @@ logger = logging.getLogger('CAT')
 logger.propagate = False
 handler = logging.FileHandler("cat_output.log")
 logger.addHandler(handler)
+
+
+class PropertyMetadata(NamedTuple):
+    """Name and metadata of the property computed by CAT."""
+
+    name: str
+    dset: str  # Dset in the HDF5
 
 
 @retry(FileExistsError, tries=100, delay=0.01)
@@ -109,20 +116,22 @@ optional:
         return path_hdf5
 
 
-def compute_bulkiness_using_cat(smiles: pd.Series, opts: Mapping[str, T], chunk_name: str) -> pd.Series:
+def compute_property_using_cat(
+        smiles: pd.Series, opts: Mapping[str, T],
+        chunk_name: str, metadata: PropertyMetadata) -> pd.Series:
     """Compute the bulkiness for the candidates."""
     # Properties to compute using cat
     cat_properties = defaultdict(bool)
-    cat_properties["bulkiness"] = True
+    cat_properties[metadata.name] = True
 
     # run cat
     path_hdf5 = call_cat(smiles, opts, cat_properties, chunk_name=chunk_name)
     with h5py.File(path_hdf5, 'r') as f:
-        dset = f['qd/properties/V_bulk']
+        dset = f[metadata.dset]
         df = prop_to_dataframe(dset)
 
     # flat the dataframe and remove duplicates
-    df = df.reset_index()
+    df.reset_index(inplace=True)
 
     # make anchor atom neutral to compare with the original
     # TODO make it more general
@@ -131,30 +140,34 @@ def compute_bulkiness_using_cat(smiles: pd.Series, opts: Mapping[str, T], chunk_
     # remove duplicates
     df.drop_duplicates(subset=['ligand'], keep='first', inplace=True)
 
-    # Extract the bulkiness
-    bulkiness = pd.merge(smiles, df, left_on="smiles", right_on="ligand")["V_bulk"]
-
-    if len(smiles.index) != len(bulkiness):
-        msg = "There is an incongruence in the bulkiness computed by CAT!"
-        raise RuntimeError(msg)
-
-    return bulkiness.to_numpy()
+    return df
 
 
 def compute_bulkiness(smiles: pd.Series, opts: Mapping[str, T], indices: pd.Index) -> pd.Series:
-    """Call CAT and catch the exceptions"""
+    """Compute bulkiness using CAT."""
     chunk = smiles[indices]
     chunk_name = str(indices[0])
-    try:
-        values = compute_bulkiness_using_cat(chunk, opts, chunk_name)
-    except (RuntimeError):
-        logger.error(f"There was an error processing:\n{chunk.values}")
-        values = np.repeat(np.nan, len(indices))
 
+    # compute and extract the bulkiness
+    metadata = PropertyMetadata("bulkiness", 'qd/properties/V_bulk')
+    df = compute_property_using_cat(chunk, opts, chunk_name, metadata)
+
+    bulkiness = pd.merge(chunk, df, left_on="smiles", right_on="ligand")["V_bulk"]
+    if len(smiles.index) != len(bulkiness):
+        msg = "There is an incongruence in the bulkiness computed by CAT!"
+        logger.error(f"There was an error processing chunk: {chunk_name}\n{msg}")
+        values = np.repeat(np.nan, len(indices))
+    else:
+        values = bulkiness.to_numpy()
     return values
 
 
-def call_cat_in_parallel(smiles: pd.Series, opts: Options) -> np.ndarray:
+def compute_cosmo_rs(smiles: pd.Series, opts: Mapping[str, T], indices: pd.Index) -> pd.Series:
+    """Compute bulkiness using CAT."""
+    raise NotImplementedError
+
+
+def call_cat_in_parallel(smiles: pd.Series, opts: Options, property_name: str = "bulkiness") -> np.ndarray:
     """Compute a ligand/quantum dot property using CAT.
 
     It creates several instances of CAT using multiprocessing.
@@ -170,7 +183,12 @@ def call_cat_in_parallel(smiles: pd.Series, opts: Options) -> np.ndarray:
     -------
         Numpy array with the computed properties
     """
-    worker = partial(compute_bulkiness, smiles, opts.to_dict())
+    # Property Function to invoke cat
+    property_functions = {"bulkiness": compute_bulkiness,
+                          "cosmo-rs": compute_cosmo_rs}
+    callback_function = property_functions[property_name]
+
+    worker = partial(callback_function, smiles, opts.to_dict())
 
     with Pool() as p:
         results = p.map(worker, chunked(smiles.index, 10))
