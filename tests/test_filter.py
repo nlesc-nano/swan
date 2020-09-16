@@ -14,14 +14,14 @@ from .utils_test import PATH_TEST
 
 T = TypeVar("T")
 
+
 PATH_INPUT_TEST_FILTER = PATH_TEST / "input_test_filter.yml"
 
 
 def run_workflow(opts: Options) -> pd.DataFrame:
     """Apply the filters and read the output."""
-    cwd = Path(".").absolute().as_posix()
     split_filter_in_batches(opts)
-    path = f"{cwd}/results/batch_0/candidates.csv"
+    path = "results/batch_0/candidates.csv"
     filter_mols = read_molecules(path)
     print("Result path: ", path)
     return filter_mols

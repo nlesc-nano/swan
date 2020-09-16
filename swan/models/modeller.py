@@ -7,7 +7,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, Tuple
 
-import horovod.torch as hvd
 import numpy as np
 import pandas as pd
 import torch
@@ -73,9 +72,6 @@ class Modeller:
         if opts.use_cuda and opts.mode == "train":
             self.device = torch.device("cuda")
 
-            # Initialize Horovod
-            hvd.init()
-            torch.cuda.set_device(hvd.local_rank())
         else:
             self.device = torch.device("cpu")
 
@@ -98,6 +94,7 @@ class Modeller:
         """Configure a new model."""
         # Create an Network architecture
         self.network = select_model(self.opts)
+        self.network = self.network.to(self.device)
 
         # select an optimizer
         optimizers = {"sgd": torch.optim.SGD, "adam": torch.optim.Adam}
@@ -109,11 +106,6 @@ class Modeller:
         else:
             self.optimizer = fun(self.network.parameters(), lr=config["lr"])
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer)
-
-        if self.opts.use_cuda:
-            self.network.cuda()
-            # Add Horovod Distributed Optimizer
-            self.optimizer = hvd.DistributedOptimizer(self.optimizer, named_parameters=self.network.named_parameters())
 
         # Create loss function
         self.loss_func = getattr(nn, self.opts.torch_config.loss_function)()
@@ -134,10 +126,6 @@ class Modeller:
 
         # Set the model to training mode
         self.network.train()
-
-        # Broadcast parameters using Horovod
-        if self.opts.use_cuda:
-            hvd.broadcast_parameters(self.network.state_dict(), root_rank=0)
 
         for epoch in range(self.opts.torch_config.epochs):
             loss_all = 0
@@ -217,16 +205,8 @@ class FingerprintModeller(Modeller):
             self.opts.featurizer.fingerprint,
             self.opts.model.input_cells)
 
-        # Partition dataset among workers using DistributedSampler
-        sampler: Optional[torch.utils.data.distributed.DistributedSampler]
-        if self.opts.use_cuda:
-            sampler = torch.utils.data.distributed.DistributedSampler(
-                dataset, num_replicas=hvd.size(), rank=hvd.rank())
-        else:
-            sampler = None
-
         return DataLoader(
-            dataset=dataset, batch_size=self.opts.torch_config.batch_size, sampler=sampler)
+            dataset=dataset, batch_size=self.opts.torch_config.batch_size)
 
 
 class GraphModeller(Modeller):
@@ -240,24 +220,14 @@ class GraphModeller(Modeller):
         # Partition dataset among workers using DistributedSampler
         sampler: Optional[torch.utils.data.distributed.DistributedSampler]
 
-        if self.opts.use_cuda:
-            sampler = torch.utils.data.distributed.DistributedSampler(
-                dataset, num_replicas=hvd.size(), rank=hvd.rank())
-        else:
-            sampler = None
-
         return tg.data.DataLoader(
-            dataset=dataset, batch_size=self.opts.torch_config.batch_size, sampler=sampler)
+            dataset=dataset, batch_size=self.opts.torch_config.batch_size)
 
     def train_model(self):
         """Train a statistical model."""
         LOGGER.info("TRAINING STEP")
         # Set the model to training mode
         self.network.train()
-
-        # Broadcast parameters using Horovod
-        if self.opts.use_cuda:
-            hvd.broadcast_parameters(self.network.state_dict(), root_rank=0)
 
         for epoch in range(self.opts.torch_config.epochs):
             loss_all = 0
