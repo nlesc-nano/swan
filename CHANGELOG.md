@@ -2,6 +2,9 @@
 
 # 0.3.1 [Unreleased]
 
+## Changed
+* Removed duplicate CAT functionality (#36)
+
 # 0.3.0 [21/08/2020]
 
 ## New

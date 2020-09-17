@@ -11,8 +11,10 @@ Welcome to SWAN!
    :caption: Contents:
 
    includereadme
-   tutorial
-   api
+   tutorial_models
+   tutorial_screening
+   api_models
+   api_filtering
 
 
 Indices and tables

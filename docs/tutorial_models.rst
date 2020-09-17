@@ -1,5 +1,5 @@
-Tutorial
-=========
+Tutorial to Generate Statistical Models
+=======================================
 In this tutorial we explore how to create and train statistical models to predict
 molecular properties using the Pytorch_ library. We will use smiles_ to represent the molecules
 and use the csv_ file format to manipulate the molecules and their properties.
