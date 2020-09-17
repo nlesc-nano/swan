@@ -1,5 +1,5 @@
-In silico Screening
-===================
+Tutorial in Silico Screening
+============================
 This tutorial covers how to perform insilico filtering of a set of molecules
 represented as smiles_. Table :ref:`smiles-table` contains some smiles
 examples representing molecules with different functional groups.

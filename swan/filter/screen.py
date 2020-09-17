@@ -1,18 +1,15 @@
-""""
+"""
 Module to screen smile by functional group and other properties.
 
-Index
------
-.. currentmodule:: swan.filter.screen
-.. autosummary::
-    {autosummary}
-
-API
----
 .. autofunction:: split_filter_in_batches
 .. autofunction:: apply_filters
 
-{autodata}
+.. autodata:: SCHEMA_SCREEN
+    :annotation: : schema.Schema
+.. autodata:: SCHEMA_FILTERS
+    :annotation: : schema.Schema
+.. autodata:: SCHEMA_ORDERING
+    :annotation: : schema.Schema
 
 """
 
@@ -96,7 +93,14 @@ def validate_input(file_input: str) -> Options:
 
 
 def split_filter_in_batches(opts: Options) -> None:
-    """Split the computations into smaller batches that fit into memory."""
+    """Split the computations into smaller batches that fit into memory.
+
+    Parameters
+    ----------
+    opts
+        :class:`swan.utils.Options` options to run the filtering
+
+    """
     # Read molecules into a pandas dataframe
     molecules = read_molecules(opts.smiles_file)
 
@@ -120,7 +124,17 @@ def split_filter_in_batches(opts: Options) -> None:
 
 
 def apply_filters(molecules: pd.DataFrame, opts: Options, output_file: Path) -> None:
-    """Apply a set of filters to the given smiles."""
+    """Apply a set of filters to the given smiles.
+
+    Parameters
+    ----------
+    molecules
+        :class:`pandas.Dataframe` with the molecular data.
+    opts
+        :class:`swan.utils.Options` options to run the filtering
+    output_file
+        :class:`pathlib.Path`
+    """
     logger.info("converting smiles to rdkit molecules")
     # Create rdkit representations
     converter = np.vectorize(Chem.MolFromSmiles)

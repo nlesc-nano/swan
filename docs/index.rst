@@ -13,7 +13,8 @@ Welcome to SWAN!
    includereadme
    tutorial_models
    tutorial_screening
-   api
+   api_models
+   api_filtering
 
 
 Indices and tables
