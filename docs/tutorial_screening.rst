@@ -1,24 +1,23 @@
 In silico Screening
 ===================
 This tutorial covers how to perform insilico filtering of a set of molecules
-represented as smiles_. Table :numref:`smiles-table` contains some smiles
+represented as smiles_. Table :ref:`smiles-table` contains some smiles
 examples representing molecules with different functional groups.
 
 .. _smiles-table:
 
-.. list-table:: smiles to filter
-   :header-rows: 1		
+.. csv-table:: smiles to filter
+   :header: "smiles"
 
- * - Smiles		 
- * - CN1C=NC2=C1C(=O)N(C(=O)N2C)C
-   - OC(=O)C1CNC2C3C4CC2C1N34
-   - C1=CC=CC=C1
-   - OC(=O)C1CNC2COC1(C2)C#C
-   - CCO
-   - CCCCCCCCC=CCCCCCCCC(=O)O
-   - CC(=O)O
-   - O=C(O)Cc1ccccc1
-   - CC(C(=O)O)O
+   CN1C=NC2=C1C(=O)N(C(=O)N2C)C
+   OC(=O)C1CNC2C3C4CC2C1N34
+   C1=CC=CC=C1
+   OC(=O)C1CNC2COC1(C2)C#C
+   CCO
+   CCCCCCCCC=CCCCCCCCC(=O)O
+   CC(=O)O
+   O=C(O)Cc1ccccc1
+   CC(C(=O)O)O
 
 
 The filtering process consists in excluding (or including) a set of
@@ -72,20 +71,25 @@ other keywords will be explain in the following sections.
 Available filters
 *****************
 
-Include and exclude function groups
------------------------------------
+.. Note:: The filters are run in sequential order, meaning that second filter is applied
+   to the set of molecules remaining after applying the first filters, the third
+   filter is applied after the second and so on.
+
+
+1. Include and exclude function groups
+--------------------------------------
 The *include_functional_groups* and *exclude_functional_groups* as their names suggest
 keep and drop molecules based on a list of functional groups. Notice the functional
 are also provided as smiles_.
 
-Synthesizability scores
------------------------
+2. Synthesizability scores
+--------------------------
 The scscore_ is a measure of synthetic complexity. It is scaled from 1 to 5
 to facilited human interpretation. See the scscore_ paper for further details.
 
 
-Bulkiness
----------
+3. Bulkiness
+------------
 Assuming that a given molecule can be attached to a given surface, the bulkiness
 descriptor gives a measure of the volumen occupied by the molecule from the
 anchoring point extending outwards as a cone. It requires the *core* keywords
@@ -103,7 +107,14 @@ To perform the screening you just need to execute the following command ::
 
 Job distributions and results
 *****************************
+For a given filter, **Swan** will try to compute the molecular properties in parallel since properties
+can be computed independently for each molecule. Therefore **Swan** split the molecular set
+into batches that can be computed in parallel. The `batch_size` keyword is used to control the
+size of these batches.
 
+After the computation has finished the filtered molecules are stored in the **results** folder
+in the *current work directory*. In that folder you can find a `candidates.csv` file for
+each batch containing the final molecules.
 
 .. _smiles: https://en.wikipedia.org/wiki/Simplified_molecular-input_line-entry_system
 .. _yaml: https://yaml.org/
