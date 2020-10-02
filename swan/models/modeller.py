@@ -12,13 +12,13 @@ import pandas as pd
 import torch
 import torch_geometric as tg
 from flamingo.features.featurizer import generate_fingerprints
+from flamingo.log_config import configure_logger
 from flamingo.utils import Options
 from rdkit.Chem import AllChem, PandasTools
 from torch import Tensor, nn
 from torch.utils.data import DataLoader
 
 from ..input_validation import validate_input
-from ..log_config import configure_logger
 from ..plot import create_scatter_plot
 from .datasets import FingerprintsDataset, MolGraphDataset
 from .models import select_model
@@ -41,7 +41,7 @@ def main():
     args = parser.parse_args()
 
     # start logger
-    configure_logger(Path(args.w))
+    configure_logger(Path(args.w), "swan")
 
     # log date
     LOGGER.info(f"Starting at: {datetime.now()}")
