@@ -45,6 +45,7 @@ setup(
         ]
     },
     install_requires=[
+        'flamingo@git+https://github.com/nlesc-nano/flamingo@master',
         'mendeleev', 'more_itertools', 'numpy', 'pandas',
         'pyyaml>=5.1.1', 'retry', 'seaborn', 'schema',
         'torch-geometric', 'typing-extensions'],
