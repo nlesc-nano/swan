@@ -1,9 +1,13 @@
 # Change Log
 
-# 0.3.1 [Unreleased]
+# 0.4.1 [Unreleased]
+
+
+# 0.4.0 [02/10/2020]
 
 ## Changed
 * Removed duplicate CAT functionality (#36)
+* Moved the properties computation and filtering to its own repo(#44, #45)
 
 # 0.3.0 [21/08/2020]
 
