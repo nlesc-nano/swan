@@ -3,8 +3,6 @@
 import subprocess
 import warnings
 
-from qmflows.test_utils import Assertion_Warning
-
 from typing_extensions import Literal
 
 from .utils_test import PATH_SWAN, PATH_TEST
@@ -29,7 +27,7 @@ def test_mypy(action: Action = 'warn') -> None:
     assert not stderr, stderr
 
     if action == 'warn' and out.returncode != 0:
-        warnings.warn(stdout, category=Assertion_Warning)
+        warnings.warn(stdout)
 
     elif action == 'raise':
         try:
