@@ -1,12 +1,13 @@
 """Module to process dataset."""
+from typing import Any, Tuple
+
 import numpy as np
 import pandas as pd
 import torch
-from torch.utils.data import Dataset
-from typing import Any, Tuple
-
 import torch_geometric as tg
-from ..features.featurizer import generate_fingerprints
+from flamingo.features.featurizer import generate_fingerprints
+from torch.utils.data import Dataset
+
 from ..graph.molecular_graph import create_molecular_graph_data
 
 

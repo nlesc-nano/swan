@@ -1,13 +1,12 @@
 """Statistical models."""
 import torch.nn.functional as F
 import torch_geometric as tg
+from flamingo.features.featurizer import (NUMBER_ATOMIC_GRAPH_FEATURES,
+                                          NUMBER_BOND_GRAPH_FEATURES)
 from flamingo.utils import Options
 from torch import Tensor, nn
 from torch.nn import BatchNorm1d
 from torch_geometric.nn import NNConv
-
-from ..features.featurizer import (NUMBER_ATOMIC_GRAPH_FEATURES,
-                                   NUMBER_BOND_GRAPH_FEATURES)
 
 
 class FullyConnected(nn.Module):

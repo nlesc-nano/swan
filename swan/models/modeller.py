@@ -11,12 +11,12 @@ import numpy as np
 import pandas as pd
 import torch
 import torch_geometric as tg
+from flamingo.features.featurizer import generate_fingerprints
 from flamingo.utils import Options
 from rdkit.Chem import AllChem, PandasTools
 from torch import Tensor, nn
 from torch.utils.data import DataLoader
 
-from ..features.featurizer import generate_fingerprints
 from ..input_validation import validate_input
 from ..log_config import configure_logger
 from ..plot import create_scatter_plot
