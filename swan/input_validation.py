@@ -7,7 +7,7 @@ import yaml
 from schema import And, Optional, Or, Schema, SchemaError, Use
 from typing import Iterable
 
-from swan.utils import Options
+from flamingo.utils import Options
 
 
 def equal_lambda(name: str):

@@ -23,10 +23,6 @@ setup(
     url='https://github.com/nlesc-nano/swan',
 
     package_dir={'swan': 'swan'},
-    package_data={
-        'swan': ['data/*']
-    },
-
     include_package_data=True,
     license="Apache Software License 2.0",
     zip_safe=False,
@@ -35,21 +31,17 @@ setup(
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: Apache Software License',
         'Natural Language :: English',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
     ],
     entry_points={
         'console_scripts': [
             'modeller=swan.models.modeller:main',
-            'save_dataset_in_db=swan.data.save_data:main',
-            'smiles_screener=swan.filter.screen:main'
+            'save_dataset_in_db=swan.data.save_data:main'
         ]
     },
     install_requires=[
-        'CAT@git+https://github.com/nlesc-nano/CAT@master',
-        'nano-CAT@git+https://github.com/nlesc-nano/nano-CAT@master',
-        'data-CAT@git+https://github.com/nlesc-nano/data-CAT@master',
+        'flamingo@git+https://github.com/nlesc-nano/flamingo@master',
         'mendeleev', 'more_itertools', 'numpy', 'pandas',
         'pyyaml>=5.1.1', 'retry', 'seaborn', 'schema',
         'torch-geometric', 'typing-extensions'],

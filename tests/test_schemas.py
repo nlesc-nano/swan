@@ -8,6 +8,7 @@ import yaml
 
 path_input_train = Path("tests/test_files/input_test_fingerprint_train.yml")
 
+
 def test_input_validation():
     """Check that the input is validated correctly."""
     opts = validate_input(path_input_train)

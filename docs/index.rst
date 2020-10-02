@@ -14,7 +14,6 @@ Welcome to SWAN!
    tutorial_models
    tutorial_screening
    api_models
-   api_filtering
 
 
 Indices and tables

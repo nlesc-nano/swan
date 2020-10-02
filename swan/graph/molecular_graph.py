@@ -13,12 +13,11 @@ API
 """
 import numpy as np
 import torch
+from flamingo.features.featurizer import (compute_molecular_graph_edges,
+                                          generate_molecular_features)
 from rdkit import Chem
 from torch import Tensor
 from torch_geometric.data import Data
-
-from ..features.featurizer import (compute_molecular_graph_edges,
-                                   generate_molecular_features)
 
 
 def create_molecular_graph_data(mol: Chem.rdchem.Mol, label: Tensor = None) -> Data:
