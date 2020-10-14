@@ -6,15 +6,15 @@
 .. image:: https://github.com/nlesc-nano/swan/workflows/build%20with%20conda/badge.svg
    :target: https://github.com/nlesc-nano/swan/actions
 
-################################################################################
+#####################################
 Screening Workflows And Nanomaterials
-################################################################################
+#####################################
 
-**Swan** is a Python pacakge to create statistical models to predict molecular properties. See Documentation_.
+🦢 **Swan** is a Python pacakge to create statistical models to predict molecular properties. See Documentation_.
 
 
-Installation
-============
+🛠 Installation
+===============
 
 - Download miniconda for python3: miniconda_ (also you can install the complete anaconda_ version).
 

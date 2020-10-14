@@ -2,6 +2,7 @@
 import argparse
 import os
 from pathlib import Path
+from pytest_mock import MockFixture
 
 import numpy as np
 import torch
@@ -16,7 +17,7 @@ path_input_fingerprint_predict = Path("tests/test_files/input_test_fingerprint_p
 path_input_graph_predict = Path("tests/test_files/input_test_graph_predict.yml")
 
 
-def test_main(mocker):
+def test_main(mocker: MockFixture):
     """Test the CLI for the models."""
     mocker.patch("argparse.ArgumentParser.parse_args", return_value=argparse.Namespace(
         i=path_input_test_fingerprints, w=".", mode="train"))
@@ -35,7 +36,7 @@ def test_split_data():
     assert xs.size == 0
 
 
-def test_train_data_fingerprints(tmp_path):
+def test_train_data_fingerprints(tmp_path: Path):
     """Test that the dataset is trained properly."""
     opts = validate_input(path_input_test_fingerprints)
 
@@ -66,7 +67,7 @@ def test_predict_unknown_fingerprints():
     assert df['predicted_property'].notna().all()
 
 
-def test_train_molecular_graph(tmp_path):
+def test_train_molecular_graph(tmp_path: Path):
     """Test the training of convulution neural network on a molecular graph."""
     opts = validate_input(path_input_test_graph)
 

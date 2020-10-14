@@ -16,7 +16,7 @@ def test_input_validation():
     assert isinstance(opts, dict)
 
 
-def test_wrong_input(tmp_path):
+def test_wrong_input(tmp_path: Path):
     """Test schema failure with wrong input."""
     d = {"csv_file": "Non-existing/path.csv"}
 
