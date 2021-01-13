@@ -49,7 +49,7 @@ Using the conda environment the following packages should be installed:
 
 - install Pytorch_ according to this_ recipe
 
-- install `Pytorch_Geometric dependencies <https://github.com/rusty1s/pytorch_geometric#installation>`
+- install `Pytorch_Geometric dependencies <https://github.com/rusty1s/pytorch_geometric#installation>`_.
 
 
 .. _installation:
