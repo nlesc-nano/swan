@@ -29,7 +29,12 @@ jobs:
     - run: conda install rdkit pytorch torchvision cpuonly -c pytorch -c conda-forge
 
     - name: install torch-geometric dependencies
-      run: pip install pip install torch-scatter==latest+cpu torch-sparse==latest+cpu torch-cluster==latest+cpu torch-spline-conv==latest+cpu -f https://pytorch-geometric.com/whl/torch-1.6.0.html
+      run: |
+      pip install --no-index torch-scatter -f https://pytorch-geometric.com/whl/torch-1.7.0+cpu.html
+      pip install --no-index torch-sparse -f https://pytorch-geometric.com/whl/torch-1.7.0+cpu.html
+      pip install --no-index torch-cluster -f https://pytorch-geometric.com/whl/torch-1.7.0+cpu.html
+      pip install --no-index torch-spline-conv -f https://pytorch-geometric.com/whl/torch-1.7.0+cpu.html
+      pip install torch-geometric
 
     - name: install torch-geometric
       run:  pip install torch-geometric
