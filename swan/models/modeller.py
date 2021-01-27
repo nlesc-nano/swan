@@ -55,8 +55,7 @@ def main():
     elif args.mode == "cross":
         cross_validate(opts)
     else:
-        rs = predict_properties(opts)
-        print(rs)
+        predict_properties(opts)
 
 
 class Modeller:
@@ -276,7 +275,7 @@ def train_and_validate_model(opts: Options) -> None:
     create_scatter_plot(*[researcher.to_numpy_detached(x) for x in (predicted, expected)])
 
 
-def predict_properties(opts: Options) -> Tensor:
+def predict_properties(opts: Options) -> pd.DataFrame:
     """Use a previous trained model to predict properties."""
     LOGGER.info(f"Loading previously trained model from: {opts.model_path}")
     modeller = FingerprintModeller if 'fingerprint' in opts.featurizer else GraphModeller
@@ -299,8 +298,10 @@ def predict_properties(opts: Options) -> Tensor:
     transformed = np.exp(predicted)
     df = pd.DataFrame({'smiles': researcher.data['smiles'].to_numpy(),
                        'predicted_property': transformed.flatten()})
+    path = Path(opts.workdir) / "prediction.csv"
+    print("prediction data has been written to: ", path)
+    df.to_csv(path)
     return df
-
 
 def cross_validate(opts: Options) -> Tensor:
     """Run a cross validation with the given `opts`."""
