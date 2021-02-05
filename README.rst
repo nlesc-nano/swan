@@ -5,6 +5,8 @@
    :target: https://swan.readthedocs.io/en/latest/?badge=latest
 .. image:: https://github.com/nlesc-nano/swan/workflows/build%20with%20conda/badge.svg
    :target: https://github.com/nlesc-nano/swan/actions
+.. image:: https://codecov.io/gh/nlesc-nano/swan/branch/master/graph/badge.svg?token=1527ficjjx
+   :target: https://codecov.io/gh/nlesc-nano/swan
 
 #####################################
 Screening Workflows And Nanomaterials
