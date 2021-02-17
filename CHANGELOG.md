@@ -2,12 +2,6 @@
 
 # 0.4.1 [Unreleased]
 
-## New
-* Allow the user to provide their own Pytorch model (#52)
-
-## Changed
-* Remove unused dependencies
-
 
 # 0.4.0 [02/10/2020]
 
