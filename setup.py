@@ -36,15 +36,14 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'modeller=swan.models.modeller:main',
+            'modeller=swan.modeller:main',
             'save_dataset_in_db=swan.data.save_data:main'
         ]
     },
     install_requires=[
         'flamingo@git+https://github.com/nlesc-nano/flamingo@master',
-        'mendeleev', 'more_itertools', 'numpy', 'pandas',
-        'pyyaml>=5.1.1', 'retry', 'seaborn', 'schema',
-        'torch-geometric', 'typing-extensions'],
+        'numpy', 'pandas', 'pyyaml', 'scipy', 'seaborn', 'schema',
+        'torch-geometric'],
 
     extras_require={
         'test': ['coverage', 'mypy', 'pycodestyle', 'pytest>=3.9', 'pytest-cov',

@@ -9,6 +9,9 @@ use_cuda: False
 featurizer:
   molecular_graph
 
+model:
+  name: Cheminet
+
 torch_config:
   epochs: 100
   batch_size: 100

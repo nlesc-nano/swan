@@ -1,4 +1,6 @@
 """Models API."""
-from .modeller import FingerprintModeller, GraphModeller, Modeller
 
-__all__ = ["FingerprintModeller", "GraphModeller", "Modeller"]
+from .fingerprint_models import FingerprintFullyConnected
+from .graph_models import ChemiNet
+
+__all__ = ["ChemiNet", "FingerprintFullyConnected"]

@@ -18,10 +18,10 @@ from rdkit.Chem import AllChem, PandasTools
 from torch import Tensor, nn
 from torch.utils.data import DataLoader
 
-from ..input_validation import validate_input
-from ..plot import create_scatter_plot
+from .input_validation import validate_input
+from .load_models import select_model
+from .plot import create_scatter_plot
 from .datasets import FingerprintsDataset, MolGraphDataset
-from .models import select_model
 
 __all__ = ["FingerprintModeller", "GraphModeller", "Modeller"]
 
@@ -52,8 +52,6 @@ def main():
 
     if args.mode == "train":
         train_and_validate_model(opts)
-    elif args.mode == "cross":
-        cross_validate(opts)
     else:
         predict_properties(opts)
 
@@ -64,7 +62,7 @@ class Modeller:
     def __init__(self, opts: Options):
         """Set up a modeler object."""
         self.opts = opts
-        self.data = pd.read_csv(opts.dataset_file, index_col=0).reset_index(drop=True)
+        self.data = pd.read_csv(opts.dataset_file).reset_index(drop=True)
         # Generate rdkit molecules
         PandasTools.AddMoleculeColumnToFrame(self.data, smilesCol='smiles', molCol='molecules')
 
@@ -75,7 +73,8 @@ class Modeller:
             self.device = torch.device("cpu")
 
         self.create_new_model()
-        self.sanitize_data()
+        if opts.sanitize:
+            self.sanitize_data()
 
     def sanitize_data(self):
         """Check that the data in the DataFrame is valid."""
@@ -92,7 +91,7 @@ class Modeller:
     def create_new_model(self):
         """Configure a new model."""
         # Create an Network architecture
-        self.network = select_model(self.opts)
+        self.network = select_model(self.opts.model)
         self.network = self.network.to(self.device)
 
         # select an optimizer
@@ -202,7 +201,7 @@ class FingerprintModeller(Modeller):
         dataset = FingerprintsDataset(
             self.data.loc[indices], 'transformed_labels',
             self.opts.featurizer.fingerprint,
-            self.opts.model.input_cells)
+            self.opts.featurizer.nbits)
 
         return DataLoader(
             dataset=dataset, batch_size=self.opts.torch_config.batch_size)
@@ -271,8 +270,8 @@ def train_and_validate_model(opts: Options) -> None:
     researcher.split_data()
     researcher.load_data()
     researcher.train_model()
-    predicted, expected = researcher.evaluate_model()
-    create_scatter_plot(*[researcher.to_numpy_detached(x) for x in (predicted, expected)])
+    predicted, expected = tuple(researcher.to_numpy_detached(x).flatten() for x in researcher.evaluate_model())
+    create_scatter_plot(predicted, expected)
 
 
 def predict_properties(opts: Options) -> pd.DataFrame:
@@ -283,7 +282,7 @@ def predict_properties(opts: Options) -> pd.DataFrame:
     # Generate features
     if 'fingerprint' in opts.featurizer:
         features = generate_fingerprints(
-            researcher.data['molecules'], opts.featurizer.fingerprint, opts.model.input_cells)
+            researcher.data['molecules'], opts.featurizer.fingerprint, opts.featurizer.nbits)
         features = torch.from_numpy(features).to(researcher.device)
     else:
         # Create a single minibatch with the data to predict
@@ -295,14 +294,13 @@ def predict_properties(opts: Options) -> pd.DataFrame:
 
     # Predict the property value and report
     predicted = researcher.to_numpy_detached(researcher.predict(features))
-    transformed = np.exp(predicted)
+    # transformed = np.exp(predicted)
+    transformed = np.exp(predicted).flatten()
     df = pd.DataFrame({'smiles': researcher.data['smiles'].to_numpy(),
-                       'predicted_property': transformed.flatten()})
+                       'predicted_property': transformed})
     path = Path(opts.workdir) / "prediction.csv"
     print("prediction data has been written to: ", path)
-    df.to_csv(path)
+    df.to_csv(path, index=False)
     return df
 
-def cross_validate(opts: Options) -> Tensor:
-    """Run a cross validation with the given `opts`."""
-    pass
+

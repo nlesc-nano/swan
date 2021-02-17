@@ -8,7 +8,7 @@ import torch_geometric as tg
 from flamingo.features.featurizer import generate_fingerprints
 from torch.utils.data import Dataset
 
-from ..graph.molecular_graph import create_molecular_graph_data
+from .graph.molecular_graph import create_molecular_graph_data
 
 
 class FingerprintsDataset(Dataset):

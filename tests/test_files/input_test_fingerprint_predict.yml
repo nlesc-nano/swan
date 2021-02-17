@@ -5,6 +5,9 @@ use_cuda: False
 
 property: gammas
 
+model:
+  name: FingerprintFullyConnected
+
 featurizer:
   fingerprint: morgan
 

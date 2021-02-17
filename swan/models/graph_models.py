@@ -3,29 +3,11 @@ import torch.nn.functional as F
 import torch_geometric as tg
 from flamingo.features.featurizer import (NUMBER_ATOMIC_GRAPH_FEATURES,
                                           NUMBER_BOND_GRAPH_FEATURES)
-from flamingo.utils import Options
 from torch import Tensor, nn
 from torch.nn import BatchNorm1d
 from torch_geometric.nn import NNConv
 
-
-class FullyConnected(nn.Module):
-    """Fully connected network for non-linear regression."""
-
-    def __init__(self, n_feature: int, n_hidden: int):
-        """Create a deep feed foward network."""
-        super().__init__()
-        self.seq = nn.Sequential(
-            nn.Linear(n_feature, n_hidden),
-            nn.ReLU(),
-            nn.Linear(n_hidden, n_hidden),
-            nn.ReLU(),
-            nn.Linear(n_hidden, 1),
-        )
-
-    def forward(self, tensor: Tensor) -> Tensor:
-        """Run the model."""
-        return self.seq(tensor)
+__all__ = ["ChemiNet"]
 
 
 class ChemiNet(nn.Module):
@@ -65,13 +47,3 @@ class ChemiNet(nn.Module):
         x = self.bn2(x)
         x = tg.nn.global_add_pool(x, data.batch)
         return self.output_layer(x)
-
-
-def select_model(opts: Options) -> nn.Module:
-    """Select a model using the input provided by the user."""
-    if 'fingerprint' in opts.featurizer:
-        return FullyConnected(opts.model.input_cells, opts.model.hidden_cells)
-    elif 'graph' in opts.featurizer:
-        return ChemiNet()
-    else:
-        raise NotImplementedError
