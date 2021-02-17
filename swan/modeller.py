@@ -20,9 +20,9 @@ from torch import Tensor, nn
 from torch.utils.data import DataLoader
 
 from .input_validation import validate_input
+from .load_models import select_model
 from .plot import create_scatter_plot
 from .datasets import FingerprintsDataset, MolGraphDataset
-from .models.models import select_model
 
 __all__ = ["FingerprintModeller", "GraphModeller", "Modeller"]
 
@@ -53,8 +53,6 @@ def main():
 
     if args.mode == "train":
         train_and_validate_model(opts)
-    elif args.mode == "cross":
-        cross_validate(opts)
     else:
         predict_properties(opts)
 
@@ -309,6 +307,3 @@ def predict_properties(opts: Options) -> pd.DataFrame:
     return df
 
 
-def cross_validate(opts: Options) -> Tensor:
-    """Run a cross validation with the given `opts`."""
-    pass

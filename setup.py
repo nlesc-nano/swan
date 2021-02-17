@@ -42,9 +42,8 @@ setup(
     },
     install_requires=[
         'flamingo@git+https://github.com/nlesc-nano/flamingo@master',
-        'mendeleev', 'more_itertools', 'numpy', 'pandas',
-        'pyyaml>=5.1.1', 'retry', 'scipy', 'seaborn', 'schema',
-        'torch-geometric', 'typing-extensions'],
+        'numpy', 'pandas', 'pyyaml', 'scipy', 'seaborn', 'schema',
+        'torch-geometric'],
 
     extras_require={
         'test': ['coverage', 'mypy', 'pycodestyle', 'pytest>=3.9', 'pytest-cov',
