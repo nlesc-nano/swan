@@ -10,8 +10,6 @@ plt.switch_backend('agg')
 
 def create_scatter_plot(predicted: np.ndarray, expected: np.ndarray, workdir: str = ".") -> None:
     """Plot the predicted vs the expected values."""
-    predicted = predicted.flatten()
-    expected = expected.flatten()
     sns.set()
 
     df = pd.DataFrame({'expected': expected, 'predicted': predicted})

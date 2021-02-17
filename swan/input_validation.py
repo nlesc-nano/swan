@@ -1,13 +1,15 @@
 """Functionality to validate the user input against the schemas."""
 
 import warnings
+from pathlib import Path
+from typing import Iterable, Union
 
 import torch
 import yaml
-from schema import And, Optional, Or, Schema, SchemaError, Use
-from typing import Iterable
-
 from flamingo.utils import Options
+from schema import And, Optional, Or, Schema, SchemaError, Use
+
+PathLike = Union[str, Path]
 
 
 def equal_lambda(name: str):
@@ -22,7 +24,7 @@ def any_lambda(array: Iterable[str]):
         str, Use(str.lower), lambda s: s in array)
 
 
-def validate_input(file_input: str) -> Options:
+def validate_input(file_input: PathLike) -> Options:
     """Check the input validation against an schema."""
     with open(file_input, 'r') as f:
         dict_input = yaml.load(f.read(), Loader=yaml.FullLoader)
@@ -114,6 +116,9 @@ SCHEMA_MODELER = Schema({
 
     # Folder to save the models
     Optional("model_path", default="swan_models.pt"): str,
+
+    # Sanitize smiles
+    Optional("sanitize", default=True): bool,
 
     # Workdir
     Optional("workdir", default="."): str

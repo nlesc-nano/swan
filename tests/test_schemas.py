@@ -1,12 +1,15 @@
 """Check the input schemas."""
 
 from pathlib import Path
-from schema import SchemaError
-from swan.input_validation import (
-    SCHEMA_TORCH, validate_input)
-import yaml
 
-path_input_train = Path("tests/test_files/input_test_fingerprint_train.yml")
+import pytest
+import yaml
+from schema import SchemaError
+
+from swan.input_validation import SCHEMA_TORCH, validate_input
+from .utils_test import PATH_TEST
+
+path_input_train = PATH_TEST / "input_test_fingerprint_train.yml"
 
 
 def test_input_validation():
@@ -25,10 +28,10 @@ def test_wrong_input(tmp_path: Path):
     with open(file_path, "w") as f:
         yaml.dump(d, f)
 
-    try:
+    with pytest.raises(SchemaError) as excinfo:
         validate_input(file_path)
-    except SchemaError:
-        pass
+
+    assert "Missing keys" in str(excinfo.value)
 
 
 def test_schema_torch():
