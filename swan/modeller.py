@@ -19,10 +19,10 @@ from scipy import stats
 from torch import Tensor, nn
 from torch.utils.data import DataLoader
 
-from ..input_validation import validate_input
-from ..plot import create_scatter_plot
+from .input_validation import validate_input
+from .plot import create_scatter_plot
 from .datasets import FingerprintsDataset, MolGraphDataset
-from .models import select_model
+from .models.models import select_model
 
 __all__ = ["FingerprintModeller", "GraphModeller", "Modeller"]
 

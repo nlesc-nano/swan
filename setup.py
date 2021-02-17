@@ -36,7 +36,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'modeller=swan.models.modeller:main',
+            'modeller=swan.modeller:main',
             'save_dataset_in_db=swan.data.save_data:main'
         ]
     },
