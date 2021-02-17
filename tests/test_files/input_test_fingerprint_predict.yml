@@ -3,7 +3,8 @@ dataset_file:
 
 use_cuda: False
 
-property: gammas
+properties:
+  - gammas
 
 model:
   name: FingerprintFullyConnected

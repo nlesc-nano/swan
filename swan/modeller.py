@@ -190,7 +190,8 @@ class Modeller:
 
     def transform_labels(self) -> pd.DataFrame:
         """Create a new column with the transformed target."""
-        self.data['transformed_labels'] = np.log(self.data[self.opts.property])
+        name = self.opts.properties[0]
+        self.data['transformed_labels'] = np.log(self.data[name])
 
 
 class FingerprintModeller(Modeller):
@@ -294,7 +295,7 @@ def predict_properties(opts: Options) -> pd.DataFrame:
 
     # Predict the property value and report
     predicted = researcher.to_numpy_detached(researcher.predict(features))
-    # transformed = np.exp(predicted)
+    # Transform back the labels
     transformed = np.exp(predicted).flatten()
     df = pd.DataFrame({'smiles': researcher.data['smiles'].to_numpy(),
                        'predicted_property': transformed})
@@ -302,5 +303,3 @@ def predict_properties(opts: Options) -> pd.DataFrame:
     print("prediction data has been written to: ", path)
     df.to_csv(path, index=False)
     return df
-
-

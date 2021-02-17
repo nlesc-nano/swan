@@ -1,7 +1,8 @@
 dataset_file:
   tests/test_files/thousand.csv
   # data/Carboxylic_acids/1E4.csv
-property: gammas
+properties:
+  - gammas
 
 use_cuda: False
 

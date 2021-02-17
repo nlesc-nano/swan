@@ -2,7 +2,7 @@
 
 import warnings
 from pathlib import Path
-from typing import Iterable, Union
+from typing import Iterable, List, Union
 
 import torch
 import yaml
@@ -105,7 +105,7 @@ SCHEMA_MODELER = Schema({
     "dataset_file": str,
 
     # Property to predict
-    "property": str,
+    "properties": [str],
 
     # Method to get the features
     "featurizer": Or(SCHEMA_FINGERPRINTS, equal_lambda("molecular_graph")),
