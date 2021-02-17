@@ -2,14 +2,19 @@
 from flamingo.utils import Options
 from torch import nn
 
-from .models import FingerprintFullyConnected, ChemiNet
+from .models import ChemiNet, FingerprintFullyConnected
+
+DEFAULT_MODELS = {
+    "fingerprintfullyconnected": FingerprintFullyConnected,
+    "cheminet": ChemiNet,
+}
 
 
 def select_model(opts: Options) -> nn.Module:
     """Select a model using the input provided by the user."""
-    if 'fingerprint' in opts.featurizer:
-        return FingerprintFullyConnected(opts.model.input_cells, opts.model.hidden_cells)
-    elif 'graph' in opts.featurizer:
-        return ChemiNet()
-    else:
+    name = opts.name.lower()
+    model = DEFAULT_MODELS.get(name, None)
+    if model is None:
         raise NotImplementedError
+
+    return model(**opts.parameters)

@@ -15,7 +15,6 @@ from flamingo.features.featurizer import generate_fingerprints
 from flamingo.log_config import configure_logger
 from flamingo.utils import Options
 from rdkit.Chem import AllChem, PandasTools
-from scipy import stats
 from torch import Tensor, nn
 from torch.utils.data import DataLoader
 
@@ -92,7 +91,7 @@ class Modeller:
     def create_new_model(self):
         """Configure a new model."""
         # Create an Network architecture
-        self.network = select_model(self.opts)
+        self.network = select_model(self.opts.model)
         self.network = self.network.to(self.device)
 
         # select an optimizer
@@ -202,7 +201,7 @@ class FingerprintModeller(Modeller):
         dataset = FingerprintsDataset(
             self.data.loc[indices], 'transformed_labels',
             self.opts.featurizer.fingerprint,
-            self.opts.model.input_cells)
+            self.opts.featurizer.nbits)
 
         return DataLoader(
             dataset=dataset, batch_size=self.opts.torch_config.batch_size)
@@ -272,8 +271,6 @@ def train_and_validate_model(opts: Options) -> None:
     researcher.load_data()
     researcher.train_model()
     predicted, expected = tuple(researcher.to_numpy_detached(x).flatten() for x in researcher.evaluate_model())
-    reg = stats.linregress(predicted, expected)
-    print(reg)
     create_scatter_plot(predicted, expected)
 
 
@@ -285,7 +282,7 @@ def predict_properties(opts: Options) -> pd.DataFrame:
     # Generate features
     if 'fingerprint' in opts.featurizer:
         features = generate_fingerprints(
-            researcher.data['molecules'], opts.featurizer.fingerprint, opts.model.input_cells)
+            researcher.data['molecules'], opts.featurizer.fingerprint, opts.featurizer.nbits)
         features = torch.from_numpy(features).to(researcher.device)
     else:
         # Create a single minibatch with the data to predict

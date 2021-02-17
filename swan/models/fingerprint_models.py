@@ -8,15 +8,15 @@ __all__ = ["FingerprintFullyConnected"]
 class FingerprintFullyConnected(nn.Module):
     """Fully connected network for non-linear regression."""
 
-    def __init__(self, n_feature: int, n_hidden: int):
+    def __init__(self, input_features: int = 2048, hidden_cells: int = 1000, output_features: int = 1):
         """Create a deep feed foward network."""
         super().__init__()
         self.seq = nn.Sequential(
-            nn.Linear(n_feature, n_hidden),
+            nn.Linear(input_features, hidden_cells),
             nn.ReLU(),
-            nn.Linear(n_hidden, n_hidden),
+            nn.Linear(hidden_cells, hidden_cells),
             nn.ReLU(),
-            nn.Linear(n_hidden, 1),
+            nn.Linear(hidden_cells, output_features),
         )
 
     def forward(self, tensor: Tensor) -> Tensor:

@@ -9,8 +9,7 @@ featurizer:
   fingerprint: atompair
 
 model:
-  input_cells: 2048
-  hidden_cells: 1000
+  name: FingerprintFullyConnected
 
 torch_config:
   epochs: 5
