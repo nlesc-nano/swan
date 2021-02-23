@@ -24,6 +24,7 @@ class FingerprintsDataset(Dataset):
         self.labels = torch.from_numpy(labels.reshape(size_labels, 1))
         fingerprints = generate_fingerprints(
             self.molecules, type_fingerprint, fingerprint_size)
+        np.save("fingerprints", fingerprints)
         self.fingerprints = torch.from_numpy(fingerprints)
 
     def __len__(self) -> int:

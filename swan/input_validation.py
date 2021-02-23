@@ -115,14 +115,16 @@ SCHEMA_MODELER = Schema({
 
     Optional("model", default={}): SCHEMA_MODEL,
 
+    Optional("scale_labels", default=True): bool,
+
+    # Sanitize smiles
+    Optional("sanitize", default=True): bool,
+
     # Network and training options options
     Optional("torch_config", default=TORCH_DEFAULTS): SCHEMA_TORCH,
 
     # Folder to save the models
     Optional("model_path", default="swan_models.pt"): str,
-
-    # Sanitize smiles
-    Optional("sanitize", default=True): bool,
 
     # Workdir
     Optional("workdir", default="."): str

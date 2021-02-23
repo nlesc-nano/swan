@@ -1,6 +1,7 @@
 """Statistical models."""
 import argparse
 import logging
+import pickle
 import tempfile
 from abc import abstractmethod
 from datetime import datetime
@@ -15,13 +16,14 @@ from flamingo.features.featurizer import generate_fingerprints
 from flamingo.log_config import configure_logger
 from flamingo.utils import Options
 from rdkit.Chem import AllChem, PandasTools
+from sklearn.preprocessing import RobustScaler
 from torch import Tensor, nn
 from torch.utils.data import DataLoader
 
+from .datasets import FingerprintsDataset, MolGraphDataset
 from .input_validation import validate_input
 from .load_models import select_model
 from .plot import create_scatter_plot
-from .datasets import FingerprintsDataset, MolGraphDataset
 
 __all__ = ["FingerprintModeller", "GraphModeller", "Modeller"]
 
@@ -63,8 +65,12 @@ class Modeller:
         """Set up a modeler object."""
         self.opts = opts
         self.data = pd.read_csv(opts.dataset_file).reset_index(drop=True)
+        # Set of transformation apply to the dataset
+        self.transformer = RobustScaler()
         # Generate rdkit molecules
         PandasTools.AddMoleculeColumnToFrame(self.data, smilesCol='smiles', molCol='molecules')
+        if opts.sanitize:
+            self.sanitize_data()
 
         if opts.use_cuda and opts.mode == "train":
             self.device = torch.device("cuda")
@@ -73,8 +79,6 @@ class Modeller:
             self.device = torch.device("cpu")
 
         self.create_new_model()
-        if opts.sanitize:
-            self.sanitize_data()
 
     def sanitize_data(self):
         """Check that the data in the DataFrame is valid."""
@@ -188,10 +192,28 @@ class Modeller:
         self.index_valid = np.random.choice(self.data.index, size=size_valid, replace=False)
         self.index_train = np.setdiff1d(self.data.index, self.index_valid, assume_unique=True)
 
-    def transform_labels(self) -> pd.DataFrame:
+    def scale_labels(self) -> pd.DataFrame:
         """Create a new column with the transformed target."""
         name = self.opts.properties[0]
-        self.data['transformed_labels'] = np.log(self.data[name])
+        if self.opts.scale_labels:
+            self.data["transformed_labels"] = self.transformer.fit_transform(
+                self.data[name].to_numpy().reshape(-1, 1))
+            self.dump_scale()
+
+        else:
+            self.data["transformed_labels"] = self.data[name]
+
+    def dump_scale(self) -> None:
+        """Save the scaling parameters in a file."""
+        path_scales = Path(self.opts.workdir) / "swan_scales.pkl"
+        with open(path_scales, 'wb') as handler:
+            pickle.dump(self.transformer, handler)
+
+    def load_scale(self) -> None:
+        """Read the scales used for the features."""
+        path_scales = Path(self.opts.workdir) / "swan_scales.pkl"
+        with open(path_scales, 'rb') as handler:
+            self.transformer = pickle.load(handler)
 
 
 class FingerprintModeller(Modeller):
@@ -267,7 +289,7 @@ def train_and_validate_model(opts: Options) -> None:
     """Train the model usign the data specificied by the user."""
     modeller = FingerprintModeller if 'fingerprint' in opts.featurizer else GraphModeller
     researcher = modeller(opts)
-    researcher.transform_labels()
+    researcher.scale_labels()
     researcher.split_data()
     researcher.load_data()
     researcher.train_model()
@@ -296,7 +318,12 @@ def predict_properties(opts: Options) -> pd.DataFrame:
     # Predict the property value and report
     predicted = researcher.to_numpy_detached(researcher.predict(features))
     # Transform back the labels
-    transformed = np.exp(predicted).flatten()
+
+    # Load and applying the scales
+    if opts.scale_labels:
+        researcher.load_scale()
+        transformed = researcher.transformer.inverse_transform(predicted).flatten()
+
     df = pd.DataFrame({'smiles': researcher.data['smiles'].to_numpy(),
                        'predicted_property': transformed})
     path = Path(opts.workdir) / "prediction.csv"
