@@ -290,6 +290,9 @@ def train_and_validate_model(opts: Options) -> None:
     researcher.load_data()
     researcher.train_model()
     predicted, expected = tuple(researcher.to_numpy_detached(x) for x in researcher.evaluate_model())
+    if opts.scale_labels:
+        predicted = researcher.transformer.inverse_transform(predicted)
+        expected = researcher.transformer.inverse_transform(expected)
     create_scatter_plot(predicted, expected, opts.properties)
 
 

@@ -16,9 +16,7 @@ class FingerprintFullyConnected(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_cells, hidden_cells),
             nn.ReLU(),
-            nn.Linear(hidden_cells, hidden_cells//2),
-            nn.ReLU(),
-            nn.Linear(hidden_cells//2, output_features),
+            nn.Linear(hidden_cells, output_features),
         )
 
     def forward(self, tensor: Tensor) -> Tensor:
