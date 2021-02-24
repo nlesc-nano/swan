@@ -67,6 +67,7 @@ class Modeller:
         self.data = pd.read_csv(opts.dataset_file).reset_index(drop=True)
         # Set of transformation apply to the dataset
         self.transformer = RobustScaler()
+        self.path_scales = Path(self.opts.workdir) / "swan_scales.pkl"
         # Generate rdkit molecules
         PandasTools.AddMoleculeColumnToFrame(self.data, smilesCol='smiles', molCol='molecules')
         if opts.sanitize:
@@ -194,25 +195,20 @@ class Modeller:
 
     def scale_labels(self) -> pd.DataFrame:
         """Create a new column with the transformed target."""
-        name = self.opts.properties[0]
+        columns = self.opts.properties
         if self.opts.scale_labels:
-            self.data["transformed_labels"] = self.transformer.fit_transform(
-                self.data[name].to_numpy().reshape(-1, 1))
+            data = self.data[columns].to_numpy()
+            self.data[columns] = self.transformer.fit_transform(data)
             self.dump_scale()
-
-        else:
-            self.data["transformed_labels"] = self.data[name]
 
     def dump_scale(self) -> None:
         """Save the scaling parameters in a file."""
-        path_scales = Path(self.opts.workdir) / "swan_scales.pkl"
-        with open(path_scales, 'wb') as handler:
+        with open(self.path_scales, 'wb') as handler:
             pickle.dump(self.transformer, handler)
 
     def load_scale(self) -> None:
         """Read the scales used for the features."""
-        path_scales = Path(self.opts.workdir) / "swan_scales.pkl"
-        with open(path_scales, 'rb') as handler:
+        with open(self.path_scales, 'rb') as handler:
             self.transformer = pickle.load(handler)
 
 
@@ -222,7 +218,7 @@ class FingerprintModeller(Modeller):
     def create_data_loader(self, indices: np.ndarray) -> DataLoader:
         """Create a DataLoader instance for the data."""
         dataset = FingerprintsDataset(
-            self.data.loc[indices], 'transformed_labels',
+            self.data.loc[indices], self.opts.properties,
             self.opts.featurizer.fingerprint,
             self.opts.featurizer.nbits)
 
@@ -236,7 +232,7 @@ class GraphModeller(Modeller):
     def create_data_loader(self, indices: np.ndarray) -> DataLoader:
         """Create a DataLoader instance for the data."""
         root = tempfile.mkdtemp(prefix="dataset_")
-        dataset = MolGraphDataset(root, self.data.loc[indices], 'transformed_labels')
+        dataset = MolGraphDataset(root, self.data.loc[indices], self.opts.properties[0])
 
         # Partition dataset among workers using DistributedSampler
         sampler: Optional[torch.utils.data.distributed.DistributedSampler]

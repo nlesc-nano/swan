@@ -15,13 +15,13 @@ class FingerprintsDataset(Dataset):
     """Read the smiles, properties and compute the fingerprints."""
 
     def __init__(
-            self, data: pd.DataFrame, property_name: str, type_fingerprint: str,
+            self, data: pd.DataFrame, properties: str, type_fingerprint: str,
             fingerprint_size: int) -> None:
         """Generate a dataset using fingerprints as features."""
         self.molecules = data['molecules']
-        labels = data[property_name].to_numpy(np.float32)
+        labels = data[properties].to_numpy(np.float32)
         size_labels = labels.size
-        self.labels = torch.from_numpy(labels.reshape(size_labels, 1))
+        self.labels = torch.from_numpy(labels.reshape(size_labels, len(properties)))
         fingerprints = generate_fingerprints(
             self.molecules, type_fingerprint, fingerprint_size)
         np.save("fingerprints", fingerprints)
