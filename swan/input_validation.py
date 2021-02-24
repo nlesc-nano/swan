@@ -2,7 +2,7 @@
 
 import warnings
 from pathlib import Path
-from typing import Iterable, List, Union
+from typing import Iterable, Union
 
 import torch
 import yaml

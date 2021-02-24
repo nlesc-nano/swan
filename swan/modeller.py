@@ -232,7 +232,7 @@ class GraphModeller(Modeller):
     def create_data_loader(self, indices: np.ndarray) -> DataLoader:
         """Create a DataLoader instance for the data."""
         root = tempfile.mkdtemp(prefix="dataset_")
-        dataset = MolGraphDataset(root, self.data.loc[indices], self.opts.properties[0])
+        dataset = MolGraphDataset(root, self.data.loc[indices], self.opts.properties)
 
         # Partition dataset among workers using DistributedSampler
         sampler: Optional[torch.utils.data.distributed.DistributedSampler]

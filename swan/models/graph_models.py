@@ -16,7 +16,7 @@ class ChemiNet(nn.Module):
     Use the convolution reported at: https://arxiv.org/abs/1704.01212
     """
 
-    def __init__(self, output_channels: int = 50):
+    def __init__(self, output_channels: int = 50, output_features: int = 1):
         """Create the network architecture."""
         super().__init__()
         self.output_channels = output_channels
@@ -34,7 +34,7 @@ class ChemiNet(nn.Module):
             nn.ReLU(),
             nn.Linear(output_channels // 2, output_channels // 2),
             nn.ReLU(),
-            nn.Linear(output_channels // 2, 1)
+            nn.Linear(output_channels // 2, output_features)
         )
         self.bn1 = BatchNorm1d(output_channels)
         self.bn2 = BatchNorm1d(output_channels // 2)
