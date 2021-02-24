@@ -20,7 +20,7 @@ class FingerprintsDataset(Dataset):
         """Generate a dataset using fingerprints as features."""
         self.molecules = data['molecules']
         labels = data[properties].to_numpy(np.float32)
-        size_labels = labels.size
+        size_labels = len(self.molecules)
         self.labels = torch.from_numpy(labels.reshape(size_labels, len(properties)))
         fingerprints = generate_fingerprints(
             self.molecules, type_fingerprint, fingerprint_size)

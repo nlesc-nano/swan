@@ -289,8 +289,8 @@ def train_and_validate_model(opts: Options) -> None:
     researcher.split_data()
     researcher.load_data()
     researcher.train_model()
-    predicted, expected = tuple(researcher.to_numpy_detached(x).flatten() for x in researcher.evaluate_model())
-    create_scatter_plot(predicted, expected)
+    predicted, expected = tuple(researcher.to_numpy_detached(x) for x in researcher.evaluate_model())
+    create_scatter_plot(predicted, expected, opts.properties)
 
 
 def predict_properties(opts: Options) -> pd.DataFrame:
