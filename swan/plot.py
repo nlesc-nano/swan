@@ -30,7 +30,8 @@ def create_scatter_plot(
     rows = nfeatures // 3
     ncols = nfeatures if nfeatures < 3 else 3
     rows = rows if rows > 1 else 1
-    fig, axis = plt.subplots(nrows=rows, ncols=ncols, constrained_layout=True)
+    fig, axis = plt.subplots(nrows=rows, ncols=ncols, figsize=(20, 20), constrained_layout=True)
+    # fig.tight_layout()
     if rows == 1:
         axis = [axis]
 
