@@ -1,7 +1,8 @@
 dataset_file:
   tests/test_files/smiles.csv
 
-property: gammas
+properties:
+  - gammas
 
 use_cuda: False
 

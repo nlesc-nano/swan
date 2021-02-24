@@ -42,7 +42,7 @@ setup(
     },
     install_requires=[
         'flamingo@git+https://github.com/nlesc-nano/flamingo@master',
-        'numpy', 'pandas', 'pyyaml', 'scipy', 'seaborn', 'schema',
+        'numpy', 'pandas', 'pyyaml', 'scikit-learn', 'scipy', 'seaborn', 'schema',
         'torch-geometric'],
 
     extras_require={

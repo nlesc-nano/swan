@@ -1,6 +1,7 @@
 """Statistical models."""
 import argparse
 import logging
+import pickle
 import tempfile
 from abc import abstractmethod
 from datetime import datetime
@@ -15,13 +16,14 @@ from flamingo.features.featurizer import generate_fingerprints
 from flamingo.log_config import configure_logger
 from flamingo.utils import Options
 from rdkit.Chem import AllChem, PandasTools
+from sklearn.preprocessing import RobustScaler
 from torch import Tensor, nn
 from torch.utils.data import DataLoader
 
+from .datasets import FingerprintsDataset, MolGraphDataset
 from .input_validation import validate_input
 from .load_models import select_model
 from .plot import create_scatter_plot
-from .datasets import FingerprintsDataset, MolGraphDataset
 
 __all__ = ["FingerprintModeller", "GraphModeller", "Modeller"]
 
@@ -63,8 +65,13 @@ class Modeller:
         """Set up a modeler object."""
         self.opts = opts
         self.data = pd.read_csv(opts.dataset_file).reset_index(drop=True)
+        # Set of transformation apply to the dataset
+        self.transformer = RobustScaler()
+        self.path_scales = Path(self.opts.workdir) / "swan_scales.pkl"
         # Generate rdkit molecules
         PandasTools.AddMoleculeColumnToFrame(self.data, smilesCol='smiles', molCol='molecules')
+        if opts.sanitize:
+            self.sanitize_data()
 
         if opts.use_cuda and opts.mode == "train":
             self.device = torch.device("cuda")
@@ -73,8 +80,6 @@ class Modeller:
             self.device = torch.device("cpu")
 
         self.create_new_model()
-        if opts.sanitize:
-            self.sanitize_data()
 
     def sanitize_data(self):
         """Check that the data in the DataFrame is valid."""
@@ -188,9 +193,23 @@ class Modeller:
         self.index_valid = np.random.choice(self.data.index, size=size_valid, replace=False)
         self.index_train = np.setdiff1d(self.data.index, self.index_valid, assume_unique=True)
 
-    def transform_labels(self) -> pd.DataFrame:
+    def scale_labels(self) -> pd.DataFrame:
         """Create a new column with the transformed target."""
-        self.data['transformed_labels'] = np.log(self.data[self.opts.property])
+        columns = self.opts.properties
+        if self.opts.scale_labels:
+            data = self.data[columns].to_numpy()
+            self.data[columns] = self.transformer.fit_transform(data)
+            self.dump_scale()
+
+    def dump_scale(self) -> None:
+        """Save the scaling parameters in a file."""
+        with open(self.path_scales, 'wb') as handler:
+            pickle.dump(self.transformer, handler)
+
+    def load_scale(self) -> None:
+        """Read the scales used for the features."""
+        with open(self.path_scales, 'rb') as handler:
+            self.transformer = pickle.load(handler)
 
 
 class FingerprintModeller(Modeller):
@@ -199,7 +218,7 @@ class FingerprintModeller(Modeller):
     def create_data_loader(self, indices: np.ndarray) -> DataLoader:
         """Create a DataLoader instance for the data."""
         dataset = FingerprintsDataset(
-            self.data.loc[indices], 'transformed_labels',
+            self.data.loc[indices], self.opts.properties,
             self.opts.featurizer.fingerprint,
             self.opts.featurizer.nbits)
 
@@ -213,7 +232,7 @@ class GraphModeller(Modeller):
     def create_data_loader(self, indices: np.ndarray) -> DataLoader:
         """Create a DataLoader instance for the data."""
         root = tempfile.mkdtemp(prefix="dataset_")
-        dataset = MolGraphDataset(root, self.data.loc[indices], 'transformed_labels')
+        dataset = MolGraphDataset(root, self.data.loc[indices], self.opts.properties)
 
         # Partition dataset among workers using DistributedSampler
         sampler: Optional[torch.utils.data.distributed.DistributedSampler]
@@ -266,12 +285,15 @@ def train_and_validate_model(opts: Options) -> None:
     """Train the model usign the data specificied by the user."""
     modeller = FingerprintModeller if 'fingerprint' in opts.featurizer else GraphModeller
     researcher = modeller(opts)
-    researcher.transform_labels()
+    researcher.scale_labels()
     researcher.split_data()
     researcher.load_data()
     researcher.train_model()
-    predicted, expected = tuple(researcher.to_numpy_detached(x).flatten() for x in researcher.evaluate_model())
-    create_scatter_plot(predicted, expected)
+    predicted, expected = tuple(researcher.to_numpy_detached(x) for x in researcher.evaluate_model())
+    if opts.scale_labels:
+        predicted = researcher.transformer.inverse_transform(predicted)
+        expected = researcher.transformer.inverse_transform(expected)
+    create_scatter_plot(predicted, expected, opts.properties)
 
 
 def predict_properties(opts: Options) -> pd.DataFrame:
@@ -294,13 +316,16 @@ def predict_properties(opts: Options) -> pd.DataFrame:
 
     # Predict the property value and report
     predicted = researcher.to_numpy_detached(researcher.predict(features))
-    # transformed = np.exp(predicted)
-    transformed = np.exp(predicted).flatten()
+    # Transform back the labels
+
+    # Load and applying the scales
+    if opts.scale_labels:
+        researcher.load_scale()
+        transformed = researcher.transformer.inverse_transform(predicted).flatten()
+
     df = pd.DataFrame({'smiles': researcher.data['smiles'].to_numpy(),
                        'predicted_property': transformed})
     path = Path(opts.workdir) / "prediction.csv"
     print("prediction data has been written to: ", path)
     df.to_csv(path, index=False)
     return df
-
-
