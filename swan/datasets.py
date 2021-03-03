@@ -49,8 +49,6 @@ class MolGraphDataset(tg.data.Dataset):
             self.labels = data[properties].to_numpy(np.float32)
         else:
             self.labels = None
-        if len(properties) == 1:
-            self.labels = self.labels.flatten()
 
     def _download(self):
         pass

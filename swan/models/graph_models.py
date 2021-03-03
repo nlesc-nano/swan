@@ -15,7 +15,7 @@ class MPNN(torch.nn.Module):
     Use the convolution reported at: https://arxiv.org/abs/1704.01212
     This network was taking from: https://github.com/rusty1s/pytorch_geometric/blob/master/examples/qm9_nn_conv.py
     """
-    def __init__(self, dim=64, batch_size=128):
+    def __init__(self, num_labels=1, dim=64, batch_size=128):
         super(MPNN, self).__init__()
         self.lin0 = torch.nn.Linear(NUMBER_ATOMIC_GRAPH_FEATURES, dim)
 
@@ -25,7 +25,7 @@ class MPNN(torch.nn.Module):
 
         self.set2set = Set2Set(dim, processing_steps=3)
         self.lin1 = torch.nn.Linear(2 * dim, dim)
-        self.lin2 = torch.nn.Linear(dim, 1)
+        self.lin2 = torch.nn.Linear(dim, num_labels)
 
     def forward(self, data):
         out = F.relu(self.lin0(data.x))
@@ -38,5 +38,4 @@ class MPNN(torch.nn.Module):
 
         out = self.set2set(out, data.batch)
         out = F.relu(self.lin1(out))
-        out = self.lin2(out)
-        return out.view(-1)
+        return self.lin2(out)

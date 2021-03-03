@@ -290,9 +290,6 @@ def train_and_validate_model(opts: Options) -> None:
     researcher.load_data()
     researcher.train_model()
     predicted, expected = tuple(researcher.to_numpy_detached(x) for x in researcher.evaluate_model())
-    if len(predicted.shape) == 1:
-        predicted = predicted.reshape(-1, 1)
-        expected = expected.reshape(-1, 1)
     if opts.scale_labels:
         predicted = researcher.transformer.inverse_transform(predicted)
         expected = researcher.transformer.inverse_transform(expected)
