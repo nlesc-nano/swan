@@ -8,7 +8,7 @@ from .models import MPNN, FingerprintFullyConnected
 
 DEFAULT_MODELS = {
     "fingerprintfullyconnected": FingerprintFullyConnected,
-    "cheminet": MPNN,
+    "mpnn": MPNN,
 }
 
 

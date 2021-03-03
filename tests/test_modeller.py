@@ -25,9 +25,9 @@ def test_main(mocker: MockFixture):
         i=path_input_test_fingerprints, w=".", mode="train"))
 
     mocker.patch("swan.modeller.predict_properties", return_value=None)
-    mocker.patch("swan.modeller.train_and_validate_model", return_value=None)
     main()
 
+    mocker.patch("swan.modeller.train_and_validate_model", return_value=None)
 
 def test_split_data():
     """Check that training and validation set are independent."""
@@ -80,6 +80,7 @@ def test_train_molecular_graph(tmp_path: Path):
     opts.torch_config.epochs = 5
     opts.torch_config.batch_size = 20
 
+    print("opts:\n", opts)
     researcher = GraphModeller(opts)
     researcher.scale_labels()
     researcher.split_data()
