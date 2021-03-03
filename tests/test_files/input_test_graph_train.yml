@@ -11,10 +11,10 @@ featurizer:
   molecular_graph
 
 model:
-  name: Cheminet
+  name: MPNN
 
 torch_config:
-  epochs: 100
+  epochs: 10
   batch_size: 100
   optimizer:
     name: sgd

@@ -108,7 +108,7 @@ class Modeller:
                                  momentum=config["momentum"], nesterov=config["nesterov"])
         else:
             self.optimizer = fun(self.network.parameters(), lr=config["lr"])
-        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer)
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min', min_lr=0.00001)
 
         # Create loss function
         self.loss_func = getattr(nn, self.opts.torch_config.loss_function)()

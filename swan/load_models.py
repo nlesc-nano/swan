@@ -4,11 +4,11 @@ import importlib
 from flamingo.utils import Options
 from torch import nn
 
-from .models import ChemiNet, FingerprintFullyConnected
+from .models import MPNN, FingerprintFullyConnected
 
 DEFAULT_MODELS = {
     "fingerprintfullyconnected": FingerprintFullyConnected,
-    "cheminet": ChemiNet,
+    "mpnn": MPNN,
 }
 
 

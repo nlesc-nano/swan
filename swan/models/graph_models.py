@@ -1,49 +1,51 @@
 """Statistical models."""
+import torch
 import torch.nn.functional as F
-import torch_geometric as tg
-from flamingo.features.featurizer import (NUMBER_ATOMIC_GRAPH_FEATURES,
-                                          NUMBER_BOND_GRAPH_FEATURES)
-from torch import Tensor, nn
-from torch.nn import BatchNorm1d
-from torch_geometric.nn import NNConv
+from flamingo.features.featurizer import NUMBER_ATOMIC_GRAPH_FEATURES, NUMBER_BOND_GRAPH_FEATURES
 
-__all__ = ["ChemiNet"]
+from torch.nn import GRU, Linear, ReLU, Sequential
+from torch_geometric.nn import NNConv, Set2Set
+
+__all__ = ["MPNN"]
 
 
-class ChemiNet(nn.Module):
+class MPNN(torch.nn.Module):
     """Create a molecular graph convolutional network.
 
     Use the convolution reported at: https://arxiv.org/abs/1704.01212
+    This network was taking from: https://github.com/rusty1s/pytorch_geometric/blob/master/examples/qm9_nn_conv.py
     """
+    def __init__(self, num_labels=1, dim=64, batch_size=128):
+        super(MPNN, self).__init__()
+        # Number of iterations to propagate the message
+        self.iterations = 3
+        # Input layer
+        self.lin0 = torch.nn.Linear(NUMBER_ATOMIC_GRAPH_FEATURES, dim)
 
-    def __init__(self, output_channels: int = 50, output_features: int = 1):
-        """Create the network architecture."""
-        super().__init__()
-        self.output_channels = output_channels
-        self.lin1 = nn.Sequential(
-            nn.Linear(NUMBER_BOND_GRAPH_FEATURES, NUMBER_ATOMIC_GRAPH_FEATURES * output_channels),
-            nn.ReLU(),
-        )
-        self.lin2 = nn.Sequential(
-            nn.Linear(NUMBER_BOND_GRAPH_FEATURES, output_channels * output_channels // 2),
-            nn.ReLU(),
-        )
-        self.conv1 = NNConv(NUMBER_ATOMIC_GRAPH_FEATURES, output_channels, self.lin1)
-        self.conv2 = NNConv(output_channels, output_channels // 2, self.lin2)
-        self.output_layer = nn.Sequential(
-            nn.ReLU(),
-            nn.Linear(output_channels // 2, output_channels // 2),
-            nn.ReLU(),
-            nn.Linear(output_channels // 2, output_features)
-        )
-        self.bn1 = BatchNorm1d(output_channels)
-        self.bn2 = BatchNorm1d(output_channels // 2)
+        # NN that transform the states into message using the edge features
+        nn = Sequential(Linear(NUMBER_BOND_GRAPH_FEATURES, batch_size), ReLU(), Linear(batch_size, dim * dim))
+        self.conv = NNConv(dim, dim, nn, aggr='mean')
+        # Combine the old state with the new one using a Gated Recurrent Unit
+        self.gru = GRU(dim, dim)
+        # Pooling function
+        self.set2set = Set2Set(dim, processing_steps=self.iterations)
+        # Fully connected output layers
+        self.lin1 = torch.nn.Linear(2 * dim, dim)
+        self.lin2 = torch.nn.Linear(dim, num_labels)
 
-    def forward(self, data: tg.data.Dataset) -> Tensor:
-        """Run model."""
-        x = F.relu(self.conv1(data.x, data.edge_index, data.edge_attr))
-        x = self.bn1(x)
-        x = F.relu(self.conv2(x, data.edge_index, data.edge_attr))
-        x = self.bn2(x)
-        x = tg.nn.global_add_pool(x, data.batch)
-        return self.output_layer(x)
+    def forward(self, data):
+        out = F.relu(self.lin0(data.x))
+        h = out.unsqueeze(0)
+
+        # propagation in "time" of the messages
+        for i in range(self.iterations):
+            # Collect the message from the neighbors
+            m = F.relu(self.conv(out, data.edge_index, data.edge_attr))
+            # update the state
+            out, h = self.gru(m.unsqueeze(0), h)
+            out = out.squeeze(0)
+
+        # Pool the state vectors
+        out = self.set2set(out, data.batch)
+        out = F.relu(self.lin1(out))
+        return self.lin2(out)
