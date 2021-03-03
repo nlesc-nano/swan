@@ -118,7 +118,7 @@ SCHEMA_MODELER = Schema({
     Optional("scale_labels", default=True): bool,
 
     # Sanitize smiles
-    Optional("sanitize", default=True): bool,
+    Optional("sanitize", default=False): bool,
 
     # Network and training options options
     Optional("torch_config", default=TORCH_DEFAULTS): SCHEMA_TORCH,
