@@ -10,7 +10,7 @@ featurizer:
   molecular_graph
 
 model:
-  name: Cheminet
+  name: MPNN
 
 model_path:
   tests/test_files/graph_swan_models.pt

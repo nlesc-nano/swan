@@ -108,7 +108,7 @@ class Modeller:
                                  momentum=config["momentum"], nesterov=config["nesterov"])
         else:
             self.optimizer = fun(self.network.parameters(), lr=config["lr"])
-        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer)
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min', min_lr=0.00001)
 
         # Create loss function
         self.loss_func = getattr(nn, self.opts.torch_config.loss_function)()
@@ -290,6 +290,9 @@ def train_and_validate_model(opts: Options) -> None:
     researcher.load_data()
     researcher.train_model()
     predicted, expected = tuple(researcher.to_numpy_detached(x) for x in researcher.evaluate_model())
+    if len(predicted.shape) == 1:
+        predicted = predicted.reshape(-1, 1)
+        expected = expected.reshape(-1, 1)
     if opts.scale_labels:
         predicted = researcher.transformer.inverse_transform(predicted)
         expected = researcher.transformer.inverse_transform(expected)
