@@ -121,8 +121,11 @@ SCHEMA_MODELER = Schema({
     # Network and training options options
     Optional("torch_config", default=TORCH_DEFAULTS): SCHEMA_TORCH,
 
-    # Folder to save the models
+    # File to save the models
     Optional("model_path", default="swan_models.pt"): str,
+
+    # File to save the scales for the features
+    Optional("model_scales", default="model_scales.pkl"): str,
 
     # Workdir
     Optional("workdir", default="."): str

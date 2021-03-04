@@ -69,8 +69,6 @@ class Modeller:
         self.data = pd.read_csv(opts.dataset_file).reset_index(drop=True)
         # Set of transformation apply to the dataset
         self.transformer = RobustScaler()
-        self.path_scales = Path(self.opts.workdir) / "swan_scales.pkl"
-        # Generate rdkit molecules
         PandasTools.AddMoleculeColumnToFrame(self.data, smilesCol='smiles', molCol='molecules')
         if opts.sanitize:
             self.sanitize_data()
@@ -100,7 +98,10 @@ class Modeller:
         self.epoch = 0
         self.set_network()
         self.set_optimizer()
+        # Scales for the features
+        self.path_scales = Path(self.opts.workdir) / "swan_scales.pkl"
 
+        # Reload model from file
         if self.opts.restart or self.opts.mode == "predict":
             self.load_model()
 

@@ -14,3 +14,6 @@ featurizer:
 
 model_path:
   tests/test_files/fingerprint_swan_models.pt
+
+model_scales:
+  tests/test_files/fingerprint_swan_scales.pkl
