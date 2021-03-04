@@ -87,7 +87,7 @@ SCHEMA_MODEL = Schema({
     # Parameters to feed the model
     Optional("parameters", default={}): dict,
     # Folder containing the module with the model
-    Optional("path", default="."): str
+    Optional("model_path", default="."): str
 })
 
 
