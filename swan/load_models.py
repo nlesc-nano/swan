@@ -1,6 +1,4 @@
 """Select the model to use."""
-import importlib
-
 from flamingo.utils import Options
 from torch import nn
 
@@ -17,7 +15,6 @@ def select_model(opts: Options) -> nn.Module:
     name = opts.name.lower()
     model = DEFAULT_MODELS.get(name, None)
     if model is None:
-        module = importlib.import_module(opts.path)
-        model = getattr(module, opts.name)
+        raise RuntimeError(f"Model {name} is not None")
 
     return model(**opts.parameters)
