@@ -39,6 +39,7 @@ def main():
                         help="Input file with options")
     parser.add_argument("-m", "--mode", help="Operation mode: train or predict",
                         choices=["train", "predict"], default="train")
+    parser.add_argument("--restart", help="restart training", action="store_true", default=False)
     parser.add_argument('-w', help="workdir", default=".")
     args = parser.parse_args()
 
@@ -53,6 +54,7 @@ def main():
     opts.mode = args.mode
 
     if args.mode == "train":
+        opts.restart = args.restart
         train_and_validate_model(opts)
     else:
         predict_properties(opts)
@@ -95,11 +97,23 @@ class Modeller:
 
     def create_new_model(self):
         """Configure a new model."""
-        # Create an Network architecture
+        self.epoch = 0
+        self.set_network()
+        self.set_optimizer()
+
+        if self.opts.restart or self.opts.mode == "predict":
+            self.load_model()
+
+        # Create loss function
+        self.loss_func = getattr(nn, self.opts.torch_config.loss_function)()
+
+    def set_network(self) -> None:
+        """Select the network to use."""
         self.network = select_model(self.opts.model)
         self.network = self.network.to(self.device)
 
-        # select an optimizer
+    def set_optimizer(self) -> None:
+        """Select the optimizer."""
         optimizers = {"sgd": torch.optim.SGD, "adam": torch.optim.Adam}
         config = self.opts.torch_config.optimizer
         fun = optimizers[config["name"]]
@@ -109,9 +123,6 @@ class Modeller:
         else:
             self.optimizer = fun(self.network.parameters(), lr=config["lr"])
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min', min_lr=0.00001)
-
-        # Create loss function
-        self.loss_func = getattr(nn, self.opts.torch_config.loss_function)()
 
     def load_data(self):
         """Create loaders for the train and validation dataset."""
@@ -130,17 +141,18 @@ class Modeller:
         # Set the model to training mode
         self.network.train()
 
-        for epoch in range(self.opts.torch_config.epochs):
+        for epoch in range(self.epoch, self.opts.torch_config.epochs):
             loss_all = 0
             for x_batch, y_batch in self.train_loader:
                 x_batch = x_batch.to(self.device)
                 y_batch = y_batch.to(self.device)
                 loss_all += self.train_batch(x_batch, y_batch) * len(x_batch)
-
+            if epoch % 10 == 0:
+                self.save_model(epoch, loss_all)
             LOGGER.info(f"Loss: {loss_all / len(self.index_train)}")
 
         # Save the models
-        torch.save(self.network.state_dict(), self.opts.model_path)
+        self.save_model(epoch, loss_all)
 
     def train_batch(self, tensor: Tensor, y_batch: Tensor) -> float:
         """Train a single batch."""
@@ -176,7 +188,6 @@ class Modeller:
     def predict(self, tensor: Tensor):
         """Use a previously trained model to predict."""
         with torch.no_grad():
-            self.network.load_state_dict(torch.load(self.opts.model_path))
             self.network.eval()  # Set model to evaluation mode
             predicted = self.network(tensor)
         return predicted
@@ -210,6 +221,23 @@ class Modeller:
         """Read the scales used for the features."""
         with open(self.path_scales, 'rb') as handler:
             self.transformer = pickle.load(handler)
+
+    def save_model(self, epoch: int, loss: float) -> None:
+        """Save the modle current status."""
+        torch.save({
+            'epoch': epoch,
+            'model_state_dict': self.network.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            'loss': loss},
+            self.opts.model_path)
+
+    def load_model(self) -> None:
+        """Load the model from the state file."""
+        checkpoint = torch.load(self.opts.model_path)
+        self.network.load_state_dict(checkpoint['model_state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.epoch = checkpoint['epoch']
+        self.loss = checkpoint['loss']
 
 
 class FingerprintModeller(Modeller):
@@ -257,7 +285,7 @@ class GraphModeller(Modeller):
             LOGGER.info(f"Loss: {loss_all / len(self.index_train)}")
 
         # Save the models
-        torch.save(self.network.state_dict(), self.opts.model_path)
+        self.save_model(epoch, loss_all)
 
     def evaluate_model(self) -> Tuple[Tensor, Tensor]:
         """Evaluate the model against the validation dataset."""

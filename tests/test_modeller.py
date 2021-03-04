@@ -22,12 +22,13 @@ path_input_graph_predict = PATH_TEST / "input_test_graph_predict.yml"
 def test_main(mocker: MockFixture):
     """Test the CLI for the models."""
     mocker.patch("argparse.ArgumentParser.parse_args", return_value=argparse.Namespace(
-        i=path_input_test_fingerprints, w=".", mode="train"))
+        i=path_input_test_fingerprints, w=".", mode="train", restart=False))
 
     mocker.patch("swan.modeller.predict_properties", return_value=None)
     main()
 
     mocker.patch("swan.modeller.train_and_validate_model", return_value=None)
+
 
 def test_split_data():
     """Check that training and validation set are independent."""
@@ -65,6 +66,7 @@ def test_predict_unknown_fingerprints():
     """Predict data for some smiles."""
     opts = validate_input(path_input_fingerprint_predict)
     opts.use_cuda = False
+    opts.mode = "predict"
     df = predict_properties(opts)
     assert df['predicted_property'].notna().all()
 
@@ -80,7 +82,6 @@ def test_train_molecular_graph(tmp_path: Path):
     opts.torch_config.epochs = 5
     opts.torch_config.batch_size = 20
 
-    print("opts:\n", opts)
     researcher = GraphModeller(opts)
     researcher.scale_labels()
     researcher.split_data()
@@ -96,5 +97,6 @@ def test_predict_unknown_graph():
     """Predict properties using the graph model."""
     opts = validate_input(path_input_graph_predict)
     opts.use_cuda = False
+    opts.mode = "predict"
     df = predict_properties(opts)
     assert df['predicted_property'].notna().all()

@@ -1,6 +1,6 @@
 dataset_file:
   tests/test_files/thousand.csv
-  # data/Carboxylic_acids/1E4.csv
+
 properties:
   - gammas
 
@@ -16,5 +16,5 @@ torch_config:
   epochs: 5
   batch_size: 100
   optimizer:
-    name: adam
-    lr: 0.2
+    name: sgd
+    lr: 0.002
