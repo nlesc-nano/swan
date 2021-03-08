@@ -9,7 +9,7 @@ LOGGER = logging.getLogger(__name__)
 
 class EarlyStopping:
     """Early stops the training if validation loss doesn't improve after a given patience."""
-    def __init__(self, patience: int = 7, delta: float = 1e-5):
+    def __init__(self, patience: int = 10, delta: float = 1e-5):
         """
         Parameters
         -----------
@@ -32,7 +32,7 @@ class EarlyStopping:
             self.save_checkpoint(saver, epoch, val_loss)
         elif score < self.best_score + self.delta:
             self.counter += 1
-            LOGGER.info(f'EarlyStopping counter: {self.counter} out of {self.patience}')
+            LOGGER.debug(f'EarlyStopping counter: {self.counter} out of {self.patience}')
             if self.counter >= self.patience:
                 self.early_stop = True
         else:
@@ -42,6 +42,6 @@ class EarlyStopping:
 
     def save_checkpoint(self, saver: Callable, epoch: int, val_loss: float):
         """Saves model when validation loss decrease."""
-        LOGGER.info(f"Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model")
+        LOGGER.debug(f"Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model")
         saver(epoch, val_loss)
         self.val_loss_min = val_loss

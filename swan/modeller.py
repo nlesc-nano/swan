@@ -288,7 +288,8 @@ class GraphModeller(Modeller):
         LOGGER.info("TRAINING STEP")
         # Set the model to training mode
 
-        for epoch in range(self.opts.torch_config.epochs):
+        for epoch in range(self.epoch, self.opts.torch_config.epochs):
+            LOGGER.info(f"epoch: {epoch}")
             self.network.train()
             loss_all = 0
             for batch in self.train_loader:
