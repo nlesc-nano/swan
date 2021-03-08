@@ -95,7 +95,10 @@ SCHEMA_FINGERPRINTS = Schema({
 })
 
 SCHEMA_GRAPH = Schema({
-    "molecular_graph": dict
+    Optional("graph", default="molecular"): str,
+
+    # Path to the file with the geometry in JSON Format
+    Optional("file_geometries", default=None): Or(None, str),
 })
 
 SCHEMA_MODELER = Schema({
@@ -106,7 +109,7 @@ SCHEMA_MODELER = Schema({
     "properties": [str],
 
     # Method to get the features
-    "featurizer": Or(SCHEMA_FINGERPRINTS, equal_lambda("molecular_graph")),
+    "featurizer": Or(SCHEMA_FINGERPRINTS, SCHEMA_GRAPH),
 
     # Whether to use CPU or GPU
     Optional("use_cuda", default=False): bool,

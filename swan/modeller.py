@@ -24,6 +24,8 @@ from .datasets import FingerprintsDataset, MolGraphDataset
 from .input_validation import validate_input
 from .load_models import select_model
 from .plot import create_scatter_plot
+from .geometry import read_geometries_from_files
+
 
 __all__ = ["FingerprintModeller", "GraphModeller", "Modeller"]
 
@@ -33,7 +35,7 @@ LOGGER = logging.getLogger(__name__)
 
 def main():
     """Parse the command line arguments and call the modeller class."""
-    parser = argparse.ArgumentParser(description="modeller -i input.yml")
+    parser = argparse.ArgumentParser("modeller")
     # configure logger
     parser.add_argument('-i', required=True,
                         help="Input file with options")
@@ -69,7 +71,6 @@ class Modeller:
         self.data = pd.read_csv(opts.dataset_file).reset_index(drop=True)
         # Set of transformation apply to the dataset
         self.transformer = RobustScaler()
-        PandasTools.AddMoleculeColumnToFrame(self.data, smilesCol='smiles', molCol='molecules')
         if opts.sanitize:
             self.sanitize_data()
 
@@ -79,9 +80,17 @@ class Modeller:
         else:
             self.device = torch.device("cpu")
 
+        self.create_molecules()
         self.create_new_model()
 
-    def sanitize_data(self):
+    def create_molecules(self) -> None:
+        """Create the molecular representation."""
+        if 'fingerprint' in self.opts.featurizer or self.opts.featurizer.file_geometries is None:
+            PandasTools.AddMoleculeColumnToFrame(self.data, smilesCol='smiles', molCol='molecules')
+        else:
+            self.data["molecules"] = read_geometries_from_files(self.opts.featurizer.file_geometries)
+
+    def sanitize_data(self) -> None:
         """Check that the data in the DataFrame is valid."""
         # discard nan values
         self.data.dropna(inplace=True)
@@ -131,7 +140,7 @@ class Modeller:
         self.valid_loader = self.create_data_loader(self.index_valid)
 
     @abstractmethod
-    def create_data_loader(self, indices: np.array) -> DataLoader:
+    def create_data_loader(self, indices: np.ndarray) -> DataLoader:
         """Create a DataLoader instance for the data."""
         pass
 

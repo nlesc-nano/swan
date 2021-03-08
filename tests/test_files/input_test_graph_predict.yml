@@ -7,7 +7,7 @@ properties:
 use_cuda: False
 
 featurizer:
-  molecular_graph
+  graph: molecular
 
 model:
   name: MPNN
