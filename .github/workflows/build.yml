@@ -28,12 +28,12 @@ jobs:
     - run: which python
     - name: install conda dependencies
       env:
-	TORCH: "1.8"
+        TORCH: "1.8"
       run: conda install scipy rdkit pytorch==${TORCH} torchvision cpuonly -c pytorch -c conda-forge
 
     - name: install torch-geometric dependencies
     - env:
-	TORCHG: "1.8.0"
+        TORCHG: "1.8.0"
       run: |
         pip install --no-index torch-scatter -f https://pytorch-geometric.com/whl/torch-${TORCHG}+cpu.html
         pip install --no-index torch-sparse -f https://pytorch-geometric.com/whl/torch-${TORCHG}+cpu.html
