@@ -27,7 +27,7 @@ jobs:
     - run: conda --version
     - run: which python
     - run: conda install scipy rdkit -c conda-forge
-    - run: pytorch==1.7.0 torchvision cpuonly -c pytorch
+    - run: conda install pytorch==1.7.0 torchvision cpuonly -c pytorch
 
     - name: install torch-geometric dependencies
       run: |
