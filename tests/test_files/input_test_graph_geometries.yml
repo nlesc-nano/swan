@@ -1,0 +1,39 @@
+dataset_file:
+  tests/test_files/cdft_properties.csv
+
+properties:
+  - Dissocation energy (nucleofuge)
+  - Dissociation energy (electrofuge)
+  - Electroaccepting power(w+)
+  - Electrodonating power (w-)
+  - Electronegativity (chi=-mu)
+  - Electronic chemical potential (mu)
+  - Electronic chemical potential (mu+)
+  - Electronic chemical potential (mu-)
+  - Electrophilicity index (w=omega)
+  - Global Dual Descriptor Deltaf+
+  - Global Dual Descriptor Deltaf-
+  - Hardness (eta)
+  - Hyperhardness (gamma)
+  - Net Electrophilicity
+  - Softness (S)
+
+use_cuda: False
+
+featurizer:
+  file_geometries: tests/test_files/cdft_geometries.json
+  graph: molecular
+
+model:
+  name: MPNN
+  parameters:
+    dim: 20
+    num_labels: 15
+
+torch_config:
+  epochs: 1
+  batch_size: 100
+  optimizer:
+    name: sgd
+    lr: 0.002
+    momentum: 0.0

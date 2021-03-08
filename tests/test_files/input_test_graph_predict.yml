@@ -4,10 +4,11 @@ dataset_file:
 properties:
   - gammas
 
+sanitize: True
 use_cuda: False
 
 featurizer:
-  molecular_graph
+  graph: molecular
 
 model:
   name: MPNN

@@ -12,12 +12,6 @@ from schema import And, Optional, Or, Schema, SchemaError, Use
 PathLike = Union[str, Path]
 
 
-def equal_lambda(name: str):
-    """Create an schema checking that the keyword matches the expected value."""
-    return And(
-        str, Use(str.lower), lambda s: s == name)
-
-
 def any_lambda(array: Iterable[str]):
     """Create an schema checking that the keyword matches one of the expected values."""
     return And(
@@ -95,7 +89,10 @@ SCHEMA_FINGERPRINTS = Schema({
 })
 
 SCHEMA_GRAPH = Schema({
-    "molecular_graph": dict
+    Optional("graph", default="molecular"): str,
+
+    # Path to the file with the geometry in JSON Format
+    Optional("file_geometries", default=None): Or(None, str),
 })
 
 SCHEMA_MODELER = Schema({
@@ -106,7 +103,7 @@ SCHEMA_MODELER = Schema({
     "properties": [str],
 
     # Method to get the features
-    "featurizer": Or(SCHEMA_FINGERPRINTS, equal_lambda("molecular_graph")),
+    "featurizer": Or(SCHEMA_FINGERPRINTS, SCHEMA_GRAPH),
 
     # Whether to use CPU or GPU
     Optional("use_cuda", default=False): bool,
