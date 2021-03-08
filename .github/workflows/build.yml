@@ -32,7 +32,7 @@ jobs:
       run: conda install scipy rdkit pytorch==${TORCH} torchvision cpuonly -c pytorch -c conda-forge
 
     - name: install torch-geometric dependencies
-    - env:
+      env:
         TORCHG: "1.8.0"
       run: |
         pip install --no-index torch-scatter -f https://pytorch-geometric.com/whl/torch-${TORCHG}+cpu.html
