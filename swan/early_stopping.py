@@ -9,7 +9,7 @@ LOGGER = logging.getLogger(__name__)
 
 class EarlyStopping:
     """Early stops the training if validation loss doesn't improve after a given patience."""
-    def __init__(self, patience: int = 10, delta: float = 1e-5):
+    def __init__(self, patience: int = 7, delta: float = 1e-5):
         """
         Parameters
         -----------
