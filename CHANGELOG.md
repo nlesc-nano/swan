@@ -5,6 +5,9 @@
 * Fix graph neural network implementation (#59)
 * Rename the graph neural network to MPNN (message passing NN)
 
+## New
+* Add bond distance as feature for the GNN using the optimized geometries (#59)
+
 # 0.4.0 [02/10/2020]
 
 ## Changed
