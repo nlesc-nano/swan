@@ -25,6 +25,7 @@ from .input_validation import validate_input
 from .load_models import select_model
 from .plot import create_scatter_plot
 from .geometry import read_geometries_from_files
+from .early_stopping import EarlyStopping
 
 
 __all__ = ["FingerprintModeller", "GraphModeller", "Modeller"]
@@ -71,6 +72,8 @@ class Modeller:
         self.data = pd.read_csv(opts.dataset_file).reset_index(drop=True)
         # Set of transformation apply to the dataset
         self.transformer = RobustScaler()
+        # Early stopping functionality
+        self.early_stopping = EarlyStopping()
 
         if opts.use_cuda and opts.mode == "train":
             self.device = torch.device("cuda")
@@ -83,7 +86,6 @@ class Modeller:
 
         if opts.sanitize:
             self.sanitize_data()
-
 
     def create_molecules(self) -> None:
         """Create the molecular representation."""
@@ -148,6 +150,7 @@ class Modeller:
 
     def train_model(self):
         """Train a statistical model."""
+        self.network.train()
         LOGGER.info("TRAINING STEP")
 
         # Set the model to training mode
@@ -176,7 +179,7 @@ class Modeller:
 
         return loss.item()
 
-    def evaluate_model(self) -> Tuple[Tensor, Tensor]:
+    def validate_model(self) -> Tuple[Tensor, Tensor]:
         """Evaluate the model against the validation dataset."""
         LOGGER.info("VALIDATION STEP")
         results = []
@@ -284,9 +287,9 @@ class GraphModeller(Modeller):
         """Train a statistical model."""
         LOGGER.info("TRAINING STEP")
         # Set the model to training mode
-        self.network.train()
 
         for epoch in range(self.opts.torch_config.epochs):
+            self.network.train()
             loss_all = 0
             for batch in self.train_loader:
                 batch.to(self.device)
@@ -294,14 +297,20 @@ class GraphModeller(Modeller):
                 loss_all += batch.num_graphs * loss_batch
             self.scheduler.step(loss_all / len(self.index_train))
 
-            LOGGER.info(f"Loss: {loss_all / len(self.index_train)}")
+            # Check for early stopping
+            self.validate_model()
+            self.early_stopping(self.save_model, epoch, self.validation_loss)
+            if self.early_stopping.early_stop:
+                LOGGER.info("EARLY STOPPING")
+                break
+
+            LOGGER.info(f"Training Loss: {loss_all / len(self.index_train)}")
 
         # Save the models
         self.save_model(epoch, loss_all)
 
-    def evaluate_model(self) -> Tuple[Tensor, Tensor]:
+    def validate_model(self) -> Tuple[Tensor, Tensor]:
         """Evaluate the model against the validation dataset."""
-        LOGGER.info("VALIDATION STEP")
         # Disable any gradient calculation
         results = []
         expected = []
@@ -315,8 +324,8 @@ class GraphModeller(Modeller):
                 loss_all += batch.num_graphs * loss.item()
                 results.append(predicted)
                 expected.append(batch.y)
-            LOGGER.info(f"Loss: {loss_all / len(self.index_valid)}")
-            print("validation loss: ", loss_all / len(self.index_valid))
+            self.validation_loss = loss_all / len(self.index_valid)
+            LOGGER.info(f"validation loss: {self.validation_loss}")
 
         return torch.cat(results), torch.cat(expected)
 
@@ -329,7 +338,7 @@ def train_and_validate_model(opts: Options) -> None:
     researcher.split_data()
     researcher.load_data()
     researcher.train_model()
-    predicted, expected = tuple(researcher.to_numpy_detached(x) for x in researcher.evaluate_model())
+    predicted, expected = tuple(researcher.to_numpy_detached(x) for x in researcher.validate_model())
     if opts.scale_labels:
         predicted = researcher.transformer.inverse_transform(predicted)
         expected = researcher.transformer.inverse_transform(expected)

@@ -7,6 +7,7 @@
 
 ## New
 * Add bond distance as feature for the GNN using the optimized geometries (#59)
+* Add early stopping functionality
 
 # 0.4.0 [02/10/2020]
 
