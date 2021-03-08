@@ -71,8 +71,6 @@ class Modeller:
         self.data = pd.read_csv(opts.dataset_file).reset_index(drop=True)
         # Set of transformation apply to the dataset
         self.transformer = RobustScaler()
-        if opts.sanitize:
-            self.sanitize_data()
 
         if opts.use_cuda and opts.mode == "train":
             self.device = torch.device("cuda")
@@ -82,6 +80,10 @@ class Modeller:
 
         self.create_molecules()
         self.create_new_model()
+
+        if opts.sanitize:
+            self.sanitize_data()
+
 
     def create_molecules(self) -> None:
         """Create the molecular representation."""
