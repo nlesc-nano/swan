@@ -12,12 +12,6 @@ from schema import And, Optional, Or, Schema, SchemaError, Use
 PathLike = Union[str, Path]
 
 
-def equal_lambda(name: str):
-    """Create an schema checking that the keyword matches the expected value."""
-    return And(
-        str, Use(str.lower), lambda s: s == name)
-
-
 def any_lambda(array: Iterable[str]):
     """Create an schema checking that the keyword matches one of the expected values."""
     return And(
