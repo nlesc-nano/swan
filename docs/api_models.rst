@@ -12,7 +12,7 @@ Deep Feedforward Network
 
 .. currentmodule:: swan.models.models
 
-.. autoclass:: swan.models.models.FingerprintFullyConnected
+.. autoclass:: swan.models.FingerprintFullyConnected
    :members:
 
 
@@ -20,5 +20,5 @@ Molecular Graph Neural Network
 
 .. currentmodule:: swan.models.models
 
-.. autoclass:: swan.models.models.MPNN
+.. autoclass:: swan.models.MPNN
    :members:
