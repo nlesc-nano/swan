@@ -157,14 +157,21 @@ class Modeller:
         self.network.train()
 
         for epoch in range(self.epoch, self.opts.torch_config.epochs):
+            LOGGER.info(f"epoch: {epoch}")
+            self.network.train()
             loss_all = 0
             for x_batch, y_batch in self.train_loader:
                 x_batch = x_batch.to(self.device)
                 y_batch = y_batch.to(self.device)
                 loss_all += self.train_batch(x_batch, y_batch) * len(x_batch)
-            if epoch % 10 == 0:
-                self.save_model(epoch, loss_all)
             LOGGER.info(f"Loss: {loss_all / len(self.index_train)}")
+
+            # Check for early stopping
+            self.validate_model()
+            self.early_stopping(self.save_model, epoch, self.validation_loss)
+            if self.early_stopping.early_stop:
+                LOGGER.info("EARLY STOPPING")
+                break
 
         # Save the models
         self.save_model(epoch, loss_all)
@@ -181,7 +188,6 @@ class Modeller:
 
     def validate_model(self) -> Tuple[Tensor, Tensor]:
         """Evaluate the model against the validation dataset."""
-        LOGGER.info("VALIDATION STEP")
         results = []
         expected = []
 
@@ -197,7 +203,8 @@ class Modeller:
                 loss_all += loss.item() * len(x_val)
                 results.append(predicted)
                 expected.append(y_val)
-            LOGGER.info(f"Loss: {loss_all / len(self.index_valid)}")
+            self.validation_loss = loss_all / len(self.index_valid)
+            LOGGER.info(f"validation loss: {self.validation_loss}")
         return torch.cat(results), torch.cat(expected)
 
     def predict(self, tensor: Tensor):

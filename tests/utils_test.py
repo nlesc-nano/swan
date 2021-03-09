@@ -10,4 +10,4 @@ __all__ = ["PATH_SWAN", "PATH_TEST"]
 PATH_SWAN = Path(pkg.resource_filename('swan', ''))
 ROOT = PATH_SWAN.parent
 
-PATH_TEST = ROOT / "tests" / "test_files"
+PATH_TEST = ROOT / "tests" / "files"

@@ -45,7 +45,7 @@ jobs:
       run:  pip install torch-geometric
 
     - name: Install the package
-      run: pip install .[test] -v
+      run: pip install .[test,doc]
       env:
         CONDA_PREFIX: /usr/share/miniconda
 

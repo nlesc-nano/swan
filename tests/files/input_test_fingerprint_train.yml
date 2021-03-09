@@ -1,17 +1,16 @@
 dataset_file:
-  tests/test_files/thousand.csv
+  tests/files/thousand.csv
 
 properties:
   - gammas
 
-sanitize: True
 use_cuda: False
 
 featurizer:
-  graph: molecular
+  fingerprint: atompair
 
 model:
-  name: MPNN
+  name: FingerprintFullyConnected
 
 torch_config:
   epochs: 5
@@ -19,4 +18,3 @@ torch_config:
   optimizer:
     name: sgd
     lr: 0.002
-    momentum: 0.0
