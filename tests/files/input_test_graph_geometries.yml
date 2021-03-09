@@ -1,5 +1,5 @@
 dataset_file:
-  tests/test_files/cdft_properties.csv
+  tests/files/cdft_properties.csv
 
 properties:
   - Dissocation energy (nucleofuge)
@@ -21,7 +21,7 @@ properties:
 use_cuda: False
 
 featurizer:
-  file_geometries: tests/test_files/cdft_geometries.json
+  file_geometries: tests/files/cdft_geometries.json
   graph: molecular
 
 model:

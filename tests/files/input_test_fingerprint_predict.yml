@@ -1,5 +1,5 @@
 dataset_file:
-  tests/test_files/smiles.csv
+  tests/files/smiles.csv
 
 use_cuda: False
 
@@ -13,7 +13,7 @@ featurizer:
   fingerprint: morgan
 
 model_path:
-  tests/test_files/fingerprint_swan_models.pt
+  tests/files/fingerprint_swan_models.pt
 
 model_scales:
-  tests/test_files/fingerprint_swan_scales.pkl
+  tests/files/fingerprint_swan_scales.pkl

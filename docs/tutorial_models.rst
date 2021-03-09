@@ -11,11 +11,11 @@ file.
 
 A peek into the file will show you something like: ::
 
-  ,smiles,E_solv,gammas
-  808780,OC(=O)C1OC(C#C)C2NC1C=C2,-11.05439751550119,8.816417146193844
-  593047,OC(=O)C1C2NC3C(=O)C2CC13O,-8.98188869016993,52.806217658944995
-  21701,OC(=O)C=C(C#C)C1NC1C1CN1,-11.386853547889574,6.413128231164093
-  768877,OC(=O)C1=CCCCC2CC2C#C1,-10.578966144649726,1.426566948888662
+  smiles,E_solv,gammas
+  OC(=O)C1OC(C#C)C2NC1C=C2,-11.05439751550119,8.816417146193844
+  OC(=O)C1C2NC3C(=O)C2CC13O,-8.98188869016993,52.806217658944995
+  OC(=O)C=C(C#C)C1NC1C1CN1,-11.386853547889574,6.413128231164093
+  OC(=O)C1=CCCCC2CC2C#C1,-10.578966144649726,1.426566948888662
 
 Where the first column contains the index of the row, the second the solvation energy and finally the
 `activity coefficients_` denoted as *gammas*. Once we have the data we can start exploring different statistical methods.
@@ -29,7 +29,8 @@ A typical `swan` input file looks like: ::
 
   dataset_file:
     tests/test_files/thousand.csv
-  property: gammas
+  properties:
+    - gammas
 
   use_cuda: True
 
@@ -37,24 +38,25 @@ A typical `swan` input file looks like: ::
     fingerprint: atompair
 
   model:
-    input_cells: 2048
-    hidden_cells: 1000
+    name: FingerprintFullyConnected
+    parameters:
+       input_features: 2048  # Fingerprint size
+       hidden_cells: 200
+       output_features: 1  # We are predicting a single property 
 
   torch_config:
     epochs: 100
     batch_size: 100
     optimizer:
       name: sgd
-      lr: 0.2
+      lr: 0.002
 
    
-**dataset_file**: Could be either a csv_ file with the smiles_ and other molecular properties or
-a *joblib* file that is binary format to load a previous used dataset (see the `save_dataset` keyword).
+**dataset_file**: A csv_ file with the smiles_ and other molecular properties.
 
-**property**: the columns names of hte csv_ file representing the molecular properties to fit.
+**properties**: the columns names of hte csv_ file representing the molecular properties to fit.
 
-**featurizer**: The type of transformation to apply to the smiles_ to generates the features_. Could be either **fingerprint** or **molecular_graph**.
-
+**featurizer**: The type of transformation to apply to the smiles_ to generates the features_. Could be either **fingerprint** or **graph**.
  
 Training a model
 ****************
@@ -64,6 +66,10 @@ In order to run the training, run the following command: ::
 
 `swan` will generate a log file called  `output.log` with a timestamp for the different steps during the training.
 Finally, you can see in your `cwd` a folder called *swan_models* containing the parameters of your statistical model.
+
+It is possible to restart the training procedure by providing the ``--restart`` option like: ::
+
+    modeller --mode train -i input.yml --restart
 
 Predicting new data
 *******************

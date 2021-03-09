@@ -12,7 +12,7 @@
 Screening Workflows And Nanomaterials
 #####################################
 
-🦢 **Swan** is a Python pacakge to create statistical models to predict molecular properties. See Documentation_.
+🦢 **Swan** is a Python pacakge to create statistical models using machine learning to predict molecular properties. See Documentation_.
 
 
 🛠 Installation
