@@ -2,11 +2,12 @@
 from flamingo.utils import Options
 from torch import nn
 
-from .models import MPNN, FingerprintFullyConnected
+from .models import MPNN, FingerprintFullyConnected, InvariantPolynomial
 
 DEFAULT_MODELS = {
     "fingerprintfullyconnected": FingerprintFullyConnected,
     "mpnn": MPNN,
+    "invariantpolynomial": InvariantPolynomial
 }
 
 

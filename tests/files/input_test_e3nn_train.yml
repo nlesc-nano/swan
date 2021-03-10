@@ -1,0 +1,22 @@
+dataset_file:
+  tests/files/cdft_properties.csv
+
+properties:
+  - Dissocation energy (nucleofuge)
+
+use_cuda: True
+
+featurizer:
+  graph: molecular
+  file_geometries: tests/files/cdft_geometries.json
+
+model:
+  name: InvariantPolynomial
+
+torch_config:
+  epochs: 100
+  batch_size: 100
+  optimizer:
+    name: adam
+    lr: 0.001
+    momentum: 0.0
