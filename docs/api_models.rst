@@ -1,6 +1,6 @@
 API Statistical Models
 ======================
-Class to train and predict statistical models.
+Available models
 
 .. currentmodule:: swan.models.modeller
 

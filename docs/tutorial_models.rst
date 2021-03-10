@@ -57,7 +57,8 @@ A typical `swan` input file looks like: ::
 **properties**: the columns names of hte csv_ file representing the molecular properties to fit.
 
 **featurizer**: The type of transformation to apply to the smiles_ to generates the features_. Could be either **fingerprint** or **graph**.
- 
+
+
 Training a model
 ****************
 In order to run the training, run the following command: ::

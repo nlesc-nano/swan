@@ -40,9 +40,6 @@ class InvariantPolynomial(torch.nn.Module):
             irreps_out=irreps_out
         )
 
-        self.bn1 = torch.nn.BatchNorm1d(irreps_mid.dim)
-        # self.bn2 = torch.nn.BatchNorm1d(irreps_mid.dim)
-
     def forward(self, data: tg.data.Dataset) -> torch.Tensor:
         # Vector defining the edges
         edge_src, edge_dst = data.edge_index
@@ -55,7 +52,7 @@ class InvariantPolynomial(torch.nn.Module):
         # Edge attributes in the harmonic basis
         edge_attr = self.mul_edges(data.edge_attr, edge_sh)
 
-        # For each edge, tensor product the node features with the
+        # For each edge, tensor product the node attributes with the
         # edge features in the spherical harmonics
         edge_features = self.tp1(data.x[edge_src], edge_attr)
         node_features = scatter(edge_features, edge_dst, dim=0)
