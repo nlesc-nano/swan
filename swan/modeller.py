@@ -284,9 +284,6 @@ class GraphModeller(Modeller):
         root = tempfile.mkdtemp(prefix="dataset_")
         dataset = MolGraphDataset(root, self.data.loc[indices], self.opts.properties)
 
-        # Partition dataset among workers using DistributedSampler
-        sampler: Optional[torch.utils.data.distributed.DistributedSampler]
-
         return tg.data.DataLoader(
             dataset=dataset, batch_size=self.opts.torch_config.batch_size)
 
