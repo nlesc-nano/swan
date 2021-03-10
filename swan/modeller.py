@@ -6,7 +6,7 @@ import tempfile
 from abc import abstractmethod
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -92,7 +92,9 @@ class Modeller:
         if 'fingerprint' in self.opts.featurizer or self.opts.featurizer.file_geometries is None:
             PandasTools.AddMoleculeColumnToFrame(self.data, smilesCol='smiles', molCol='molecules')
         else:
-            self.data["molecules"] = read_geometries_from_files(self.opts.featurizer.file_geometries)
+            molecules, positions = read_geometries_from_files(self.opts.featurizer.file_geometries)
+            self.data["molecules"] = molecules
+            self.data["positions"] = positions
 
     def sanitize_data(self) -> None:
         """Check that the data in the DataFrame is valid."""
