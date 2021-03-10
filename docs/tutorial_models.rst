@@ -58,6 +58,7 @@ A typical `swan` input file looks like: ::
 
 **featurizer**: The type of transformation to apply to the smiles_ to generates the features_. Could be either **fingerprint** or **graph**.
 
+Have a look at the  :ref:`available models`.
 
 Training a model
 ****************

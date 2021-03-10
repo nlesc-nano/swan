@@ -14,9 +14,9 @@ model:
   name: InvariantPolynomial
 
 torch_config:
-  epochs: 100
+  epochs: 50
   batch_size: 100
   optimizer:
     name: adam
-    lr: 0.001
+    lr: 0.002
     momentum: 0.0
