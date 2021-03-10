@@ -15,10 +15,10 @@ class MPNN(torch.nn.Module):
     Use the convolution reported at: https://arxiv.org/abs/1704.01212
     This network was taking from: https://github.com/rusty1s/pytorch_geometric/blob/master/examples/qm9_nn_conv.py
     """
-    def __init__(self, num_labels=1, dim=10, batch_size=128):
+    def __init__(self, num_labels: int = 1, dim: int = 10, batch_size: int = 128, num_iterations: int = 3):
         super(MPNN, self).__init__()
         # Number of iterations to propagate the message
-        self.iterations = 3
+        self.iterations = num_iterations
         # Input layer
         self.lin0 = torch.nn.Linear(NUMBER_ATOMIC_GRAPH_FEATURES, dim)
 

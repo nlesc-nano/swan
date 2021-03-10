@@ -41,8 +41,10 @@ class MolGraphDataset(tg.data.Dataset):
     def __init__(self, root: str, data: pd.DataFrame, properties: List[str] = None):
         """Generate Molecular graph dataset."""
         super().__init__(root)
+        data.reset_index(drop=True, inplace=True)
         self.molecules = data['molecules']
-        self.molecules.reset_index(drop=True, inplace=True)
+        self.positions = data['positions'] if "positions" in data.columns else None
+
         self.norm = tg.transforms.NormalizeFeatures()
         if properties is not None:
             self.labels = data[properties].to_numpy(np.float32)
@@ -61,10 +63,8 @@ class MolGraphDataset(tg.data.Dataset):
 
     def __getitem__(self, idx):
         """Return the idx dataset element."""
-        if self.labels is not None:
-            # labels = torch.Tensor([self.labels[idx]]).reshape(1, 1)
-            labels = torch.Tensor([self.labels[idx]])
-        else:
-            labels = None
-        data = create_molecular_graph_data(self.molecules[idx], labels)
+        labels = None if self.labels is None else torch.Tensor([self.labels[idx]])
+        positions = None if self.positions is None else torch.Tensor(self.positions[idx])
+        data = create_molecular_graph_data(
+            self.molecules[idx], positions=positions, labels=labels)
         return self.norm(data)
