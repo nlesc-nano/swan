@@ -12,6 +12,7 @@ Welcome to SWAN!
 
    includereadme
    tutorial_models
+   available_models
    api_models
 
 

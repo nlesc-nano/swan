@@ -12,7 +12,7 @@ __all__ = ["MPNN"]
 class MPNN(torch.nn.Module):
     """Create a molecular graph convolutional network.
 
-    Use the convolution reported at: https://arxiv.org/abs/1704.01212
+    Use the convolution NN reported at: https://arxiv.org/abs/1704.01212
     This network was taking from: https://github.com/rusty1s/pytorch_geometric/blob/master/examples/qm9_nn_conv.py
     """
     def __init__(self, num_labels: int = 1, dim: int = 10, batch_size: int = 128, num_iterations: int = 3):
