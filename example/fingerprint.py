@@ -5,4 +5,4 @@ from swan.dataset import FingerprintsDataset
 
 path = '../data/Carboxylic_acids/GDB13/Results/CDFT/cdft.csv'
 dataset = FingerprintsDataset(path, properties='Hyperhardness (gamma)')
-model = FingerprintModeller(net, data, opt)
+model = FingerprintModeller(net, dataset)

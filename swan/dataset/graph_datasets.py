@@ -7,6 +7,7 @@ import torch
 import torch_geometric as tg
 from rdkit.Chem import PandasTools
 from .graph.molecular_graph import create_molecular_graph_data
+from .sanitize_data import sanitize_data
 
 
 class MolGraphDataset(tg.data.Dataset):
@@ -14,13 +15,15 @@ class MolGraphDataset(tg.data.Dataset):
     def __init__(self,
                  root: str,
                  data: Union[pd.DataFrame, str],
-                 properties: List[str] = None):
+                 properties: List[str] = None,
+                 sanitize=True):
         """Generate a dataset using graphs
 
         Args:
             root (str): [description]
             data (Union[pd.DataFrame, str]): path of the csv file or pd DF
-            properties (List[str], optional): Names of the properies to use as lable. Defaults to None.
+            properties (List[str], optional): Names of the properies to use as label.
+                                              Defaults to None.
         """
         super().__init__(root)
 
@@ -30,6 +33,8 @@ class MolGraphDataset(tg.data.Dataset):
             PandasTools.AddMoleculeColumnToFrame(data,
                                                  smilesCol='smiles',
                                                  molCol='molecules')
+        if sanitize:
+            data = sanitize_data(data)
 
         data.reset_index(drop=True, inplace=True)
 

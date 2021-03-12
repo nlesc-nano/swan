@@ -7,6 +7,7 @@ import torch
 from flamingo.features.featurizer import generate_fingerprints
 from torch.utils.data import Dataset
 from rdkit.Chem import PandasTools
+from .sanitize_data import sanitize_data
 
 
 class FingerprintsDataset(Dataset):
@@ -15,7 +16,8 @@ class FingerprintsDataset(Dataset):
                  data: Union[pd.DataFrame, str],
                  properties: List[str] = None,
                  type_fingerprint: str = 'atompair',
-                 fingerprint_size: int = 2048) -> None:
+                 fingerprint_size: int = 2048,
+                 sanitize=True) -> None:
         """Generate a dataset using fingerprints as features.
 
         Args:
@@ -35,6 +37,9 @@ class FingerprintsDataset(Dataset):
 
         # extract molecules
         self.molecules = data['molecules']
+
+        if sanitize:
+            data = sanitize_data(data)
 
         # extract prop to predict
         labels = data[properties].to_numpy(np.float32)
