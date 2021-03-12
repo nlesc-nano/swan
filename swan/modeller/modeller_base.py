@@ -18,8 +18,6 @@ from sklearn.preprocessing import RobustScaler
 from torch import Tensor, nn
 from torch.utils.data import DataLoader, Dataset
 
-from .load_models import select_model
-
 from ..utils.early_stopping import EarlyStopping
 
 from ..utils.input_validation import MINIMAL_MODELER_DEFAULTS
@@ -41,9 +39,6 @@ class ModellerBase:
         else:
             self.opts = opts
 
-        self.network = network
-        self.dataset = dataset
-
         # Set of transformation apply to the dataset
         self.transformer = RobustScaler()
 
@@ -55,6 +50,8 @@ class ModellerBase:
         else:
             self.device = torch.device("cpu")
 
+        self.network = network().to(self.device)
+        self.dataset = dataset
         self.configure()
 
     def configure(self):
@@ -71,11 +68,6 @@ class ModellerBase:
 
         # Create loss function
         self.loss_func = getattr(nn, self.opts.torch_config.loss_function)()
-
-    def set_network(self) -> None:
-        """Select the network to use."""
-        self.network = select_model(self.opts.model)
-        self.network = self.network.to(self.device)
 
     def set_optimizer(self) -> None:
         """Select the optimizer."""

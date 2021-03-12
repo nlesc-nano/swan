@@ -6,6 +6,7 @@ import pandas as pd
 import torch
 import torch_geometric as tg
 from rdkit.Chem import PandasTools
+from .geometry import read_geometries_from_files
 from .graph.molecular_graph import create_molecular_graph_data
 from .sanitize_data import sanitize_data
 
@@ -14,9 +15,10 @@ class MolGraphDataset(tg.data.Dataset):
     """Dataset for molecular graphs."""
     def __init__(self,
                  root: str,
-                 data: Union[pd.DataFrame, str],
+                 data: str,
                  properties: List[str] = None,
-                 sanitize=True):
+                 sanitize=True,
+                 file_geometries=None):
         """Generate a dataset using graphs
 
         Args:
@@ -28,20 +30,25 @@ class MolGraphDataset(tg.data.Dataset):
         super().__init__(root)
 
         # convert to pd dataFrame if necessary
-        if isinstance(data, str):
-            data = pd.read_csv(data)
+        data = pd.read_csv(data).reset_index(drop=True)
+
+        if file_geometries is not None:
+            molecules, positions = read_geometries_from_files(
+                self.opts.featurizer.file_geometries)
+            data["molecules"] = molecules
+            data["positions"] = positions
+        else:
             PandasTools.AddMoleculeColumnToFrame(data,
                                                  smilesCol='smiles',
                                                  molCol='molecules')
+            data["positions"] = None
+
         if sanitize:
             data = sanitize_data(data)
-
         data.reset_index(drop=True, inplace=True)
 
-        # extract molecules and positions
-        self.molecules = data['molecules']
-        self.positions = data[
-            'positions'] if "positions" in data.columns else None
+        self.molecules = data["molecules"]
+        self.positions = data["positions"]
 
         self.norm = tg.transforms.NormalizeFeatures()
 
@@ -50,6 +57,21 @@ class MolGraphDataset(tg.data.Dataset):
             self.labels = data[properties].to_numpy(np.float32)
         else:
             self.labels = None
+
+        self.compute_graph()
+
+    def compute_graph(self):
+        """compute the graphs in advance."""
+        self.molecular_graphs = []
+        for idx in self.__len__():
+            labels = None if self.labels is None else torch.Tensor(
+                [self.labels[idx]])
+            positions = None if self.positions is None else torch.Tensor(
+                self.positions[idx])
+            data = create_molecular_graph_data(self.molecules[idx],
+                                               positions=positions,
+                                               labels=labels)
+            self.molecular_graphs.append(data)
 
     def _download(self):
         pass
@@ -63,11 +85,4 @@ class MolGraphDataset(tg.data.Dataset):
 
     def __getitem__(self, idx):
         """Return the idx dataset element."""
-        labels = None if self.labels is None else torch.Tensor(
-            [self.labels[idx]])
-        positions = None if self.positions is None else torch.Tensor(
-            self.positions[idx])
-        data = create_molecular_graph_data(self.molecules[idx],
-                                           positions=positions,
-                                           labels=labels)
-        return self.norm(data)
+        return self.norm(self.molecular_graphs[idx])

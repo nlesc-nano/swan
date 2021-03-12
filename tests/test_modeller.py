@@ -7,24 +7,22 @@ import numpy as np
 import torch
 from pytest_mock import MockFixture
 
-from swan.input_validation import validate_input
-from swan.modeller import (FingerprintModeller, GraphModeller, main,
-                           predict_properties)
+from swan.utils.input_validation import validate_input
+from swan.modeller import (FingerprintModeller, GraphModeller)
 
 from .utils_test import PATH_TEST
 
 PATH_INPUT_TEST_FINGERPRINTS = PATH_TEST / "input_test_fingerprint_train.yml"
 
+# def test_main(mocker: MockFixture):
+#     """Test the CLI for the models."""
+#     mocker.patch("argparse.ArgumentParser.parse_args", return_value=argparse.Namespace(
+#         i=PATH_INPUT_TEST_FINGERPRINTS, w=".", mode="train", restart=False))
 
-def test_main(mocker: MockFixture):
-    """Test the CLI for the models."""
-    mocker.patch("argparse.ArgumentParser.parse_args", return_value=argparse.Namespace(
-        i=PATH_INPUT_TEST_FINGERPRINTS, w=".", mode="train", restart=False))
+#     mocker.patch("swan.modeller.predict_properties", return_value=None)
+#     main()
 
-    mocker.patch("swan.modeller.predict_properties", return_value=None)
-    main()
-
-    mocker.patch("swan.modeller.train_and_validate_model", return_value=None)
+#     mocker.patch("swan.modeller.train_and_validate_model", return_value=None)
 
 
 def test_split_data():

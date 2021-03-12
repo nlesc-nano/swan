@@ -13,7 +13,7 @@ from .sanitize_data import sanitize_data
 class FingerprintsDataset(Dataset):
     """Read the smiles, properties and compute the fingerprints."""
     def __init__(self,
-                 data: Union[pd.DataFrame, str],
+                 data: str,
                  properties: List[str] = None,
                  type_fingerprint: str = 'atompair',
                  fingerprint_size: int = 2048,
@@ -28,12 +28,11 @@ class FingerprintsDataset(Dataset):
             fingerprint_size (int): [description]
         """
 
-        # convert to pd dataFrame if necessary
-        if isinstance(data, str):
-            data = pd.read_csv(data).reset_index(drop=True)
-            PandasTools.AddMoleculeColumnToFrame(data,
-                                                 smilesCol='smiles',
-                                                 molCol='molecules')
+        # convert to pd dataFrame if necessaryS
+        data = pd.read_csv(data).reset_index(drop=True)
+        PandasTools.AddMoleculeColumnToFrame(data,
+                                             smilesCol='smiles',
+                                             molCol='molecules')
 
         # extract molecules
         self.molecules = data['molecules']
