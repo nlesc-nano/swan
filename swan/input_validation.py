@@ -77,7 +77,7 @@ TORCH_DEFAULTS = SCHEMA_TORCH.validate({})
 
 SCHEMA_MODEL = Schema({
     # Model's name
-    "name": str,
+    Optional("name", default=None): str,
     # Parameters to feed the model
     Optional("parameters", default={}): dict,
 })

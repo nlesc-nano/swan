@@ -1,5 +1,5 @@
 """Module to process dataset."""
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -7,7 +7,7 @@ import torch
 import torch_geometric as tg
 from flamingo.features.featurizer import generate_fingerprints
 from torch.utils.data import Dataset
-
+from rdkit.Chem import AllChem, PandasTools
 from .graph.molecular_graph import create_molecular_graph_data
 
 
@@ -15,16 +15,37 @@ class FingerprintsDataset(Dataset):
     """Read the smiles, properties and compute the fingerprints."""
 
     def __init__(
-            self, data: pd.DataFrame, properties: str, type_fingerprint: str,
-            fingerprint_size: int) -> None:
-        """Generate a dataset using fingerprints as features."""
+            self, data: Union[pd.DataFrame, str], properties: str, type_fingerprint: str = 'atompair' ,
+            fingerprint_size: int = 2048) -> None:
+        """Generate a dataset using fingerprints as features.
+
+        Args:
+            data (Union): path of the csv file, or pandas data frame containing the data
+            properties (str): [description]
+            type_fingerprint (str): [description]
+            fingerprint_size (int): [description]
+        """
+
+        # convert to pd dataFrame if necessary
+        if isinstance(data, str):
+            data = pd.read_csv(data)
+            PandasTools.AddMoleculeColumnToFrame(data, smilesCol='smiles', molCol='molecules')
+     
+        # extract molecules
         self.molecules = data['molecules']
+
+        # extract prop to predict
         labels = data[properties].to_numpy(np.float32)
         size_labels = len(self.molecules)
         self.labels = torch.from_numpy(labels.reshape(size_labels, len(properties)))
         fingerprints = generate_fingerprints(
             self.molecules, type_fingerprint, fingerprint_size)
         self.fingerprints = torch.from_numpy(fingerprints)
+
+    def create_molecules(self) -> None:
+        """Create the molecular representation."""
+            
+
 
     def __len__(self) -> int:
         """Return dataset length."""
