@@ -42,15 +42,15 @@ To train your model using the MPNN you need to provide the following section in 
   model:
     name: MPNN
     parameters:
-      dim: 10
+      output_channels: 10
       num_labels: 1
       batch_size: 128
       num_iterations: 3
 
 The optional parameters for the model are: ::
-* ``dim``
+* ``output_channels`` Channels in the Convolution. default 10.
 * ``num_labels``: the amount of labels to predict. Default 1.
-*  ``batch_size``: the size of the batch used to train the model. Default 128
+*  ``batch_size``: the size of the batch used to train the model. Default 128.
 * ``num_iterations``: number of steps to interchange messages for each epoch. Default 3.
 
 Additionally the model requires the use of the following featurizer: ::

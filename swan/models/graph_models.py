@@ -15,23 +15,23 @@ class MPNN(torch.nn.Module):
     Use the convolution NN reported at: https://arxiv.org/abs/1704.01212
     This network was taking from: https://github.com/rusty1s/pytorch_geometric/blob/master/examples/qm9_nn_conv.py
     """
-    def __init__(self, num_labels: int = 1, dim: int = 10, batch_size: int = 128, num_iterations: int = 3):
+    def __init__(self, num_labels: int = 1, output_channels: int = 10, batch_size: int = 128, num_iterations: int = 3):
         super(MPNN, self).__init__()
         # Number of iterations to propagate the message
         self.iterations = num_iterations
         # Input layer
-        self.lin0 = torch.nn.Linear(NUMBER_ATOMIC_GRAPH_FEATURES, dim)
+        self.lin0 = torch.nn.Linear(NUMBER_ATOMIC_GRAPH_FEATURES, output_channels)
 
         # NN that transform the states into message using the edge features
-        nn = Sequential(Linear(NUMBER_BOND_GRAPH_FEATURES, batch_size), ReLU(), Linear(batch_size, dim * dim))
-        self.conv = NNConv(dim, dim, nn, aggr='mean')
+        nn = Sequential(Linear(NUMBER_BOND_GRAPH_FEATURES, batch_size), ReLU(), Linear(batch_size, output_channels * output_channels))
+        self.conv = NNConv(output_channels, output_channels, nn, aggr='mean')
         # Combine the old state with the new one using a Gated Recurrent Unit
-        self.gru = GRU(dim, dim)
+        self.gru = GRU(output_channels, output_channels)
         # Pooling function
-        self.set2set = Set2Set(dim, processing_steps=self.iterations)
+        self.set2set = Set2Set(output_channels, processing_steps=self.iterations)
         # Fully connected output layers
-        self.lin1 = torch.nn.Linear(2 * dim, dim)
-        self.lin2 = torch.nn.Linear(dim, num_labels)
+        self.lin1 = torch.nn.Linear(2 * output_channels, output_channels)
+        self.lin2 = torch.nn.Linear(output_channels, num_labels)
 
     def forward(self, data):
         out = F.relu(self.lin0(data.x))
