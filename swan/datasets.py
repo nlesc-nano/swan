@@ -63,7 +63,7 @@ class MolGraphDataset(tg.data.Dataset):
         """Return dataset length."""
         return len(self.molecules)
 
-    def calculate_graph(self, idx):
+    def calculate_graph(self, idx: int):
         """Return the idx dataset element."""
         labels = None if self.labels is None else torch.Tensor([self.labels[idx]])
         positions = None if self.positions is None else torch.Tensor(self.positions[idx])
