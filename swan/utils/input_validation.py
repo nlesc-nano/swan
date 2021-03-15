@@ -47,7 +47,7 @@ SCHEMA_OPTIMIZER = Schema({
     any_lambda(("adam", "sgd")),
 
     # Learning rate
-    Optional("lr", default=0.1):
+    Optional("lr", default=0.01):
     float,
 
     # Momentum

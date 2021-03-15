@@ -42,6 +42,7 @@ class ModellerBase:
 
         if opts is None:
             self.opts = Options(MINIMAL_MODELER_DEFAULTS)
+            self.opts.properties = dataset.properties
         else:
             self.opts = Options(opts)
 
@@ -173,21 +174,22 @@ class ModellerBase:
 
     def split_data(self, frac: float = 0.2):
         """Split the data into a training and test set."""
-        size_valid = int(len(self.data.index) * frac)
+        size_valid = int(len(self.dataset.data.index) * frac)
         # Sample the indices without replacing
-        self.index_valid = np.random.choice(self.data.index,
+        self.index_valid = np.random.choice(self.dataset.data.index,
                                             size=size_valid,
                                             replace=False)
-        self.index_train = np.setdiff1d(self.data.index,
+        self.index_train = np.setdiff1d(self.dataset.data.index,
                                         self.index_valid,
                                         assume_unique=True)
 
     def scale_labels(self) -> pd.DataFrame:
         """Create a new column with the transformed target."""
         columns = self.opts.properties
+        print(self.dataset.data)
         if self.opts.scale_labels:
-            data = self.data[columns].to_numpy()
-            self.data[columns] = self.transformer.fit_transform(data)
+            data = self.dataset.data[columns].to_numpy()
+            self.dataset.data[columns] = self.transformer.fit_transform(data)
             self.dump_scale()
 
     def dump_scale(self) -> None:

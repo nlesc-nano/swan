@@ -2,11 +2,9 @@ from pathlib import Path
 import unittest
 import numpy as np
 
-from pytest_mock import MockFixture
-
 from swan.dataset import FingerprintsDataset, MolGraphDataset
 
-from .utils_test import PATH_TEST
+from utils_test import PATH_TEST
 
 
 class TestDataSet(unittest.TestCase):
@@ -16,9 +14,11 @@ class TestDataSet(unittest.TestCase):
 
     def test_fingerprint(self):
         dataset = FingerprintsDataset(self.data, properties=["gammas"])
+        print(dataset.data)
 
     def test_graph(self):
         dataset = MolGraphDataset(self.data, properties=["gammas"])
+        print(dataset.data)
 
 
 if __name__ == "__main__":

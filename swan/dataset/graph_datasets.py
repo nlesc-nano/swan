@@ -14,47 +14,51 @@ from .sanitize_data import sanitize_data
 class MolGraphDataset(tg.data.Dataset):
     """Dataset for molecular graphs."""
     def __init__(self,
-                 root: str,
                  data: str,
                  properties: List[str] = None,
+                 root: str = None,
                  sanitize=True,
                  file_geometries=None):
         """Generate a dataset using graphs
 
         Args:
-            root (str): [description]
+            root (str): location where the dataset should be saved optional (None)
             data (Union[pd.DataFrame, str]): path of the csv file or pd DF
             properties (List[str], optional): Names of the properies to use as label.
                                               Defaults to None.
         """
         super().__init__(root)
 
-        # convert to pd dataFrame if necessary
-        data = pd.read_csv(data).reset_index(drop=True)
+        # # convert to pd dataFrame if necessary
+        self.data = pd.read_csv(data).reset_index(drop=True)
 
         if file_geometries is not None:
-            molecules, positions = read_geometries_from_files(
-                self.opts.featurizer.file_geometries)
-            data["molecules"] = molecules
-            data["positions"] = positions
+            molecules, positions = read_geometries_from_files(file_geometries)
+            self.data["molecules"] = molecules
+            self.data["positions"] = positions
+
         else:
-            PandasTools.AddMoleculeColumnToFrame(data,
+
+            PandasTools.AddMoleculeColumnToFrame(self.data,
                                                  smilesCol='smiles',
                                                  molCol='molecules')
-            data["positions"] = None
 
-        if sanitize:
-            data = sanitize_data(data)
-        data.reset_index(drop=True, inplace=True)
+            if sanitize:
+                self.data = sanitize_data(self.data)
 
-        self.molecules = data["molecules"]
-        self.positions = data["positions"]
+            self.data["positions"] = None
+            self.data.reset_index(drop=True, inplace=True)
+
+            # extract molecules
+            self.molecules = self.data['molecules']
+            self.positions = self.data["positions"]
 
         self.norm = tg.transforms.NormalizeFeatures()
 
         # get labels
         if properties is not None:
-            self.labels = data[properties].to_numpy(np.float32)
+            self.properties = properties
+            self.labels = self.data[self.properties].to_numpy(np.float32)
         else:
             self.labels = None
 
@@ -63,10 +67,11 @@ class MolGraphDataset(tg.data.Dataset):
     def compute_graph(self):
         """compute the graphs in advance."""
         self.molecular_graphs = []
-        for idx in self.__len__():
+
+        for idx in range(self.__len__()):
             labels = None if self.labels is None else torch.Tensor(
                 [self.labels[idx]])
-            positions = None if self.positions is None else torch.Tensor(
+            positions = None if self.positions[idx] is None else torch.Tensor(
                 self.positions[idx])
             data = create_molecular_graph_data(self.molecules[idx],
                                                positions=positions,

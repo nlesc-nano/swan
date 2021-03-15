@@ -29,29 +29,30 @@ class FingerprintsDataset(Dataset):
         """
 
         # convert to pd dataFrame if necessaryS
-        data = pd.read_csv(data).reset_index(drop=True)
-        PandasTools.AddMoleculeColumnToFrame(data,
+        self.data = pd.read_csv(data).reset_index(drop=True)
+        PandasTools.AddMoleculeColumnToFrame(self.data,
                                              smilesCol='smiles',
                                              molCol='molecules')
 
-        # extract molecules
-        self.molecules = data['molecules']
-
         if sanitize:
-            data = sanitize_data(data)
+            self.data = sanitize_data(self.data)
 
-        # extract prop to predict
-        labels = data[properties].to_numpy(np.float32)
-        size_labels = len(self.molecules)
+        # extract molecules
+        self.molecules = self.data['molecules']
 
+        self.properties = properties
         # convert to torch
-        if properties is not None:
+        if self.properties is not None:
 
-            if not isinstance(properties, list):
-                properties = [properties]
+            if not isinstance(self.properties, list):
+                self.properties = [self.properties]
+
+            # extract prop to predict
+            labels = self.data[self.properties].to_numpy(np.float32)
+            size_labels = len(self.molecules)
 
             self.labels = torch.from_numpy(
-                labels.reshape(size_labels, len(properties)))
+                labels.reshape(size_labels, len(self.properties)))
         else:
             self.labels = None
 

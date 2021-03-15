@@ -21,11 +21,7 @@ class GraphModeller(ModellerBase):
     """Object to create models using molecular graphs."""
     def create_data_loader(self, indices: np.ndarray) -> DataLoader:
         """Create a DataLoader instance for the data."""
-        root = tempfile.mkdtemp(prefix="dataset_")
-        dataset = MolGraphDataset(root, self.data.loc[indices],
-                                  self.opts.properties)
-
-        return tg.data.DataLoader(dataset=dataset,
+        return tg.data.DataLoader(dataset=self.dataset,
                                   batch_size=self.opts.torch_config.batch_size)
 
     def train_model(self):

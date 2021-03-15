@@ -5,11 +5,10 @@ import numpy as np
 import torch
 from swan.modeller import FingerprintModeller
 from swan.modeller.models.fingerprint_models import FingerprintFullyConnected
-from pytest_mock import MockFixture
 
 from swan.dataset import FingerprintsDataset
 
-from .utils_test import PATH_TEST
+from utils_test import PATH_TEST
 
 
 class TestFingerprintModeller(unittest.TestCase):
@@ -25,9 +24,13 @@ class TestFingerprintModeller(unittest.TestCase):
 
         self.modeller.scale_labels()
         self.modeller.split_data()
-        self.modeller.modellerarcher.load_data()
+        self.modeller.load_data()
         self.modeller.train_model()
         expected, predicted = self.modeller.validate_model()
         err = torch.functional.F.mse_loss(expected, predicted)
         assert os.path.exists(self.modeller.opts.model_path)
         assert not np.isnan(err.item())
+
+
+if __name__ == "__main__":
+    unittest.main()
