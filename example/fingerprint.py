@@ -1,4 +1,4 @@
-from swan import FingerprintModeller
+from swan.modeller import FingerprintModeller
 from swan.dataset import FingerprintsDataset
 from mynet import FingerprintFullyConnected
 

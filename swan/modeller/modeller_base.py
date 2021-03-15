@@ -32,7 +32,13 @@ class ModellerBase:
                  network: nn.Module,
                  dataset: Dataset,
                  opts: Options = None):
-        """Set up a modeler object."""
+        """Base class of the modeller
+
+        Args:
+            network (nn.Module): [description]
+            dataset (Dataset): [description]
+            opts (Options, optional): [description]. Defaults to None.
+        """
 
         if opts is None:
             self.opts = Options(MINIMAL_MODELER_DEFAULTS)
