@@ -51,6 +51,8 @@ class MolGraphDataset(tg.data.Dataset):
         else:
             self.labels = None
 
+        self.data = [self.calculate_graph(i) for i in range(len(self.molecules))]
+
     def _download(self):
         pass
 
@@ -61,10 +63,14 @@ class MolGraphDataset(tg.data.Dataset):
         """Return dataset length."""
         return len(self.molecules)
 
-    def __getitem__(self, idx):
+    def calculate_graph(self, idx):
         """Return the idx dataset element."""
         labels = None if self.labels is None else torch.Tensor([self.labels[idx]])
         positions = None if self.positions is None else torch.Tensor(self.positions[idx])
         data = create_molecular_graph_data(
             self.molecules[idx], positions=positions, labels=labels)
         return self.norm(data)
+
+    def __getitem__(self, idx):
+        """Return the idx dataset element."""
+        return self.data[idx]
