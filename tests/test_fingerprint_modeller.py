@@ -8,7 +8,7 @@ from swan.modeller.models.fingerprint_models import FingerprintFullyConnected
 
 from swan.dataset import FingerprintsDataset
 
-from utils_test import PATH_TEST
+from .utils_test import PATH_TEST
 
 
 class TestFingerprintModeller(unittest.TestCase):
@@ -30,7 +30,3 @@ class TestFingerprintModeller(unittest.TestCase):
         err = torch.functional.F.mse_loss(expected, predicted)
         assert os.path.exists(self.modeller.opts.model_path)
         assert not np.isnan(err.item())
-
-
-if __name__ == "__main__":
-    unittest.main()

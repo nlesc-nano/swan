@@ -33,6 +33,8 @@ class MolGraphDataset(tg.data.Dataset):
         self.data = pd.read_csv(data).reset_index(drop=True)
 
         if file_geometries is not None:
+            # i would say that if we want to read the geometry
+            # it has to be in the dataframe instead of a separate file
             molecules, positions = read_geometries_from_files(file_geometries)
             self.data["molecules"] = molecules
             self.data["positions"] = positions

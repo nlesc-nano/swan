@@ -4,7 +4,7 @@ import numpy as np
 
 from swan.dataset import FingerprintsDataset, MolGraphDataset
 
-from utils_test import PATH_TEST
+from .utils_test import PATH_TEST
 
 
 class TestDataSet(unittest.TestCase):
@@ -19,7 +19,3 @@ class TestDataSet(unittest.TestCase):
     def test_graph(self):
         dataset = MolGraphDataset(self.data, properties=["gammas"])
         print(dataset.data)
-
-
-if __name__ == "__main__":
-    unittest.main()
