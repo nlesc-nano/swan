@@ -19,10 +19,11 @@ LOGGER = logging.getLogger(__name__)
 
 class GraphModeller(ModellerBase):
     """Object to create models using molecular graphs."""
-    def create_data_loader(self, indices: np.ndarray) -> DataLoader:
+    def create_data_loader(self, indices: np.ndarray,
+                           batch_size: int) -> DataLoader:
         """Create a DataLoader instance for the data."""
-        return tg.data.DataLoader(dataset=self.dataset,
-                                  batch_size=self.opts.torch_config.batch_size)
+        return tg.data.DataLoader(dataset=self.dataset[indices],
+                                  batch_size=batch_size)
 
     def train_model(self):
         """Train a statistical model."""

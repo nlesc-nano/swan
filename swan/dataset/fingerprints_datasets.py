@@ -17,7 +17,7 @@ class FingerprintsDataset(Dataset):
                  properties: List[str] = None,
                  type_fingerprint: str = 'atompair',
                  fingerprint_size: int = 2048,
-                 sanitize=True) -> None:
+                 sanitize=False) -> None:
         """Generate a dataset using fingerprints as features.
 
         Args:
@@ -36,6 +36,8 @@ class FingerprintsDataset(Dataset):
 
         if sanitize:
             self.data = sanitize_data(self.data)
+
+        self.data.reset_index(drop=True, inplace=True)
 
         # extract molecules
         self.molecules = self.data['molecules']

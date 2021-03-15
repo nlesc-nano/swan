@@ -31,7 +31,7 @@ class ModellerBase:
     def __init__(self,
                  network: nn.Module,
                  dataset: Dataset,
-                 opts: Options = None):
+                 use_cuda: bool = False):
         """Base class of the modeller
 
         Args:
@@ -40,68 +40,62 @@ class ModellerBase:
             opts (Options, optional): [description]. Defaults to None.
         """
 
-        if opts is None:
-            self.opts = Options(MINIMAL_MODELER_DEFAULTS)
-            self.opts.properties = dataset.properties
-        else:
-            self.opts = Options(opts)
-
         # Set of transformation apply to the dataset
         self.transformer = RobustScaler()
 
         # Early stopping functionality
         self.early_stopping = EarlyStopping()
 
-        if self.opts.use_cuda and self.opts.mode == "train":
+        # cuda support
+        self.use_cuda = use_cuda
+        if self.use_cuda:
             self.device = torch.device("cuda")
         else:
             self.device = torch.device("cpu")
 
+        # create the network
         self.network = network.to(self.device)
+
+        # add dataset in the class
         self.dataset = dataset
-        self.configure()
 
-    def configure(self):
-        """Configure a new model."""
+        # set the default optimizer
+        self.set_optimizer('SGD', lr=0.01)
+
+        # set the default loss
+        self.set_loss('MSELoss')
+
+        # I/O options
+        self.workdir = './'
+        self.path_scales = Path(self.workdir) / "swan_scales.pkl"
+
+        # current number of epoch
         self.epoch = 0
-        self.set_optimizer()
 
-        # Scales for the features
-        self.path_scales = Path(self.opts.workdir) / "swan_scales.pkl"
+    def set_optimizer(self, name, *args, **kwargs):
+        """Set an optimizer using the config file
 
-        # Reload model from file
-        if self.opts.restart or self.opts.mode == "predict":
-            self.load_model()
+        Args:
+            name ([type]): [description]
+        """
+        self.optimizer = torch.optim.__getattribute__(name)(
+            self.network.parameters(), *args, **kwargs)
 
-        # Create loss function
-        self.loss_func = getattr(nn, self.opts.torch_config.loss_function)()
+    def set_loss(self, name, *args, **kwargs):
+        """Set the loss function for the training
 
-    def set_optimizer(self) -> None:
-        """Select the optimizer."""
-        optimizers = {"sgd": torch.optim.SGD, "adam": torch.optim.Adam}
-        config = self.opts.torch_config.optimizer
-        fun = optimizers[config["name"]]
-        if config["name"] == "sgd":
-            self.optimizer = fun(self.network.parameters(),
-                                 lr=config["lr"],
-                                 momentum=config["momentum"],
-                                 nesterov=config["nesterov"])
-        else:
-            self.optimizer = fun(self.network.parameters(), lr=config["lr"])
-        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            self.optimizer, mode='min', min_lr=0.00001)
-
-    def load_data(self):
-        """Create loaders for the train and validation dataset."""
-        self.train_loader = self.create_data_loader(self.index_train)
-        self.valid_loader = self.create_data_loader(self.index_valid)
+        Args:
+            name ([type]): [description]
+        """
+        self.loss_func = getattr(nn, name)(*args, **kwargs)
 
     @abstractmethod
-    def create_data_loader(self, indices: np.ndarray) -> DataLoader:
+    def create_data_loader(self, indices: np.ndarray,
+                           batch_size: int) -> DataLoader:
         """Create a DataLoader instance for the data."""
         pass
 
-    def train_model(self):
+    def train_model(self, nepoch):
         """Train a statistical model."""
         self.network.train()
         LOGGER.info("TRAINING STEP")
@@ -109,7 +103,7 @@ class ModellerBase:
         # Set the model to training mode
         self.network.train()
 
-        for epoch in range(self.epoch, self.opts.torch_config.epochs):
+        for epoch in range(self.epoch, self.epoch + nepoch):
             LOGGER.info(f"epoch: {epoch}")
             self.network.train()
             loss_all = 0
@@ -117,7 +111,7 @@ class ModellerBase:
                 x_batch = x_batch.to(self.device)
                 y_batch = y_batch.to(self.device)
                 loss_all += self.train_batch(x_batch, y_batch) * len(x_batch)
-            LOGGER.info(f"Loss: {loss_all / len(self.index_train)}")
+            LOGGER.info(f"Loss: {loss_all / self.train_dataset.__len__()}")
 
             # Check for early stopping
             self.validate_model()
@@ -156,7 +150,7 @@ class ModellerBase:
                 loss_all += loss.item() * len(x_val)
                 results.append(predicted)
                 expected.append(y_val)
-            self.validation_loss = loss_all / len(self.index_valid)
+            self.validation_loss = loss_all / self.valid_dataset.__len__()
             LOGGER.info(f"validation loss: {self.validation_loss}")
         return torch.cat(results), torch.cat(expected)
 
@@ -169,28 +163,15 @@ class ModellerBase:
 
     def to_numpy_detached(self, tensor: Tensor):
         """Create a view of a Numpy array in CPU."""
-        tensor = tensor.cpu() if self.opts.use_cuda else tensor
+        tensor = tensor.cpu() if self.use_cuda else tensor
         return tensor.detach().numpy()
-
-    def split_data(self, frac: float = 0.2):
-        """Split the data into a training and test set."""
-        size_valid = int(len(self.dataset.data.index) * frac)
-        # Sample the indices without replacing
-        self.index_valid = np.random.choice(self.dataset.data.index,
-                                            size=size_valid,
-                                            replace=False)
-        self.index_train = np.setdiff1d(self.dataset.data.index,
-                                        self.index_valid,
-                                        assume_unique=True)
 
     def scale_labels(self) -> pd.DataFrame:
         """Create a new column with the transformed target."""
-        columns = self.opts.properties
-        print(self.dataset.data)
-        if self.opts.scale_labels:
-            data = self.dataset.data[columns].to_numpy()
-            self.dataset.data[columns] = self.transformer.fit_transform(data)
-            self.dump_scale()
+        columns = self.dataset.properties
+        data = self.dataset.data[columns].to_numpy()
+        self.dataset.data[columns] = self.transformer.fit_transform(data)
+        self.dump_scale()
 
     def dump_scale(self) -> None:
         """Save the scaling parameters in a file."""
@@ -202,19 +183,23 @@ class ModellerBase:
         with open(self.path_scales, 'rb') as handler:
             self.transformer = pickle.load(handler)
 
-    def save_model(self, epoch: int, loss: float) -> None:
+    def save_model(self,
+                   epoch: int,
+                   loss: float,
+                   filename: str = 'swan_chk.pt') -> None:
         """Save the modle current status."""
+        filename = Path(self.workdir) / filename
         torch.save(
             {
                 'epoch': epoch,
                 'model_state_dict': self.network.state_dict(),
                 'optimizer_state_dict': self.optimizer.state_dict(),
                 'loss': loss
-            }, self.opts.model_path)
+            }, filename)
 
-    def load_model(self) -> None:
+    def load_model(self, filename) -> None:
         """Load the model from the state file."""
-        checkpoint = torch.load(self.opts.model_path)
+        checkpoint = torch.load(filename)
         self.network.load_state_dict(checkpoint['model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         self.epoch = checkpoint['epoch']
