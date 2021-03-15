@@ -23,10 +23,8 @@ class TestFingerprintModeller(unittest.TestCase):
     def test_train_data_fingerprints(self):
 
         self.modeller.scale_labels()
-        self.modeller.split_data()
-        self.modeller.load_data()
-        self.modeller.train_model()
+        self.modeller.create_data_loader(batch_size=64)
+        self.modeller.train_model(nepoch=5)
         expected, predicted = self.modeller.validate_model()
         err = torch.functional.F.mse_loss(expected, predicted)
-        assert os.path.exists(self.modeller.opts.model_path)
         assert not np.isnan(err.item())

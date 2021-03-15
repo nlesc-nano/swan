@@ -65,6 +65,9 @@ class ModellerBase:
         # set the default loss
         self.set_loss('MSELoss')
 
+        # set scheduler
+        self.set_scheduler('StepLR', 0.1)
+
         # I/O options
         self.workdir = './'
         self.path_scales = Path(self.workdir) / "swan_scales.pkl"
@@ -88,6 +91,18 @@ class ModellerBase:
             name ([type]): [description]
         """
         self.loss_func = getattr(nn, name)(*args, **kwargs)
+
+    def set_scheduler(self, name, *args, **kwargs):
+        """Set the sceduler used for decreasing the LR
+
+        Args:
+            name ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """
+        self.scheduler = torch.optim.lr_scheduler.__getattribute__(name)(
+            self.optimizer, *args, **kwargs)
 
     @abstractmethod
     def create_data_loader(self, indices: np.ndarray,

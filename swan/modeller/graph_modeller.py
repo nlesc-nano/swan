@@ -8,7 +8,7 @@ import torch
 from torch import Tensor
 import torch_geometric as tg
 
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 
 from ..dataset import MolGraphDataset
 from .modeller_base import ModellerBase
@@ -19,18 +19,30 @@ LOGGER = logging.getLogger(__name__)
 
 class GraphModeller(ModellerBase):
     """Object to create models using molecular graphs."""
-    def create_data_loader(self, indices: np.ndarray,
-                           batch_size: int) -> DataLoader:
+    def create_data_loader(self,
+                           frac=[0.8, 0.2],
+                           batch_size: int = 64) -> DataLoader:
         """Create a DataLoader instance for the data."""
-        return tg.data.DataLoader(dataset=self.dataset[indices],
-                                  batch_size=batch_size)
 
-    def train_model(self):
+        ntotal = self.dataset.__len__()
+        ntrain = int(frac[0] * ntotal)
+        nvalid = ntotal - ntrain
+
+        self.train_dataset, self.valid_dataset = random_split(
+            self.dataset, [ntrain, nvalid])
+
+        self.train_loader = tg.data.DataLoader(dataset=self.train_dataset,
+                                               batch_size=batch_size)
+
+        self.valid_loader = tg.data.DataLoader(dataset=self.valid_dataset,
+                                               batch_size=batch_size)
+
+    def train_model(self, nepoch):
         """Train a statistical model."""
         LOGGER.info("TRAINING STEP")
         # Set the model to training mode
 
-        for epoch in range(self.epoch, self.opts.torch_config.epochs):
+        for epoch in range(self.epoch, self.epoch + nepoch):
             LOGGER.info(f"epoch: {epoch}")
             self.network.train()
             loss_all = 0
@@ -38,7 +50,7 @@ class GraphModeller(ModellerBase):
                 batch.to(self.device)
                 loss_batch = self.train_batch(batch, batch.y)
                 loss_all += batch.num_graphs * loss_batch
-            self.scheduler.step(loss_all / len(self.index_train))
+            self.scheduler.step(loss_all / self.train_dataset.__len__())
 
             # Check for early stopping
             self.validate_model()
@@ -47,7 +59,8 @@ class GraphModeller(ModellerBase):
                 LOGGER.info("EARLY STOPPING")
                 break
 
-            LOGGER.info(f"Training Loss: {loss_all / len(self.index_train)}")
+            LOGGER.info(
+                f"Training Loss: {loss_all / self.train_dataset.__len__()}")
 
         # Save the models
         self.save_model(epoch, loss_all)
@@ -67,7 +80,7 @@ class GraphModeller(ModellerBase):
                 loss_all += batch.num_graphs * loss.item()
                 results.append(predicted)
                 expected.append(batch.y)
-            self.validation_loss = loss_all / len(self.index_valid)
+            self.validation_loss = loss_all / self.valid_dataset.__len__()
             LOGGER.info(f"validation loss: {self.validation_loss}")
 
         return torch.cat(results), torch.cat(expected)
