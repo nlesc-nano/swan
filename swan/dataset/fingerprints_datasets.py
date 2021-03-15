@@ -46,6 +46,10 @@ class FingerprintsDataset(Dataset):
 
         # convert to torch
         if properties is not None:
+
+            if not isinstance(properties, list):
+                properties = [properties]
+
             self.labels = torch.from_numpy(
                 labels.reshape(size_labels, len(properties)))
         else:

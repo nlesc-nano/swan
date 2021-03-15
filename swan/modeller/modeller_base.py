@@ -35,9 +35,9 @@ class ModellerBase:
         """Set up a modeler object."""
 
         if opts is None:
-            self.opts = MINIMAL_MODELER_DEFAULTS
+            self.opts = Options(MINIMAL_MODELER_DEFAULTS)
         else:
-            self.opts = opts
+            self.opts = Options(opts)
 
         # Set of transformation apply to the dataset
         self.transformer = RobustScaler()
@@ -45,12 +45,12 @@ class ModellerBase:
         # Early stopping functionality
         self.early_stopping = EarlyStopping()
 
-        if opts.use_cuda and opts.mode == "train":
+        if self.opts.use_cuda and self.opts.mode == "train":
             self.device = torch.device("cuda")
         else:
             self.device = torch.device("cpu")
 
-        self.network = network().to(self.device)
+        self.network = network.to(self.device)
         self.dataset = dataset
         self.configure()
 
