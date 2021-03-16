@@ -208,7 +208,7 @@ class Modeller:
                 loss_all += loss.item() * len(x_val)
                 results.append(predicted)
                 expected.append(y_val)
-            self.validation_loss = loss_all / self.valid_dataset.__len__()
+            self.validation_loss = loss_all / self.data.valid_dataset.__len__()
             LOGGER.info(f"validation loss: {self.validation_loss}")
         return torch.cat(results), torch.cat(expected)
 
@@ -237,9 +237,9 @@ class Modeller:
 
     def scale_labels(self) -> pd.DataFrame:
         """Create a new column with the transformed target."""
-        columns = self.dataset.properties
-        data = self.dataset.data[columns].to_numpy()
-        self.dataset.data[columns] = self.transformer.fit_transform(data)
+        columns = self.data.dataset.properties
+        data = self.data.dataset.data[columns].to_numpy()
+        self.data.dataset.data[columns] = self.transformer.fit_transform(data)
         self.dump_scale()
 
     def dump_scale(self) -> None:
