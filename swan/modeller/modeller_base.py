@@ -70,7 +70,7 @@ class ModellerBase:
         # current number of epoch
         self.epoch = 0
 
-    def set_optimizer(self, name: str, *args, **kwargs):
+    def set_optimizer(self, name: str, *args, **kwargs) -> None:
         """Set an optimizer using the config file
 
         Parameters
@@ -111,7 +111,7 @@ class ModellerBase:
         """Create a DataLoader instance for the data."""
         pass
 
-    def train_model(self, nepoch):
+    def train_model(self, nepoch: int) -> None:
         """Train a statistical model."""
         self.network.train()
         LOGGER.info("TRAINING STEP")
@@ -122,7 +122,7 @@ class ModellerBase:
         for epoch in range(self.epoch, self.epoch + nepoch):
             LOGGER.info(f"epoch: {epoch}")
             self.network.train()
-            loss_all = 0
+            loss_all = 0.
             for x_batch, y_batch in self.train_loader:
                 x_batch = x_batch.to(self.device)
                 y_batch = y_batch.to(self.device)
@@ -170,14 +170,14 @@ class ModellerBase:
             LOGGER.info(f"validation loss: {self.validation_loss}")
         return torch.cat(results), torch.cat(expected)
 
-    def predict(self, tensor: Tensor):
+    def predict(self, tensor: Tensor) -> Tensor:
         """Use a previously trained model to predict."""
         with torch.no_grad():
             self.network.eval()  # Set model to evaluation mode
             predicted = self.network(tensor)
         return predicted
 
-    def to_numpy_detached(self, tensor: Tensor):
+    def to_numpy_detached(self, tensor: Tensor) -> Tensor:
         """Create a view of a Numpy array in CPU."""
         tensor = tensor.cpu() if self.use_cuda else tensor
         return tensor.detach().numpy()

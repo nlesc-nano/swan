@@ -7,6 +7,7 @@ import pandas as pd
 import torch
 import torch_geometric as tg
 from rdkit.Chem import PandasTools
+from torch_geometric.data import Data
 
 from .geometry import read_geometries_from_files
 from .graph.molecular_graph import create_molecular_graph_data
@@ -78,7 +79,7 @@ class MolGraphDataset(tg.data.Dataset):
 
         self.compute_graph()
 
-    def compute_graph(self):
+    def compute_graph(self) -> None:
         """compute the graphs in advance."""
         self.molecular_graphs = []
 
@@ -98,10 +99,10 @@ class MolGraphDataset(tg.data.Dataset):
     def _process(self):
         pass
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Return dataset length."""
         return len(self.molecules)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> Data:
         """Return the idx dataset element."""
         return self.norm(self.molecular_graphs[idx])

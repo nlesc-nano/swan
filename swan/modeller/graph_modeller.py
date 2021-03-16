@@ -32,7 +32,7 @@ class GraphModeller(ModellerBase):
         self.valid_loader = tg.data.DataLoader(dataset=self.valid_dataset,
                                                batch_size=batch_size)
 
-    def train_model(self, nepoch):
+    def train_model(self, nepoch: int) -> None:
         """Train a statistical model."""
         LOGGER.info("TRAINING STEP")
         # Set the model to training mode

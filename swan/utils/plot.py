@@ -43,11 +43,11 @@ def create_scatter_plot(
     path = os.path.join(workdir, "scatterplot.png")
     plt.savefig(path)
 
-    print(f"{'name':40} slope intercept rvalue")
+    print(f"{'name':40} slope intercept rvalue stderr")
     for k, name in enumerate(properties):
         # Print linear regression result
         reg = stats.linregress(predicted[:, k], expected[:, k])
-        print(f"{name:40} {reg.slope:.3f}  {reg.intercept:.3f}  {reg.rvalue:.3f}")
+        print(f"{name:40} {reg.slope:.3f}  {reg.intercept:.3f}  {reg.rvalue:.3f}  {reg.stderr:.3e}")
 
 
 def chunks_of(data: List[Any], n: int) -> Iterator[Any]:
