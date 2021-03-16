@@ -1,11 +1,13 @@
 import logging
+
+import pandas as pd
 from rdkit.Chem import AllChem
 
 # Starting logger
 LOGGER = logging.getLogger(__name__)
 
 
-def sanitize_data(data):
+def sanitize_data(data: pd.DataFrame) -> pd.DataFrame:
     """Check that the data in the DataFrame is valid."""
     # discard nan values
     data.dropna(inplace=True)

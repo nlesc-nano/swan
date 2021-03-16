@@ -1,13 +1,15 @@
-import numpy as np
+from typing import Tuple
+
 from torch.utils.data import DataLoader, random_split
+
 from .modeller_base import ModellerBase
 
 
 class FingerprintModeller(ModellerBase):
     """Object to create models using fingerprints."""
     def create_data_loader(self,
-                           frac=[0.8, 0.2],
-                           batch_size: int = 64) -> DataLoader:
+                           frac: Tuple[float, float] = (0.8, 0.2),
+                           batch_size: int = 64) -> None:
 
         ntotal = self.dataset.__len__()
         ntrain = int(frac[0] * ntotal)

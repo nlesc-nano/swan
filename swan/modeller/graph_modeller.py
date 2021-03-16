@@ -1,16 +1,11 @@
 import logging
-import tempfile
 from typing import Tuple
 
-import numpy as np
-
 import torch
-from torch import Tensor
 import torch_geometric as tg
+from torch import Tensor
+from torch.utils.data import random_split
 
-from torch.utils.data import DataLoader, random_split
-
-from ..dataset import MolGraphDataset
 from .modeller_base import ModellerBase
 
 # Starting logger
@@ -20,8 +15,8 @@ LOGGER = logging.getLogger(__name__)
 class GraphModeller(ModellerBase):
     """Object to create models using molecular graphs."""
     def create_data_loader(self,
-                           frac=[0.8, 0.2],
-                           batch_size: int = 64) -> DataLoader:
+                           frac: Tuple[float, float] = (0.8, 0.2),
+                           batch_size: int = 64) -> None:
         """Create a DataLoader instance for the data."""
 
         ntotal = self.dataset.__len__()
@@ -37,7 +32,7 @@ class GraphModeller(ModellerBase):
         self.valid_loader = tg.data.DataLoader(dataset=self.valid_dataset,
                                                batch_size=batch_size)
 
-    def train_model(self, nepoch):
+    def train_model(self, nepoch: int) -> None:
         """Train a statistical model."""
         LOGGER.info("TRAINING STEP")
         # Set the model to training mode
