@@ -68,6 +68,7 @@ class MolGraphDataset(tg.data.Dataset):
             self.molecules = self.data['molecules']
             self.positions = self.data["positions"]
 
+        self.normalize_feature = False
         self.norm = tg.transforms.NormalizeFeatures()
 
         # get labels
@@ -105,4 +106,7 @@ class MolGraphDataset(tg.data.Dataset):
 
     def __getitem__(self, idx: int) -> Data:
         """Return the idx dataset element."""
-        return self.norm(self.molecular_graphs[idx])
+        out = self.molecular_graphs[idx]
+        if self.normalize_feature:
+            out = self.norm(out)
+        return out
