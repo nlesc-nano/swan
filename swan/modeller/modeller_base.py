@@ -1,26 +1,18 @@
-"""Statistical models."""
+"""Base class to configure the statistical model."""
 
 import logging
 import pickle
-
 from abc import abstractmethod
-
 from pathlib import Path
 from typing import Tuple
 
-import numpy as np
 import pandas as pd
 import torch
-
-from flamingo.utils import Options
-
 from sklearn.preprocessing import RobustScaler
 from torch import Tensor, nn
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import Dataset
 
 from ..utils.early_stopping import EarlyStopping
-
-from ..utils.input_validation import MINIMAL_MODELER_DEFAULTS
 
 # Starting logger
 LOGGER = logging.getLogger(__name__)
@@ -34,12 +26,15 @@ class ModellerBase:
                  use_cuda: bool = False):
         """Base class of the modeller
 
-        Args:
-            network (nn.Module): [description]
-            dataset (Dataset): [description]
-            opts (Options, optional): [description]. Defaults to None.
+        Parameters
+        ----------
+        network
+            Torch Neural Network [description]
+        dataset
+            Torch Dataset
+        use_cuda
+            Train the model using Cuda
         """
-
         # Set of transformation apply to the dataset
         self.transformer = RobustScaler()
 
@@ -69,44 +64,50 @@ class ModellerBase:
         self.set_scheduler('StepLR', 0.1)
 
         # I/O options
-        self.workdir = './'
-        self.path_scales = Path(self.workdir) / "swan_scales.pkl"
+        self.workdir = Path('.')
+        self.path_scales = self.workdir / "swan_scales.pkl"
 
         # current number of epoch
         self.epoch = 0
 
-    def set_optimizer(self, name, *args, **kwargs):
+    def set_optimizer(self, name: str, *args, **kwargs):
         """Set an optimizer using the config file
 
-        Args:
-            name ([type]): [description]
+        Parameters
+        ----------
+        name
+            optimizer name
+
         """
         self.optimizer = torch.optim.__getattribute__(name)(
             self.network.parameters(), *args, **kwargs)
 
-    def set_loss(self, name, *args, **kwargs):
+    def set_loss(self, name: str, *args, **kwargs) -> None:
         """Set the loss function for the training
 
-        Args:
-            name ([type]): [description]
+        Parameter
+        ---------
+        name
+            Loss function name
+
         """
         self.loss_func = getattr(nn, name)(*args, **kwargs)
 
-    def set_scheduler(self, name, *args, **kwargs):
+    def set_scheduler(self, name, *args, **kwargs) -> None:
         """Set the sceduler used for decreasing the LR
 
-        Args:
-            name ([type]): [description]
+        Parameters
+        ----------
+        name
+            Scheduler name
 
-        Returns:
-            [type]: [description]
         """
-        self.scheduler = torch.optim.lr_scheduler.__getattribute__(name)(
+        self.scheduler = getattr(torch.optim.lr_scheduler, name)(
             self.optimizer, *args, **kwargs)
 
     @abstractmethod
-    def create_data_loader(self, indices: np.ndarray,
-                           batch_size: int) -> DataLoader:
+    def create_data_loader(self, frac: Tuple[float, float],
+                           batch_size: int) -> None:
         """Create a DataLoader instance for the data."""
         pass
 
@@ -203,14 +204,14 @@ class ModellerBase:
                    loss: float,
                    filename: str = 'swan_chk.pt') -> None:
         """Save the modle current status."""
-        filename = Path(self.workdir) / filename
+        path = self.workdir / filename
         torch.save(
             {
                 'epoch': epoch,
                 'model_state_dict': self.network.state_dict(),
                 'optimizer_state_dict': self.optimizer.state_dict(),
                 'loss': loss
-            }, filename)
+            }, path)
 
     def load_model(self, filename) -> None:
         """Load the model from the state file."""

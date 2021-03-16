@@ -1,31 +1,43 @@
 """Module to process dataset."""
-from typing import List, Union
+from pathlib import Path
+from typing import List, Optional, Union
 
 import numpy as np
 import pandas as pd
 import torch
 import torch_geometric as tg
 from rdkit.Chem import PandasTools
+
 from .geometry import read_geometries_from_files
 from .graph.molecular_graph import create_molecular_graph_data
 from .sanitize_data import sanitize_data
+
+PathLike = Union[str, Path]
 
 
 class MolGraphDataset(tg.data.Dataset):
     """Dataset for molecular graphs."""
     def __init__(self,
-                 data: str,
+                 data: PathLike,
                  properties: List[str] = None,
-                 root: str = None,
-                 sanitize=True,
-                 file_geometries=None):
+                 root: Optional[str] = None,
+                 sanitize: bool = True,
+                 file_geometries: Optional[PathLike] = None):
         """Generate a dataset using graphs
 
-        Args:
-            root (str): location where the dataset should be saved optional (None)
-            data (Union[pd.DataFrame, str]): path of the csv file or pd DF
-            properties (List[str], optional): Names of the properies to use as label.
-                                              Defaults to None.
+        Parameters
+        ----------
+        data
+            path of the csv file
+        properties
+            Labels names
+        root
+            Path to the root directory for the dataset
+        sanitize
+            Check that molecules have a valid conformer
+        file_geometries
+            Path to a file with the geometries in PDB format
+
         """
         super().__init__(root)
 

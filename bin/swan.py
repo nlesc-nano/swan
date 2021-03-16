@@ -1,33 +1,21 @@
 """Statistical models."""
 import argparse
 import logging
-import pickle
 import tempfile
-from abc import abstractmethod
 from datetime import datetime
 from pathlib import Path
-from typing import Tuple
 
-import numpy as np
 import pandas as pd
 import torch
 import torch_geometric as tg
 from flamingo.features.featurizer import generate_fingerprints
 from flamingo.log_config import configure_logger
 from flamingo.utils import Options
-from rdkit.Chem import AllChem, PandasTools
-from sklearn.preprocessing import RobustScaler
-from torch import Tensor, nn
-from torch.utils.data import DataLoader
 
-from .datasets import FingerprintsDataset, MolGraphDataset
+from swan.modeller import FingerprintModeller, GraphModeller
+from swan.dataset import MolGraphDataset
 from .input_validation import validate_input
-from .load_models import select_model
 from .plot import create_scatter_plot
-from .geometry import read_geometries_from_files
-from .early_stopping import EarlyStopping
-
-__all__ = ["FingerprintModeller", "GraphModeller", "Modeller"]
 
 # Starting logger
 LOGGER = logging.getLogger(__name__)

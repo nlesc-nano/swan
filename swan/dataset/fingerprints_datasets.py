@@ -1,31 +1,44 @@
 """Module to process dataset."""
-from typing import Any, Tuple, Union, List
+from pathlib import Path
+from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 import torch
 from flamingo.features.featurizer import generate_fingerprints
-from torch.utils.data import Dataset
 from rdkit.Chem import PandasTools
+from torch.utils.data import Dataset
+
 from .sanitize_data import sanitize_data
+
+PathLike = Union[str, Path]
 
 
 class FingerprintsDataset(Dataset):
     """Read the smiles, properties and compute the fingerprints."""
     def __init__(self,
-                 data: str,
-                 properties: List[str] = None,
+                 data: PathLike,
+                 properties: Union[str, List[str]] = None,
+                 root: Optional[str] = None,
                  type_fingerprint: str = 'atompair',
                  fingerprint_size: int = 2048,
-                 sanitize=False) -> None:
+                 sanitize: bool = False) -> None:
         """Generate a dataset using fingerprints as features.
 
-        Args:
-            data (Union): path of the csv file, or pandas data frame
-                          containing the data
-            properties (str): [description]
-            type_fingerprint (str): [description]
-            fingerprint_size (int): [description]
+        Parameters
+        ----------
+        data
+            path of the csv file
+        properties
+            Labels names
+        root
+            Path to the root directory for the dataset
+        type_fingerprint
+            Either ``atompair``, ``torsion`` or ``morgan``.
+        fingerprint_size
+            Size of the fingerprint in bits
+        sanitize
+            Check that molecules have a valid conformer
         """
 
         # convert to pd dataFrame if necessaryS
