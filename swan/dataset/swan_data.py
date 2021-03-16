@@ -33,10 +33,10 @@ class SwanData:
         self.train_dataset, self.valid_dataset = random_split(
             self.dataset, [ntrain, nvalid])
 
-        self.train_loader = self.data_loader_fun(dataset=self.train_datset,
+        self.train_loader = self.data_loader_fun(dataset=self.train_dataset,
                                                  batch_size=batch_size)
 
-        self.valid_loader = self.data_loader_fun(dataset=self.valid_datset,
+        self.valid_loader = self.data_loader_fun(dataset=self.valid_dataset,
                                                  batch_size=batch_size)
 
     @staticmethod

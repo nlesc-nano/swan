@@ -1,4 +1,2 @@
-from .fingerprints_modeller import FingerprintModeller
-from .graph_modeller import GraphModeller
-
-_all__ = ["FingerprintModeller", "GraphModeller"]
+from .modeller import Modeller
+_all__ = ["Modeller"]
