@@ -3,6 +3,7 @@ dataset_file:
 
 properties:
   - Dissocation energy (nucleofuge)
+  - Dissociation energy (electrofuge)
 
 use_cuda: True
 
@@ -12,9 +13,11 @@ featurizer:
 
 model:
   name: InvariantPolynomial
+  parameters:
+    irreps_out: "2x0e"
 
 torch_config:
-  epochs: 50
+  epochs: 100
   batch_size: 100
   optimizer:
     name: adam
