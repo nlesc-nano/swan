@@ -11,7 +11,7 @@ class FingerprintModeller(ModellerBase):
 
         ntotal = self.dataset.__len__()
         ntrain = int(frac[0] * ntotal)
-        nvalid = int(frac[1] * ntotal)
+        nvalid = ntotal - ntrain
 
         self.train_dataset, self.valid_dataset = random_split(
             self.dataset, [ntrain, nvalid])
