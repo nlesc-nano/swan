@@ -1,14 +1,14 @@
 import torch
 import torch_geometric as tg
 from e3nn import o3
-from e3nn.o3 import FullyConnectedTensorProduct, TensorProduct
+from e3nn.o3 import FullyConnectedTensorProduct, Linear, TensorProduct
 from flamingo.features.featurizer import (NUMBER_ATOMIC_GRAPH_FEATURES,
                                           NUMBER_BOND_GRAPH_FEATURES)
 from torch_scatter import scatter_add, segment_add_coo
 
 
 class InvariantPolynomial(torch.nn.Module):
-    def __init__(self, irreps_out: str = "0e", lmax: int = 3) -> None:
+    def __init__(self, irreps_out: str = "0e", lmax: int = 2) -> None:
         super().__init__()
 
         # Different bond features
@@ -29,10 +29,17 @@ class InvariantPolynomial(torch.nn.Module):
             [(0, l, l, "uvu", False) for l in range(lmax + 1)]
         )
 
+        self.seq = torch.nn.Sequential(
+            torch.nn.Linear(NUMBER_ATOMIC_GRAPH_FEATURES, NUMBER_ATOMIC_GRAPH_FEATURES),
+            torch.nn.ReLU(),
+        )
+
+        # self.lin = Linear(representation_atoms, self.irreps_sh)
+
         # middle layer
         # irreps_mid1 = o3.Irreps("64x0e + 24x1e + 24x1o + 16x2e + 16x2o")
-        irreps_mid1 = o3.Irreps("64x0e + 24x1e + 24x1o + 16x2e + 16x2o")
-        irreps_mid2 = o3.Irreps("8x0e + 4x1e + 4x1o + 2x2e + 2x2o")
+        irreps_mid1 = o3.Irreps("16x0e + 6x1e + 6x1o + 4x2e + 4x2o")
+        irreps_mid2 = o3.Irreps("8x0e + 3x1e + 3x1o + 2x2e + 4x2o")
 
         # Output representation
         irreps_out = o3.Irreps(irreps_out)
@@ -46,14 +53,14 @@ class InvariantPolynomial(torch.nn.Module):
         self.tp2 = FullyConnectedTensorProduct(
             irreps_in1=irreps_mid1,
             irreps_in2=self.mul_edges.irreps_out,
-            irreps_out=irreps_out,
+            irreps_out=irreps_mid2,
         )
 
-        # self.tp3 = FullyConnectedTensorProduct(
-        #     irreps_in1=irreps_mid2,
-        #     irreps_in2=self.mul_edges.irreps_out,
-        #     irreps_out=irreps_out
-        # )
+        self.tp3 = FullyConnectedTensorProduct(
+            irreps_in1=irreps_mid2,
+            irreps_in2=self.mul_edges.irreps_out,
+            irreps_out=irreps_out
+        )
 
     def forward(self, data: tg.data.Dataset) -> torch.Tensor:
         # Vector defining the edges
@@ -72,7 +79,8 @@ class InvariantPolynomial(torch.nn.Module):
 
         # For each edge, tensor product the node attributes with the
         # edge features in the spherical harmonics
-        edge_features = self.tp1(data.x[edge_src], edge_attr)
+        first = self.seq(data.x[edge_src])
+        edge_features = self.tp1(first, edge_attr)
         node_features = scatter_add(edge_features, edge_dst, dim=0)
 
         # Normalize by the number of bonds for each atom
@@ -82,12 +90,12 @@ class InvariantPolynomial(torch.nn.Module):
         edge_features = self.tp2(node_features[edge_src], edge_attr)
         node_features = scatter_add(edge_features, edge_dst, dim=0)
 
-        # # Normalize by the number of bonds for each atom
-        # node_features = node_features.div(num_of_bonds_per_atom ** 0.5)
+        # Normalize by the number of bonds for each atom
+        node_features = node_features.div(num_of_bonds_per_atom ** 0.5)
 
-        # # communicate information to the neighbors
-        # edge_features = self.tp3(node_features[edge_src], edge_attr)
-        # node_features = scatter_add(edge_features, edge_dst, dim=0)
+        # communicate information to the neighbors
+        edge_features = self.tp3(node_features[edge_src], edge_attr)
+        node_features = scatter_add(edge_features, edge_dst, dim=0)
 
         # Normalize by the number of bonds for each atom
         node_features = node_features.div(num_of_bonds_per_atom ** 0.5)
