@@ -5,13 +5,40 @@ from typing import Any, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 import torch
+
 from flamingo.features.featurizer import generate_fingerprints
 from rdkit.Chem import PandasTools
 from torch.utils.data import Dataset
 
+from .swan_data import SwanData
 from .sanitize_data import sanitize_data
 
 PathLike = Union[str, Path]
+
+
+class FingerprintsData(SwanData):
+    def __init__(self,
+                 data: PathLike,
+                 properties: Union[str, List[str]] = None,
+                 root: Optional[str] = None,
+                 type_fingerprint: str = 'atompair',
+                 fingerprint_size: int = 2048,
+                 sanitize: bool = False) -> None:
+
+        super().__init__()
+
+        self.dataset = FingerprintsDataset(data,
+                                           properties=properties,
+                                           root=root,
+                                           type_fingerprint=type_fingerprint,
+                                           fingerprint_size=fingerprint_size,
+                                           sanitize=sanitize)
+
+        self.data_loader_fun = torch.utils.data.DataLoader
+
+    @staticmethod
+    def get_item(batch_data):
+        return batch_data[0], batch_data[1]
 
 
 class FingerprintsDataset(Dataset):

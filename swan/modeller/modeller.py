@@ -2,27 +2,26 @@
 
 import logging
 import pickle
-from abc import abstractmethod
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, List
 
 import pandas as pd
 import torch
 from sklearn.preprocessing import RobustScaler
 from torch import Tensor, nn
-from torch.utils.data import Dataset
 
 from ..utils.early_stopping import EarlyStopping
+from ..dataset.swan_data import SwanData
 
 # Starting logger
 LOGGER = logging.getLogger(__name__)
 
 
-class ModellerBase:
+class Modeller:
     """Object to create statistical models."""
     def __init__(self,
                  network: nn.Module,
-                 dataset: Dataset,
+                 data: SwanData,
                  use_cuda: bool = False):
         """Base class of the modeller
 
@@ -52,7 +51,7 @@ class ModellerBase:
         self.network = network.to(self.device)
 
         # add dataset in the class
-        self.dataset = dataset
+        self.data = data
 
         # set the default optimizer
         self.set_optimizer('SGD', lr=0.01)
@@ -102,32 +101,55 @@ class ModellerBase:
             Scheduler name
 
         """
-        self.scheduler = getattr(torch.optim.lr_scheduler, name)(
-            self.optimizer, *args, **kwargs)
+        if name is None:
+            self.scheduler = None
+        else:
+            self.scheduler = getattr(torch.optim.lr_scheduler,
+                                     name)(self.optimizer, *args, **kwargs)
 
-    @abstractmethod
-    def create_data_loader(self, frac: Tuple[float, float],
-                           batch_size: int) -> None:
-        """Create a DataLoader instance for the data."""
-        pass
+    def train_model(self,
+                    nepoch: int,
+                    frac: List[int] = [0.8, 0.2],
+                    batch_size: int = 64) -> None:
+        """Train the model
 
-    def train_model(self, nepoch: int) -> None:
-        """Train a statistical model."""
-        self.network.train()
+        Parameters
+        ----------
+        nepoch : int
+            number of ecpoch to run
+        frac : List[int], optional
+            divide the dataset in train/valid, by default [0.8, 0.2]
+        batch_size : int, optional
+            batchsize, by default 64
+        """
+
         LOGGER.info("TRAINING STEP")
 
-        # Set the model to training mode
-        self.network.train()
+        # create the dataloader
+        self.data.create_data_loader(frac=frac, batch_size=batch_size)
 
+        # run over the epochs
         for epoch in range(self.epoch, self.epoch + nepoch):
             LOGGER.info(f"epoch: {epoch}")
+
+            # set the model to train mode
+            # and init loss
             self.network.train()
             loss_all = 0.
-            for x_batch, y_batch in self.train_loader:
+
+            # iterate over the data loader
+            for batch_data in self.data.train_loader:
+                x_batch, y_batch = self.data.get_item(batch_data)
                 x_batch = x_batch.to(self.device)
                 y_batch = y_batch.to(self.device)
-                loss_all += self.train_batch(x_batch, y_batch) * len(x_batch)
-            LOGGER.info(f"Loss: {loss_all / self.train_dataset.__len__()}")
+                loss_all += self.train_batch(x_batch,
+                                             y_batch)  # * len(y_batch)
+            LOGGER.info(
+                f"Loss: {loss_all / self.data.train_dataset.__len__()}")
+
+            # decrease the LR if necessary
+            if self.scheduler is not None:
+                self.scheduler.step()
 
             # Check for early stopping
             self.validate_model()
@@ -139,18 +161,37 @@ class ModellerBase:
         # Save the models
         self.save_model(epoch, loss_all)
 
-    def train_batch(self, tensor: Tensor, y_batch: Tensor) -> float:
-        """Train a single batch."""
-        prediction = self.network(tensor)
-        loss = self.loss_func(prediction, y_batch)
-        loss.backward()  # backpropagation, compute gradients
-        self.optimizer.step()  # apply gradients
-        self.optimizer.zero_grad()  # clear gradients for next train
+    def train_batch(self, inp_data: Tensor, ground_truth: Tensor) -> float:
+        """Train a single mini batch
+
+        Parameters
+        ----------
+        inp_data : Tensor
+            input data of the network
+        ground_truth : Tensor
+            ground trurth of the data points in input
+
+        Returns
+        -------
+        float
+            loss over the mini batch
+        """
+        prediction = self.network(inp_data)
+        loss = self.loss_func(prediction, ground_truth)
+        loss.backward()
+        self.optimizer.step()
+        self.optimizer.zero_grad()
 
         return loss.item()
 
     def validate_model(self) -> Tuple[Tensor, Tensor]:
-        """Evaluate the model against the validation dataset."""
+        """compute the output of the model on the validation set
+
+        Returns
+        -------
+        Tuple[Tensor, Tensor]
+            output of the network, ground truth of the data
+        """
         results = []
         expected = []
 
@@ -158,7 +199,8 @@ class ModellerBase:
         with torch.no_grad():
             self.network.eval()
             loss_all = 0
-            for x_val, y_val in self.valid_loader:
+            for batch_data in self.data.valid_loader:
+                x_val, y_val = self.data.get_item(batch_data)
                 x_val = x_val.to(self.device)
                 y_val = y_val.to(self.device)
                 predicted = self.network(x_val)
@@ -170,11 +212,22 @@ class ModellerBase:
             LOGGER.info(f"validation loss: {self.validation_loss}")
         return torch.cat(results), torch.cat(expected)
 
-    def predict(self, tensor: Tensor) -> Tensor:
-        """Use a previously trained model to predict."""
+    def predict(self, inp_data: Tensor) -> Tensor:
+        """compute output of the model for a given input
+
+        Parameters
+        ----------
+        inp_data : Tensor
+            input data of the network
+
+        Returns
+        -------
+        Tensor
+            output of the network
+        """
         with torch.no_grad():
             self.network.eval()  # Set model to evaluation mode
-            predicted = self.network(tensor)
+            predicted = self.network(inp_data)
         return predicted
 
     def to_numpy_detached(self, tensor: Tensor) -> Tensor:

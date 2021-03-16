@@ -5,15 +5,40 @@ from typing import List, Optional, Union
 import numpy as np
 import pandas as pd
 import torch
+
 import torch_geometric as tg
-from rdkit.Chem import PandasTools
 from torch_geometric.data import Data
+from rdkit.Chem import PandasTools
 
 from .geometry import read_geometries_from_files
 from .graph.molecular_graph import create_molecular_graph_data
 from .sanitize_data import sanitize_data
-
+from .swan_data import SwanData
 PathLike = Union[str, Path]
+
+
+class MolGraphData(SwanData):
+    """Data loader for graph data."""
+    def __init__(self,
+                 data: PathLike,
+                 properties: List[str] = None,
+                 root: Optional[str] = None,
+                 sanitize: bool = True,
+                 file_geometries: Optional[PathLike] = None):
+
+        super().__init__()
+
+        self.dataset = MolGraphDataset(data,
+                                       properties=properties,
+                                       root=root,
+                                       sanitize=sanitize,
+                                       file_geometries=file_geometries)
+
+        self.data_loader_fun = tg.data.DataLoader
+
+    @staticmethod
+    def get_item(batch_data: List[Data]):
+        return batch_data, batch_data.y
 
 
 class MolGraphDataset(tg.data.Dataset):
