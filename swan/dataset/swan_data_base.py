@@ -1,10 +1,11 @@
 from torch.utils.data import random_split
 
 
-class SwanData:
+class SwanDataBase:
     """Base class for the data loaders."""
     def __init__(self):
 
+        self.dataframe = None
         self.dataset = None
         self.train_dataset = None
         self.valid_dataset = None

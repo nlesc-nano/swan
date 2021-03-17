@@ -1,2 +1,2 @@
-from .fingerprints_datasets import FingerprintsDataset, FingerprintsData
-from .graph_datasets import MolGraphDataset, MolGraphData
+from .fingerprints_data import FingerprintsData
+from .graph_data import GraphData

@@ -11,7 +11,7 @@ from sklearn.preprocessing import RobustScaler
 from torch import Tensor, nn
 
 from ..utils.early_stopping import EarlyStopping
-from ..dataset.swan_data import SwanData
+from ..dataset.swan_data_base import SwanDataBase
 
 # Starting logger
 LOGGER = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ class Modeller:
     """Object to create statistical models."""
     def __init__(self,
                  network: nn.Module,
-                 data: SwanData,
+                 data: SwanDataBase,
                  use_cuda: bool = False):
         """Base class of the modeller
 
@@ -237,9 +237,9 @@ class Modeller:
 
     def scale_labels(self) -> pd.DataFrame:
         """Create a new column with the transformed target."""
-        columns = self.data.dataset.properties
-        data = self.data.dataset.data[columns].to_numpy()
-        self.data.dataset.data[columns] = self.transformer.fit_transform(data)
+        columns = self.data.properties
+        data = self.data.dataframe[columns].to_numpy()
+        self.data.dataframe[columns] = self.transformer.fit_transform(data)
         self.dump_scale()
 
     def dump_scale(self) -> None:
