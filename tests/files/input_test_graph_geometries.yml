@@ -27,7 +27,7 @@ featurizer:
 model:
   name: MPNN
   parameters:
-    dim: 20
+    output_channels: 20
     num_labels: 15
 
 torch_config:
