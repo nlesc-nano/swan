@@ -1,15 +1,10 @@
 """Base class to configure the statistical model."""
 
 import logging
-import pickle
 from pathlib import Path
 from typing import Tuple, List
-
-import pandas as pd
 import torch
-from sklearn.preprocessing import RobustScaler
 from torch import Tensor, nn
-
 from ..utils.early_stopping import EarlyStopping
 from ..dataset.swan_data_base import SwanDataBase
 
@@ -34,8 +29,6 @@ class Modeller:
         use_cuda
             Train the model using Cuda
         """
-        # Set of transformation apply to the dataset
-        self.transformer = RobustScaler()
 
         # Early stopping functionality
         self.early_stopping = EarlyStopping()
@@ -234,23 +227,6 @@ class Modeller:
         """Create a view of a Numpy array in CPU."""
         tensor = tensor.cpu() if self.use_cuda else tensor
         return tensor.detach().numpy()
-
-    def scale_labels(self) -> pd.DataFrame:
-        """Create a new column with the transformed target."""
-        columns = self.data.properties
-        data = self.data.dataframe[columns].to_numpy()
-        self.data.dataframe[columns] = self.transformer.fit_transform(data)
-        self.dump_scale()
-
-    def dump_scale(self) -> None:
-        """Save the scaling parameters in a file."""
-        with open(self.path_scales, 'wb') as handler:
-            pickle.dump(self.transformer, handler)
-
-    def load_scale(self) -> None:
-        """Read the scales used for the features."""
-        with open(self.path_scales, 'rb') as handler:
-            self.transformer = pickle.load(handler)
 
     def save_model(self,
                    epoch: int,

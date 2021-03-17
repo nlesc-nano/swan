@@ -2,9 +2,7 @@
 from pathlib import Path
 from typing import List, Optional, Union
 
-import numpy as np
 import pandas as pd
-import torch
 
 import torch_geometric as tg
 from torch_geometric.data import Data
@@ -12,7 +10,7 @@ from rdkit.Chem import PandasTools
 
 from .geometry import read_geometries_from_files
 from .graph.molecular_graph import create_molecular_graph_data
-from .sanitize_data import sanitize_data
+
 from .swan_data_base import SwanDataBase
 PathLike = Union[str, Path]
 
@@ -40,70 +38,77 @@ class GraphData(SwanDataBase):
 
         super().__init__()
 
-        self.process_data(data_path,
-                          properties=properties,
-                          sanitize=sanitize,
-                          file_geometries=file_geometries)
+        # create the dataframe
+        self.dataframe = self.process_data(data_path,
+                                           file_geometries=file_geometries)
 
+        # clean the dataframe
+        self.clean_dataframe(sanitize=sanitize)
+
+        # extract the labels from the dataframe
+        self.labels = self.get_labels(properties)
+
+        # create the graphs
+        self.molecular_graphs = self.compute_graph()
+
+        # create the dataset
         self.dataset = GraphDataset(self.molecular_graphs)
 
+        # define the loader type
         self.data_loader_fun = tg.data.DataLoader
 
-    def process_data(self,
-                     data: PathLike,
-                     properties: List[str] = None,
-                     root: Optional[str] = None,
-                     sanitize: bool = True,
-                     file_geometries: Optional[PathLike] = None):
+    def process_data(
+            self,
+            data: PathLike,
+            file_geometries: Optional[PathLike] = None) -> pd.DataFrame:
+        """process the data frame
+
+        Parameters
+        ----------
+        data : PathLike
+            filename of the data
+        file_geometries : Optional[PathLike], optional
+            file containing the geometry of the molecules, by default None
+
+        Returns
+        -------
+        pd.DataFrame
+            data frame
+        """
 
         # # convert to pd dataFrame if necessary
-        self.dataframe = pd.read_csv(data).reset_index(drop=True)
+        dataframe = pd.read_csv(data).reset_index(drop=True)
 
         if file_geometries is not None:
             # i would say that if we want to read the geometry
             # it has to be in the dataframe instead of a separate file
             molecules, positions = read_geometries_from_files(file_geometries)
-            self.dataframe["molecules"] = molecules
-            self.dataframe["positions"] = positions
+            dataframe["molecules"] = molecules
+            dataframe["positions"] = positions
 
         else:
 
-            PandasTools.AddMoleculeColumnToFrame(self.dataframe,
+            PandasTools.AddMoleculeColumnToFrame(dataframe,
                                                  smilesCol='smiles',
                                                  molCol='molecules')
 
-            if sanitize:
-                self.dataframe = sanitize_data(self.dataframe)
-
-            self.dataframe["positions"] = None
-            self.dataframe.reset_index(drop=True, inplace=True)
-
-            # extract molecules
-            self.molecules = self.dataframe['molecules']
-            self.positions = self.dataframe["positions"]
-
-        # get labels
-        if properties is not None:
-            self.properties = properties
-            self.labels = self.dataframe[self.properties].to_numpy(np.float32)
-        else:
-            self.labels = None
-
-        self.compute_graph()
+        return dataframe
 
     def compute_graph(self) -> None:
         """compute the graphs in advance."""
-        self.molecular_graphs = []
 
-        for idx in range(len(self.molecules)):
-            labels = None if self.labels is None else torch.Tensor(
-                [self.labels[idx]])
-            positions = None if self.positions[idx] is None else torch.Tensor(
-                self.positions[idx])
-            graph = create_molecular_graph_data(self.molecules[idx],
-                                                positions=positions,
-                                                labels=labels)
-            self.molecular_graphs.append(graph)
+        molecular_graphs = []
+        if "positions" not in self.dataframe:
+            self.dataframe["positions"] = None
+
+        for idx in range(len(self.labels)):
+            gm = create_molecular_graph_data(
+                self.dataframe["molecules"][idx],
+                positions=self.dataframe["positions"][idx],
+                labels=self.labels[idx])
+            molecular_graphs.append(gm)
+
+        return molecular_graphs
 
     @staticmethod
     def get_item(batch_data: List[Data]):

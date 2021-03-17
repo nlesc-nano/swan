@@ -19,7 +19,7 @@ class TestFingerprintModeller(unittest.TestCase):
 
     def test_train_data_fingerprints(self):
 
-        self.modeller.scale_labels()
+        self.modeller.data.scale_labels()
         self.modeller.train_model(nepoch=5, batch_size=64)
         expected, predicted = self.modeller.validate_model()
         err = torch.functional.F.mse_loss(expected, predicted)

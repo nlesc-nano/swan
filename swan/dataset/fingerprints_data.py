@@ -1,8 +1,7 @@
 """Module to process dataset."""
 from pathlib import Path
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, List, Tuple, Union
 
-import numpy as np
 import pandas as pd
 import torch
 
@@ -11,7 +10,6 @@ from rdkit.Chem import PandasTools
 from torch.utils.data import Dataset
 
 from .swan_data_base import SwanDataBase
-from .sanitize_data import sanitize_data
 
 PathLike = Union[str, Path]
 
@@ -20,7 +18,6 @@ class FingerprintsData(SwanDataBase):
     def __init__(self,
                  path_data: PathLike,
                  properties: Union[str, List[str]] = None,
-                 root: Optional[str] = None,
                  type_fingerprint: str = 'atompair',
                  fingerprint_size: int = 2048,
                  sanitize: bool = False) -> None:
@@ -44,57 +41,49 @@ class FingerprintsData(SwanDataBase):
 
         super().__init__()
 
-        self.process_data(path_data,
-                          properties=properties,
-                          type_fingerprint=type_fingerprint,
-                          fingerprint_size=fingerprint_size,
-                          sanitize=sanitize)
+        # create the dataframe
+        self.dataframe = self.process_data(path_data)
 
+        # clean the dataframe
+        self.clean_dataframe(sanitize=sanitize)
+
+        # extract the labels from the dataframe
+        self.labels = self.get_labels(properties)
+        print(self.labels)
+
+        # compute fingerprints
+        fingerprints = generate_fingerprints(self.dataframe["molecules"],
+                                             type_fingerprint,
+                                             fingerprint_size)
+        self.fingerprints = torch.from_numpy(fingerprints)
+
+        # create the dataset
         self.dataset = FingerprintsDataset(self.fingerprints, self.labels)
 
+        # data loader type
         self.data_loader_fun = torch.utils.data.DataLoader
 
-    def process_data(self,
-                     path_data: PathLike,
-                     properties: Union[str, List[str]] = None,
-                     type_fingerprint: str = 'atompair',
-                     fingerprint_size: int = 2048,
-                     sanitize: bool = False):
+    def process_data(self, path_data: PathLike) -> pd.DataFrame:
+        """process the data frame
+
+        Parameters
+        ----------
+        path_data : PathLike
+            file name of the data
+
+        Returns
+        -------
+        pd.DataFrame
+            data frame
+        """
 
         # convert to pd dataFrame if necessaryS
-        self.dataframe = pd.read_csv(path_data).reset_index(drop=True)
-        PandasTools.AddMoleculeColumnToFrame(self.dataframe,
+        dataframe = pd.read_csv(path_data).reset_index(drop=True)
+        PandasTools.AddMoleculeColumnToFrame(dataframe,
                                              smilesCol='smiles',
                                              molCol='molecules')
 
-        if sanitize:
-            self.dataframe = sanitize_data(self.dataframe)
-
-        self.dataframe.reset_index(drop=True, inplace=True)
-
-        # extract molecules
-        self.molecules = self.dataframe['molecules']
-        self.properties = properties
-
-        # convert to torch
-        if self.properties is not None:
-
-            if not isinstance(self.properties, list):
-                self.properties = [self.properties]
-
-            # extract prop to predict
-            labels = self.dataframe[self.properties].to_numpy(np.float32)
-            size_labels = len(self.molecules)
-
-            self.labels = torch.from_numpy(
-                labels.reshape(size_labels, len(self.properties)))
-        else:
-            self.labels = None
-
-        # compute fingerprints
-        fingerprints = generate_fingerprints(self.molecules, type_fingerprint,
-                                             fingerprint_size)
-        self.fingerprints = torch.from_numpy(fingerprints)
+        return dataframe
 
     @staticmethod
     def get_item(batch_data):
