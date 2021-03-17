@@ -47,6 +47,7 @@ class GraphData(SwanDataBase):
 
         # extract the labels from the dataframe
         self.labels = self.get_labels(properties)
+        self.nlabels = self.labels.shape[1]
 
         # create the graphs
         self.molecular_graphs = self.compute_graph()
@@ -76,9 +77,10 @@ class GraphData(SwanDataBase):
             data frame
         """
 
-        # # convert to pd dataFrame if necessary
+        # create data frame
         dataframe = pd.read_csv(data).reset_index(drop=True)
 
+        # read geometries from file
         if file_geometries is not None:
             # i would say that if we want to read the geometry
             # it has to be in the dataframe instead of a separate file
@@ -86,8 +88,10 @@ class GraphData(SwanDataBase):
             dataframe["molecules"] = molecules
             dataframe["positions"] = positions
 
+        # ignore geometries
+        # do not initialize positions as sanitize_data
+        # will then erase all entries
         else:
-
             PandasTools.AddMoleculeColumnToFrame(dataframe,
                                                  smilesCol='smiles',
                                                  molCol='molecules')
@@ -97,10 +101,12 @@ class GraphData(SwanDataBase):
     def compute_graph(self) -> None:
         """compute the graphs in advance."""
 
-        molecular_graphs = []
+        # initialize positions if they are not in the df
         if "positions" not in self.dataframe:
             self.dataframe["positions"] = None
 
+        # create the graphs
+        molecular_graphs = []
         for idx in range(len(self.labels)):
             gm = create_molecular_graph_data(
                 self.dataframe["molecules"][idx],
@@ -110,8 +116,7 @@ class GraphData(SwanDataBase):
 
         return molecular_graphs
 
-    @staticmethod
-    def get_item(batch_data: List[Data]):
+    def get_item(self, batch_data: List[Data]):
         """get the data/ground truth of a minibatch
 
         Parameters
@@ -124,7 +129,7 @@ class GraphData(SwanDataBase):
         [type]
             feature, label
         """
-        return batch_data, batch_data.y
+        return batch_data, batch_data.y.view(-1, self.nlabels)
 
 
 class GraphDataset(tg.data.Dataset):
@@ -149,7 +154,12 @@ class GraphDataset(tg.data.Dataset):
 
     def __getitem__(self, idx: int) -> Data:
         """Return the idx dataset element."""
+
+        # get elements
         out = self.molecular_graphs[idx]
+
+        # normalize if necessary
         if self.normalize_feature:
             out = self.norm(out)
+
         return out

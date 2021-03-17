@@ -47,7 +47,7 @@ class Modeller:
         self.data = data
 
         # set the default optimizer
-        self.set_optimizer('SGD', lr=0.01)
+        self.set_optimizer('SGD', lr=0.001)
 
         # set the default loss
         self.set_loss('MSELoss')

@@ -47,9 +47,9 @@ class SwanDataBase:
                 properties = [properties]
 
             labels = torch.tensor(self.dataframe[properties].to_numpy(
-                np.float32))
+                np.float32)).view(-1, len(properties))
         else:
-            labels = [None] * self.dataframe.shape[0]
+            labels = torch.tensor([None] * self.dataframe.shape[0]).view(-1, 1)
 
         return labels
 
