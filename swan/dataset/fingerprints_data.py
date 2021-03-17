@@ -86,7 +86,7 @@ class FingerprintsData(SwanDataBase):
         return dataframe
 
     @staticmethod
-    def get_item(batch_data):
+    def get_item(batch_data: List[Any]) -> Tuple[torch.Tensor, torch.Tensor]:
         """get the data/ground truth of a minibatch
 
         Parameters

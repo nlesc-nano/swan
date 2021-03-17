@@ -1,18 +1,17 @@
 from torch.utils.data import random_split
 from sklearn.preprocessing import RobustScaler
-import pandas as pd
+from typing import Any, List, Tuple, Union
 import torch
 import numpy as np
 import pickle
 from pathlib import Path
-from typing import List
 
 from .sanitize_data import sanitize_data
 
 
 class SwanDataBase:
     """Base class for the data loaders."""
-    def __init__(self):
+    def __init__(self) -> None:
 
         self.dataframe = None
         self.dataset = None
@@ -32,7 +31,8 @@ class SwanDataBase:
         self.workdir = Path('.')
         self.path_scales = self.workdir / "swan_scales.pkl"
 
-    def get_labels(self, properties: List[str]):
+    def get_labels(self, properties: Union[str, List[str],
+                                           None]) -> torch.Tensor:
         """extract the labels from the dataframe
 
         Parameters
@@ -53,7 +53,7 @@ class SwanDataBase:
 
         return labels
 
-    def clean_dataframe(self, sanitize: bool = True):
+    def clean_dataframe(self, sanitize: bool = True) -> None:
         """Sanitize the data by removing
 
         Parameters
@@ -91,7 +91,7 @@ class SwanDataBase:
         self.valid_loader = self.data_loader_fun(dataset=self.valid_dataset,
                                                  batch_size=batch_size)
 
-    def scale_labels(self) -> pd.DataFrame:
+    def scale_labels(self):
         """Create a new column with the transformed target."""
         self.labels = self.transformer.fit_transform(self.labels)
         self.dump_scale()
@@ -107,7 +107,7 @@ class SwanDataBase:
             self.transformer = pickle.load(handler)
 
     @staticmethod
-    def get_item(batch_data):
+    def get_item(batch_data: Any) -> Tuple[Any, Any]:
         """get the data/ground truth of a minibatch
 
         Parameters

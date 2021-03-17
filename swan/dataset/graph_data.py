@@ -1,6 +1,6 @@
 """Module to process dataset."""
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Tuple, Optional, Union, Any
 
 import pandas as pd
 
@@ -19,9 +19,9 @@ class GraphData(SwanDataBase):
     """Data loader for graph data."""
     def __init__(self,
                  data_path: PathLike,
-                 properties: List[str] = None,
+                 properties: Union[str, List[str]] = None,
                  sanitize: bool = True,
-                 file_geometries: Optional[PathLike] = None):
+                 file_geometries: Optional[PathLike] = None) -> None:
         """Generate a dataset using graphs
 
         Parameters
@@ -98,7 +98,7 @@ class GraphData(SwanDataBase):
 
         return dataframe
 
-    def compute_graph(self) -> None:
+    def compute_graph(self) -> List[Data]:
         """compute the graphs in advance."""
 
         # initialize positions if they are not in the df
@@ -116,7 +116,7 @@ class GraphData(SwanDataBase):
 
         return molecular_graphs
 
-    def get_item(self, batch_data: List[Data]):
+    def get_item(self, batch_data: List[Data]) -> Tuple[List[Any], Any]:
         """get the data/ground truth of a minibatch
 
         Parameters

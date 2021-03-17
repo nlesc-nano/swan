@@ -102,7 +102,7 @@ class Modeller:
 
     def train_model(self,
                     nepoch: int,
-                    frac: List[int] = [0.8, 0.2],
+                    frac: List[float] = [0.8, 0.2],
                     batch_size: int = 64) -> None:
         """Train the model
 
