@@ -2,11 +2,10 @@
 
 import warnings
 from pathlib import Path
-from typing import Iterable, Union
+from typing import Any, Dict, Iterable, Union
 
 import torch
 import yaml
-from flamingo.utils import Options
 from schema import And, Optional, Or, Schema, SchemaError, Use
 
 PathLike = Union[str, Path]
@@ -17,14 +16,13 @@ def any_lambda(array: Iterable[str]):
     return And(str, Use(str.lower), lambda s: s in array)
 
 
-def validate_input(file_input: PathLike) -> Options:
+def validate_input(file_input: PathLike) -> Dict[str, Any]:
     """Check the input validation against an schema."""
     with open(file_input, 'r') as f:
         dict_input = yaml.load(f.read(), Loader=yaml.FullLoader)
     try:
-        data = SCHEMA_MODELER.validate(dict_input)
-        opts = Options(data)
-        if opts.use_cuda:
+        opts = SCHEMA_MODELER.validate(dict_input)
+        if opts["use_cuda"]:
             check_if_cuda_is_available(opts)
         return opts
 
@@ -34,10 +32,10 @@ def validate_input(file_input: PathLike) -> Options:
         raise
 
 
-def check_if_cuda_is_available(opts: Options):
+def check_if_cuda_is_available(opts: Dict[str, Any]):
     """Check that a CUDA device is available, otherwise turnoff the option."""
     if not torch.cuda.is_available():
-        opts.use_cuda = False
+        opts["use_cuda"] = False
         warnings.warn(
             "There is not CUDA device available using default CPU methods")
 

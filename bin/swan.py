@@ -4,9 +4,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-import pandas as pd
 from swan.utils.log_config import configure_logger
-from flamingo.utils import Options
 
 from .input_validation import validate_input
 # from .plot import create_scatter_plot
@@ -42,16 +40,16 @@ def main():
     opts = validate_input(Path(args.i))
     opts.mode = args.mode
 
-    if args.mode == "train":
-        opts.restart = args.restart
-        train_and_validate_model(opts)
-    else:
-        predict_properties(opts)
+    # if args.mode == "train":
+    #     opts.restart = args.restart
+    #     train_and_validate_model(opts)
+    # else:
+    #     predict_properties(opts)
 
 
-def train_and_validate_model(opts: Options) -> None:
-    """Train the model usign the data specificied by the user."""
-    pass
+# def train_and_validate_model(opts: Options) -> None:
+#     """Train the model usign the data specificied by the user."""
+#     pass
     # modeller = FingerprintModeller if 'fingerprint' in opts.featurizer else GraphModeller
     # researcher = modeller(opts)
     # researcher.scale_labels()
@@ -66,9 +64,9 @@ def train_and_validate_model(opts: Options) -> None:
     # create_scatter_plot(predicted, expected, opts.properties)
 
 
-def predict_properties(opts: Options) -> pd.DataFrame:
-    """Use a previous trained model to predict properties."""
-    pass
+# def predict_properties(opts: Options) -> pd.DataFrame:
+#     """Use a previous trained model to predict properties."""
+#     pass
     # LOGGER.info(f"Loading previously trained model from: {opts.model_path}")
     # modeller = FingerprintModeller if 'fingerprint' in opts.featurizer else GraphModeller
     # researcher = modeller(opts)

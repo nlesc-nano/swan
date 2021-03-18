@@ -4,11 +4,10 @@ from typing import Any, List, Tuple, Union
 
 import pandas as pd
 import torch
-
-from flamingo.features.featurizer import generate_fingerprints
 from rdkit.Chem import PandasTools
 from torch.utils.data import Dataset
 
+from .features.featurizer import generate_fingerprints
 from .swan_data_base import SwanDataBase
 
 PathLike = Union[str, Path]
