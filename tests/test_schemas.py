@@ -6,7 +6,7 @@ import pytest
 import yaml
 from schema import SchemaError
 
-from swan.input_validation import SCHEMA_TORCH, validate_input
+from swan.utils.input_validation import SCHEMA_TORCH, validate_input
 from .utils_test import PATH_TEST
 
 path_input_train = PATH_TEST / "input_test_fingerprint_train.yml"

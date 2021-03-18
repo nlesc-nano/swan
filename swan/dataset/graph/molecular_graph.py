@@ -20,8 +20,9 @@ from torch import Tensor
 from torch_geometric.data import Data
 
 
-def create_molecular_graph_data(
-        mol: Chem.rdchem.Mol, positions: Tensor = None, labels: Tensor = None) -> Data:
+def create_molecular_graph_data(mol: Chem.rdchem.Mol,
+                                positions: Tensor = None,
+                                labels: Tensor = None) -> Data:
     """Create a torch-geometry data object representing a graph.
 
     See torch-geometry documentation:
@@ -35,4 +36,8 @@ def create_molecular_graph_data(
     atomic_features = torch.from_numpy(atomic_features.astype(np.float32))
     bond_features = torch.from_numpy(bond_features.astype(np.float32))
 
-    return Data(x=atomic_features, edge_attr=bond_features, edge_index=edges, positions=positions, y=labels)
+    return Data(x=atomic_features,
+                edge_attr=bond_features,
+                edge_index=edges,
+                positions=positions,
+                y=labels)
