@@ -20,7 +20,7 @@ class FingerprintsData(SwanDataBase):
                  properties: Union[str, List[str]] = None,
                  type_fingerprint: str = 'atompair',
                  fingerprint_size: int = 2048,
-                 sanitize: bool = False) -> None:
+                 sanitize: bool = True) -> None:
         """generate fingerprint data.
 
         Parameters

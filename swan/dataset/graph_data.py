@@ -1,17 +1,17 @@
 """Module to process dataset."""
 from pathlib import Path
-from typing import List, Tuple, Optional, Union, Any
+from typing import Any, List, Optional, Tuple, Union
 
 import pandas as pd
-
+import torch
 import torch_geometric as tg
-from torch_geometric.data import Data
 from rdkit.Chem import PandasTools
+from torch_geometric.data import Data
 
 from .geometry import read_geometries_from_files
 from .graph.molecular_graph import create_molecular_graph_data
-
 from .swan_data_base import SwanDataBase
+
 PathLike = Union[str, Path]
 
 
@@ -110,13 +110,13 @@ class GraphData(SwanDataBase):
         for idx in range(len(self.labels)):
             gm = create_molecular_graph_data(
                 self.dataframe["molecules"][idx],
-                positions=self.dataframe["positions"][idx],
+                positions=torch.Tensor(self.dataframe["positions"][idx]),
                 labels=self.labels[idx])
             molecular_graphs.append(gm)
 
         return molecular_graphs
 
-    def get_item(self, batch_data: List[Data]) -> Tuple[List[Any], Any]:
+    def get_item(self, batch_data: List[Data]) -> Tuple[List[Any], torch.Tensor]:
         """get the data/ground truth of a minibatch
 
         Parameters

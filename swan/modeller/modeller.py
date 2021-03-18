@@ -2,11 +2,14 @@
 
 import logging
 from pathlib import Path
-from typing import Tuple, List
+from typing import List, Tuple
+
+import numpy as np
 import torch
 from torch import Tensor, nn
-from ..utils.early_stopping import EarlyStopping
+
 from ..dataset.swan_data_base import SwanDataBase
+from ..utils.early_stopping import EarlyStopping
 
 # Starting logger
 LOGGER = logging.getLogger(__name__)
@@ -223,7 +226,7 @@ class Modeller:
             predicted = self.network(inp_data)
         return predicted
 
-    def to_numpy_detached(self, tensor: Tensor) -> Tensor:
+    def to_numpy_detached(self, tensor: Tensor) -> np.ndarray:
         """Create a view of a Numpy array in CPU."""
         tensor = tensor.cpu() if self.use_cuda else tensor
         return tensor.detach().numpy()

@@ -1,10 +1,12 @@
-from torch.utils.data import random_split
-from sklearn.preprocessing import RobustScaler
-from typing import Any, List, Tuple, Union
-import torch
-import numpy as np
 import pickle
 from pathlib import Path
+from typing import Any, List, Tuple, Union
+
+import numpy as np
+import pandas as pd
+import torch
+from sklearn.preprocessing import RobustScaler
+from torch.utils.data import random_split
 
 from .sanitize_data import sanitize_data
 
@@ -13,7 +15,7 @@ class SwanDataBase:
     """Base class for the data loaders."""
     def __init__(self) -> None:
 
-        self.dataframe = None
+        self.dataframe = pd.DataFrame()
         self.dataset = None
         self.train_dataset = None
         self.valid_dataset = None
@@ -53,7 +55,7 @@ class SwanDataBase:
 
         return labels
 
-    def clean_dataframe(self, sanitize: bool = True) -> None:
+    def clean_dataframe(self, sanitize: bool) -> None:
         """Sanitize the data by removing
 
         Parameters
@@ -77,8 +79,7 @@ class SwanDataBase:
         batch_size : int, optional
             batchsize, by default 64
         """
-
-        ntotal = self.dataset.__len__()
+        ntotal = len(self.dataset)
         ntrain = int(frac[0] * ntotal)
         nvalid = ntotal - ntrain
 
@@ -107,7 +108,7 @@ class SwanDataBase:
             self.transformer = pickle.load(handler)
 
     @staticmethod
-    def get_item(batch_data: Any) -> Tuple[Any, Any]:
+    def get_item(batch_data: Any) -> Tuple[Any, torch.Tensor]:
         """get the data/ground truth of a minibatch
 
         Parameters
