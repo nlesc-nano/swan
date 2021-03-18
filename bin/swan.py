@@ -1,21 +1,15 @@
 """Statistical models."""
 import argparse
 import logging
-import tempfile
 from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
-import torch
-import torch_geometric as tg
-from flamingo.features.featurizer import generate_fingerprints
-from flamingo.log_config import configure_logger
+from swan.utils.log_config import configure_logger
 from flamingo.utils import Options
 
-from swan.modeller import FingerprintModeller, GraphModeller
-from swan.dataset import MolGraphDataset
 from .input_validation import validate_input
-from .plot import create_scatter_plot
+# from .plot import create_scatter_plot
 
 # Starting logger
 LOGGER = logging.getLogger(__name__)
@@ -57,56 +51,58 @@ def main():
 
 def train_and_validate_model(opts: Options) -> None:
     """Train the model usign the data specificied by the user."""
-    modeller = FingerprintModeller if 'fingerprint' in opts.featurizer else GraphModeller
-    researcher = modeller(opts)
-    researcher.scale_labels()
-    researcher.split_data()
-    researcher.load_data()
-    researcher.train_model()
-    predicted, expected = tuple(
-        researcher.to_numpy_detached(x) for x in researcher.validate_model())
-    if opts.scale_labels:
-        predicted = researcher.transformer.inverse_transform(predicted)
-        expected = researcher.transformer.inverse_transform(expected)
-    create_scatter_plot(predicted, expected, opts.properties)
+    pass
+    # modeller = FingerprintModeller if 'fingerprint' in opts.featurizer else GraphModeller
+    # researcher = modeller(opts)
+    # researcher.scale_labels()
+    # researcher.split_data()
+    # researcher.load_data()
+    # researcher.train_model()
+    # predicted, expected = tuple(
+    #     researcher.to_numpy_detached(x) for x in researcher.validate_model())
+    # if opts.scale_labels:
+    #     predicted = researcher.transformer.inverse_transform(predicted)
+    #     expected = researcher.transformer.inverse_transform(expected)
+    # create_scatter_plot(predicted, expected, opts.properties)
 
 
 def predict_properties(opts: Options) -> pd.DataFrame:
     """Use a previous trained model to predict properties."""
-    LOGGER.info(f"Loading previously trained model from: {opts.model_path}")
-    modeller = FingerprintModeller if 'fingerprint' in opts.featurizer else GraphModeller
-    researcher = modeller(opts)
-    # Generate features
-    if 'fingerprint' in opts.featurizer:
-        features = generate_fingerprints(researcher.data['molecules'],
-                                         opts.featurizer.fingerprint,
-                                         opts.featurizer.nbits)
-        features = torch.from_numpy(features).to(researcher.device)
-    else:
-        # Create a single minibatch with the data to predict
-        dataset = MolGraphDataset(tempfile.mkdtemp(prefix="dataset_"),
-                                  researcher.data)
-        data_loader = tg.data.DataLoader(dataset=dataset,
-                                         batch_size=len(
-                                             researcher.data['molecules']))
-        features = next(iter(data_loader))
-        features.to(researcher.device)
+    pass
+    # LOGGER.info(f"Loading previously trained model from: {opts.model_path}")
+    # modeller = FingerprintModeller if 'fingerprint' in opts.featurizer else GraphModeller
+    # researcher = modeller(opts)
+    # # Generate features
+    # if 'fingerprint' in opts.featurizer:
+    #     features = generate_fingerprints(researcher.data['molecules'],
+    #                                      opts.featurizer.fingerprint,
+    #                                      opts.featurizer.nbits)
+    #     features = torch.from_numpy(features).to(researcher.device)
+    # else:
+    #     # Create a single minibatch with the data to predict
+    #     dataset = MolGraphDataset(tempfile.mkdtemp(prefix="dataset_"),
+    #                               researcher.data)
+    #     data_loader = tg.data.DataLoader(dataset=dataset,
+    #                                      batch_size=len(
+    #                                          researcher.data['molecules']))
+    #     features = next(iter(data_loader))
+    #     features.to(researcher.device)
 
-    # Predict the property value and report
-    predicted = researcher.to_numpy_detached(researcher.predict(features))
-    # Transform back the labels
+    # # Predict the property value and report
+    # predicted = researcher.to_numpy_detached(researcher.predict(features))
+    # # Transform back the labels
 
-    # Load and applying the scales
-    if opts.scale_labels:
-        researcher.load_scale()
-        transformed = researcher.transformer.inverse_transform(
-            predicted).flatten()
+    # # Load and applying the scales
+    # if opts.scale_labels:
+    #     researcher.load_scale()
+    #     transformed = researcher.transformer.inverse_transform(
+    #         predicted).flatten()
 
-    df = pd.DataFrame({
-        'smiles': researcher.data['smiles'].to_numpy(),
-        'predicted_property': transformed
-    })
-    path = Path(opts.workdir) / "prediction.csv"
-    print("prediction data has been written to: ", path)
-    df.to_csv(path, index=False)
-    return df
+    # df = pd.DataFrame({
+    #     'smiles': researcher.data['smiles'].to_numpy(),
+    #     'predicted_property': transformed
+    # })
+    # path = Path(opts.workdir) / "prediction.csv"
+    # print("prediction data has been written to: ", path)
+    # df.to_csv(path, index=False)
+    # return df

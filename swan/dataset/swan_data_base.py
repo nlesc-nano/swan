@@ -53,7 +53,7 @@ class SwanDataBase:
 
         return labels
 
-    def clean_dataframe(self, sanitize: bool = True) -> None:
+    def clean_dataframe(self, sanitize: bool) -> None:
         """Sanitize the data by removing
 
         Parameters
@@ -77,7 +77,6 @@ class SwanDataBase:
         batch_size : int, optional
             batchsize, by default 64
         """
-
         ntotal = self.dataset.__len__()
         ntrain = int(frac[0] * ntotal)
         nvalid = ntotal - ntrain
