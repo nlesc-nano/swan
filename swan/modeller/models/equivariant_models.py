@@ -2,9 +2,10 @@ import torch
 import torch_geometric as tg
 from e3nn import o3
 from e3nn.o3 import FullyConnectedTensorProduct, Linear, TensorProduct
-from flamingo.features.featurizer import (NUMBER_ATOMIC_GRAPH_FEATURES,
-                                          NUMBER_BOND_GRAPH_FEATURES)
 from torch_scatter import scatter_add, segment_add_coo
+
+from swan.dataset.features.featurizer import (NUMBER_ATOMIC_GRAPH_FEATURES,
+                                              NUMBER_BOND_GRAPH_FEATURES)
 
 
 class InvariantPolynomial(torch.nn.Module):

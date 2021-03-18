@@ -42,7 +42,6 @@ setup(
     },
     install_requires=[
         'e3nn@git+https://github.com/e3nn/e3nn@main',
-        'flamingo@git+https://github.com/nlesc-nano/flamingo@main',
         'numpy', 'pandas', 'pyyaml', 'scikit-learn', 'scipy', 'seaborn', 'schema',
         'torch-geometric'],
 

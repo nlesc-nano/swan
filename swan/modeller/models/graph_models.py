@@ -1,7 +1,7 @@
 """Statistical models."""
 import torch
 import torch.nn.functional as F
-from flamingo.features.featurizer import NUMBER_ATOMIC_GRAPH_FEATURES, NUMBER_BOND_GRAPH_FEATURES
+from swan.dataset.features.featurizer import NUMBER_ATOMIC_GRAPH_FEATURES, NUMBER_BOND_GRAPH_FEATURES
 
 from torch.nn import GRU, Linear, ReLU, Sequential
 from torch_geometric.nn import NNConv, Set2Set
