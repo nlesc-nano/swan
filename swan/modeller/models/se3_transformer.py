@@ -5,12 +5,11 @@ import torch
 from equivariant_attention.fibers import Fiber
 from equivariant_attention.modules import (GAvgPooling, GConvSE3, GMaxPooling,
                                            GNormSE3, GSE3Res, get_basis_and_r)
-from swan.dataset.features.featurizer import NUMBER_ATOMIC_GRAPH_FEATURES, NUMBER_BOND_GRAPH_FEATURES
 
-try:
-    import dgl    
-except ImportError:
-    raise ImportError("The DGL library is required to run this model.")
+from swan.dataset.features.featurizer import (NUMBER_ATOMIC_GRAPH_FEATURES,
+                                              NUMBER_BOND_GRAPH_FEATURES)
+
+__all__ = ["TFN", "SE3Transformer"]
 
 
 class TFN(torch.nn.Module):
@@ -114,10 +113,11 @@ class SE3Transformer(torch.nn.Module):
             Gblock.append(GMaxPooling())
 
         # FC layers
-        FCblock = []
-        FCblock.append(torch.nn.Linear(self.fibers['out'].n_features, self.fibers['out'].n_features))
-        FCblock.append(torch.nn.ReLU(inplace=True))
-        FCblock.append(torch.nn.Linear(self.fibers['out'].n_features, out_dim))
+        FCblock = [
+            torch.nn.Linear(self.fibers['out'].n_features, self.fibers['out'].n_features),
+            torch.nn.ReLU(inplace=True),
+            torch.nn.Linear(self.fibers['out'].n_features, out_dim)
+        ]
 
         return torch.nn.ModuleList(Gblock), torch.nn.ModuleList(FCblock)
 

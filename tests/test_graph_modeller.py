@@ -8,7 +8,7 @@ from swan.dataset import GraphData
 from .utils_test import PATH_TEST
 
 
-class TestFingerprintModeller(unittest.TestCase):
+class TestGraphModeller(unittest.TestCase):
     """Test the finger print models
     """
     def setUp(self):

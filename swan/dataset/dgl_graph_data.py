@@ -12,21 +12,12 @@ from torch.utils.data import Dataset
 from .graph.molecular_graph import create_molecular_dgl_graph
 from .swan_data_base import SwanDataBase
 
-# import torch
-
 try:
     import dgl
 except ImportError:
     raise ImportError("DGL is a required dependency, see: https://www.dgl.ai/")
 
-# from .geometry import read_geometries_from_files
-# from .graph.molecular_graph import create_molecular_graph_data
-
-# import pandas as pd
-
-# import torch_geometric as tg
-# from rdkit.Chem import PandasTools
-# from torch_geometric.data import Data
+__all__ = ["DGLGraphData"]
 
 
 PathLike = Union[str, Path]

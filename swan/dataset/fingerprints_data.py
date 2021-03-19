@@ -10,6 +10,8 @@ from .swan_data_base import SwanDataBase
 
 PathLike = Union[str, Path]
 
+__all__ = ["FingerprintsData"]
+
 
 class FingerprintsData(SwanDataBase):
     def __init__(self,

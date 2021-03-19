@@ -1,17 +1,23 @@
-import unittest
-from swan.dataset import FingerprintsData, GraphData
+
+from swan.dataset import FingerprintsData, GraphData, DGLGraphData
 from .utils_test import PATH_TEST
 
+PATH_CSV = PATH_TEST / "thousand.csv"
 
-class TestDataSet(unittest.TestCase):
-    """Test case for the data set we use."""
-    def setUp(self):
-        self.data = PATH_TEST / "thousand.csv"
 
-    def test_fingerprint(self):
-        data = FingerprintsData(self.data, properties=["gammas"])
-        data.create_data_loader()
+def test_fingerprint_dataset():
+    """Check that the fingerprint dataset is loaded correctly."""
+    data = FingerprintsData(PATH_CSV, properties=["gammas"])
+    data.create_data_loader()
 
-    def test_graph(self):
-        data = GraphData(self.data, properties=["gammas"])
-        data.create_data_loader()
+
+def test_torch_geometric_dataset():
+    """Check that the torch_geometric dataset is loaded correctly."""
+    data = GraphData(PATH_CSV, properties=["gammas"])
+    data.create_data_loader()
+
+
+def test_dgl_dataset():
+    """Check that the DGL dataset is loaded correctly."""
+    data = DGLGraphData(PATH_CSV, properties=["gammas"])
+    data.create_data_loader()
