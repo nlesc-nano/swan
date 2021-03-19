@@ -31,7 +31,7 @@ def create_scatter_plot(
     # Create a subplot with at most 3 features per line
     rows = (nfeatures // 3) + (0 if nfeatures % 3 == 0 else 1)
     ncols = nfeatures if nfeatures < 3 else 3
-    fig, axis = plt.subplots(nrows=rows, ncols=ncols, figsize=(20, 20), constrained_layout=True)
+    _, axis = plt.subplots(nrows=rows, ncols=ncols, figsize=(20, 20), constrained_layout=True)
     # fig.tight_layout()
     if rows == 1:
         axis = [axis]
