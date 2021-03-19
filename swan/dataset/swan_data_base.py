@@ -7,12 +7,14 @@ import pandas as pd
 import torch
 from rdkit.Chem import PandasTools
 from sklearn.preprocessing import RobustScaler
-from torch.utils.data import random_split
+from torch.utils.data import random_split, Dataset, DataLoader
 
 from .geometry import read_geometries_from_files
 from .sanitize_data import sanitize_data
 
 PathLike = Union[str, Path]
+
+__all__ = ["SwanDataBase"]
 
 
 class SwanDataBase:
@@ -20,15 +22,15 @@ class SwanDataBase:
     def __init__(self) -> None:
 
         self.dataframe = pd.DataFrame()
-        self.dataset = None
-        self.train_dataset = None
-        self.valid_dataset = None
+        self.dataset = Dataset()  # type: torch.utils.data.Dataset
+        self.train_dataset = Dataset()  # type: torch.utils.data.Dataset
+        self.valid_dataset = Dataset()  # type: torch.utils.data.Dataset
 
-        self.train_loader = None
-        self.valid_loader = None
-        self.data_loader_fun = None
+        self.train_loader = DataLoader(Dataset())  # type: DataLoader
+        self.valid_loader = DataLoader(Dataset())  # type: DataLoader
+        self.data_loader_fun = DataLoader
 
-        self.labels = None
+        self.labels = torch.tensor([])
 
         # Set of transformation apply to the dataset
         self.transformer = RobustScaler()
@@ -151,8 +153,7 @@ class SwanDataBase:
         with open(self.path_scales, 'rb') as handler:
             self.transformer = pickle.load(handler)
 
-    @staticmethod
-    def get_item(batch_data: Any) -> Tuple[Any, torch.Tensor]:
+    def get_item(self, batch_data: Any) -> Tuple[Any, torch.Tensor]:
         """get the data/ground truth of a minibatch
 
         Parameters

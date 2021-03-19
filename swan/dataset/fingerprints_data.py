@@ -2,9 +2,7 @@
 from pathlib import Path
 from typing import Any, List, Tuple, Union
 
-import pandas as pd
 import torch
-from rdkit.Chem import PandasTools
 from torch.utils.data import Dataset
 
 from .features.featurizer import generate_fingerprints
@@ -62,9 +60,7 @@ class FingerprintsData(SwanDataBase):
         # data loader type
         self.data_loader_fun = torch.utils.data.DataLoader
 
-
-    @staticmethod
-    def get_item(batch_data: List[Any]) -> Tuple[torch.Tensor, torch.Tensor]:
+    def get_item(self, batch_data: List[Any]) -> Tuple[Any, torch.Tensor]:
         """get the data/ground truth of a minibatch
 
         Parameters

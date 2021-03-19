@@ -1,19 +1,39 @@
-"""Module to process dataset."""
+"""Interface to build a Dataset for DGL.
+
+see: https://www.dgl.ai/
+
+"""
 from pathlib import Path
-from typing import Any, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import torch
-import torch_geometric as tg
-from torch_geometric.data import Data
+from torch.utils.data import Dataset
 
-from .graph.molecular_graph import create_molecular_torch_geometric_graph
+from .graph.molecular_graph import create_molecular_dgl_graph
 from .swan_data_base import SwanDataBase
+
+# import torch
+
+try:
+    import dgl
+except ImportError:
+    raise ImportError("DGL is a required dependency, see: https://www.dgl.ai/")
+
+# from .geometry import read_geometries_from_files
+# from .graph.molecular_graph import create_molecular_graph_data
+
+# import pandas as pd
+
+# import torch_geometric as tg
+# from rdkit.Chem import PandasTools
+# from torch_geometric.data import Data
+
 
 PathLike = Union[str, Path]
 
 
-class GraphData(SwanDataBase):
-    """Data loader for graph data."""
+class DGLGraphData(SwanDataBase):
+    """Dataset construction for DGL."""
     def __init__(self,
                  data_path: PathLike,
                  properties: Union[str, List[str]] = None,
@@ -32,9 +52,6 @@ class GraphData(SwanDataBase):
         file_geometries
             Path to a file with the geometries in PDB format
         """
-
-        super().__init__()
-
         # create the dataframe
         self.dataframe = self.process_data(data_path,
                                            file_geometries=file_geometries)
@@ -50,12 +67,12 @@ class GraphData(SwanDataBase):
         self.molecular_graphs = self.compute_graph()
 
         # create the dataset
-        self.dataset = GraphDataset(self.molecular_graphs)
+        self.dataset = DGLGraphDataset(self.molecular_graphs, self.labels)
 
         # define the loader type
-        self.data_loader_fun = tg.data.DataLoader
+        self.data_loader_fun = dgl.dataloading.DataLoader
 
-    def compute_graph(self) -> List[Data]:
+    def compute_graph(self) -> List[dgl.DGLGraph]:
         """compute the graphs in advance."""
 
         # initialize positions if they are not in the df
@@ -65,15 +82,13 @@ class GraphData(SwanDataBase):
         # create the graphs
         molecular_graphs = []
         for idx in range(len(self.labels)):
-            gm = create_molecular_torch_geometric_graph(
+            gm = create_molecular_dgl_graph(
                 self.dataframe["molecules"][idx],
                 positions=self.dataframe["positions"][idx],
                 labels=self.labels[idx])
             molecular_graphs.append(gm)
 
-        return molecular_graphs
-
-    def get_item(self, batch_data: Any) -> Tuple[Any, torch.Tensor]:
+    def get_item(self, batch_data: List[torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
         """get the data/ground truth of a minibatch
 
         Parameters
@@ -86,37 +101,22 @@ class GraphData(SwanDataBase):
         [type]
             feature, label
         """
-        return batch_data, batch_data.y.view(-1, self.nlabels)
+        return batch_data[0], batch_data[1]
 
 
-class GraphDataset(tg.data.Dataset):
-    """Dataset for molecular graphs."""
-    def __init__(self, molecular_graphs: List[tg.data.Data]):
+class DGLGraphDataset(Dataset):
+    def __init__(self, molecular_graphs: List[dgl.DGLGraph], labels: torch.Tensor):
         """Generate a dataset using graphs
         """
         super().__init__()
         self.molecular_graphs = molecular_graphs
-        self.normalize_feature = False
-        self.norm = tg.transforms.NormalizeFeatures()
-
-    def _download(self):
-        pass
-
-    def _process(self):
-        pass
+        self.labels = labels
 
     def __len__(self) -> int:
         """Return dataset length."""
         return len(self.molecular_graphs)
 
-    def __getitem__(self, idx: int) -> Data:
+    def __getitem__(self, idx: int) -> Tuple[dgl.DGLGraph, torch.Tensor]:
         """Return the idx dataset element."""
 
-        # get elements
-        out = self.molecular_graphs[idx]
-
-        # normalize if necessary
-        if self.normalize_feature:
-            out = self.norm(out)
-
-        return out
+        return self.molecular_graphs[idx], self.labels[idx]

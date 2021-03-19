@@ -12,11 +12,11 @@ API
 .. autofunction:: create_molecular_torch_geometric_graph
 
 """
-import numpy as np
+import dgl
 import torch
+import torch_geometric as tg
 from rdkit import Chem
 from torch import Tensor
-import torch_geometric as tg
 
 from swan.dataset.features.featurizer import (compute_molecular_graph_edges,
                                               generate_molecular_features)
@@ -30,16 +30,42 @@ def create_molecular_torch_geometric_graph(
     https://pytorch-geometric.readthedocs.io/en/latest/?badge=latest
     The graph nodes contains atomic and bond pair information.
     """
-    atomic_features, bond_features = generate_molecular_features(mol)
+    atomic_features, bond_features = [
+        torch.from_numpy(array) for array in generate_molecular_features(mol)]
     # Undirectional edges to represent molecular bonds
     edges = torch.from_numpy(compute_molecular_graph_edges(mol))
 
-    atomic_features = torch.tensor(atomic_features.astype(np.float32))
-    bond_features = torch.tensor(bond_features.astype(np.float32))
-
     return tg.data.Data(
-        x=atomic_features,
-        edge_attr=bond_features,
-        edge_index=edges,
-        positions=positions,
+        x=atomic_features,        # [num_atoms, NUMBER_ATOMIC_GRAPH_FEATURES]
+        edge_attr=bond_features,  # [num_atoms, NUMBER_BOND_GRAPH_FEATURES]
+        edge_index=edges,         # [2, 2 x num_bonds]
+        positions=positions,      # [num_atoms, 3]
         y=labels)
+
+
+def create_molecular_dgl_graph(
+        mol: Chem.rdchem.Mol, positions: Tensor = None, labels: Tensor = None) -> dgl.DGLGraph:
+    """Create a DGL Graph object.
+
+    See: https://www.dgl.ai/
+    The graph nodes contains atomic and bond pair information.
+
+    """
+    atomic_features, bond_features = [
+        torch.from_numpy(array) for array in generate_molecular_features(mol)]
+
+    # Undirectional edges to represent molecular bonds
+    src, dst = torch.from_numpy(compute_molecular_graph_edges(mol))
+
+    # Create graph
+    graph = dgl.DGLGraph((src, dst))
+
+    # Add node features to graph
+    graph.ndata['x'] = positions  # [num_atoms, 3]
+    graph.ndata['f'] = atomic_features  # [num_atoms, NUMBER_ATOMIC_GRAPH_FEATURES]
+
+    # Add edge features to graph
+    graph.edata['d'] = positions[dst] - positions[src]  # [num_atoms, 3]
+    graph.edata['w'] = bond_features  # [num_atoms, NUMBER_BOND_GRAPH_FEATURES]
+
+    return graph
