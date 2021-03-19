@@ -2,14 +2,12 @@
 from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
 
-import pandas as pd
 import torch
 import torch_geometric as tg
 from rdkit.Chem import PandasTools
 from torch_geometric.data import Data
 
-from .geometry import read_geometries_from_files
-from .graph.molecular_graph import create_molecular_graph_data
+from .graph.molecular_graph import create_molecular_torch_geometric_graph
 from .swan_data_base import SwanDataBase
 
 PathLike = Union[str, Path]
@@ -58,46 +56,6 @@ class GraphData(SwanDataBase):
         # define the loader type
         self.data_loader_fun = tg.data.DataLoader
 
-    def process_data(
-            self,
-            data: PathLike,
-            file_geometries: Optional[PathLike] = None) -> pd.DataFrame:
-        """process the data frame
-
-        Parameters
-        ----------
-        data : PathLike
-            filename of the data
-        file_geometries : Optional[PathLike], optional
-            file containing the geometry of the molecules, by default None
-
-        Returns
-        -------
-        pd.DataFrame
-            data frame
-        """
-
-        # create data frame
-        dataframe = pd.read_csv(data).reset_index(drop=True)
-
-        # read geometries from file
-        if file_geometries is not None:
-            # i would say that if we want to read the geometry
-            # it has to be in the dataframe instead of a separate file
-            molecules, positions = read_geometries_from_files(file_geometries)
-            dataframe["molecules"] = molecules
-            dataframe["positions"] = positions
-
-        # ignore geometries
-        # do not initialize positions as sanitize_data
-        # will then erase all entries
-        else:
-            PandasTools.AddMoleculeColumnToFrame(dataframe,
-                                                 smilesCol='smiles',
-                                                 molCol='molecules')
-
-        return dataframe
-
     def compute_graph(self) -> List[Data]:
         """compute the graphs in advance."""
 
@@ -108,7 +66,7 @@ class GraphData(SwanDataBase):
         # create the graphs
         molecular_graphs = []
         for idx in range(len(self.labels)):
-            gm = create_molecular_graph_data(
+            gm = create_molecular_torch_geometric_graph(
                 self.dataframe["molecules"][idx],
                 positions=self.dataframe["positions"][idx],
                 labels=self.labels[idx])
@@ -134,7 +92,7 @@ class GraphData(SwanDataBase):
 
 class GraphDataset(tg.data.Dataset):
     """Dataset for molecular graphs."""
-    def __init__(self, molecular_graphs):
+    def __init__(self, molecular_graphs: List[tg.data.Data]):
         """Generate a dataset using graphs
         """
         super().__init__()

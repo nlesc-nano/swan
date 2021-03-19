@@ -1,14 +1,18 @@
 import pickle
 from pathlib import Path
-from typing import Any, List, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 import torch
+from rdkit.Chem import PandasTools
 from sklearn.preprocessing import RobustScaler
 from torch.utils.data import random_split
 
+from .geometry import read_geometries_from_files
 from .sanitize_data import sanitize_data
+
+PathLike = Union[str, Path]
 
 
 class SwanDataBase:
@@ -32,6 +36,46 @@ class SwanDataBase:
         # I/O options
         self.workdir = Path('.')
         self.path_scales = self.workdir / "swan_scales.pkl"
+
+    def process_data(
+            self,
+            data: PathLike,
+            file_geometries: Optional[PathLike] = None) -> pd.DataFrame:
+        """process the data frame
+
+        Parameters
+        ----------
+        data : PathLike
+            filename of the data
+        file_geometries : Optional[PathLike], optional
+            file containing the geometry of the molecules, by default None
+
+        Returns
+        -------
+        pd.DataFrame
+            data frame
+        """
+
+        # create data frame
+        dataframe = pd.read_csv(data).reset_index(drop=True)
+
+        # read geometries from file
+        if file_geometries is not None:
+            # i would say that if we want to read the geometry
+            # it has to be in the dataframe instead of a separate file
+            molecules, positions = read_geometries_from_files(file_geometries)
+            dataframe["molecules"] = molecules
+            dataframe["positions"] = positions
+
+        # ignore geometries
+        # do not initialize positions as sanitize_data
+        # will then erase all entries
+        else:
+            PandasTools.AddMoleculeColumnToFrame(dataframe,
+                                                 smilesCol='smiles',
+                                                 molCol='molecules')
+
+        return dataframe
 
     def get_labels(self, properties: Union[str, List[str],
                                            None]) -> torch.Tensor:

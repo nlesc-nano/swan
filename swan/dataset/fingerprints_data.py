@@ -62,27 +62,6 @@ class FingerprintsData(SwanDataBase):
         # data loader type
         self.data_loader_fun = torch.utils.data.DataLoader
 
-    def process_data(self, path_data: PathLike) -> pd.DataFrame:
-        """process the data frame
-
-        Parameters
-        ----------
-        path_data : PathLike
-            file name of the data
-
-        Returns
-        -------
-        pd.DataFrame
-            data frame
-        """
-
-        # convert to pd dataFrame if necessaryS
-        dataframe = pd.read_csv(path_data).reset_index(drop=True)
-        PandasTools.AddMoleculeColumnToFrame(dataframe,
-                                             smilesCol='smiles',
-                                             molCol='molecules')
-
-        return dataframe
 
     @staticmethod
     def get_item(batch_data: List[Any]) -> Tuple[torch.Tensor, torch.Tensor]:
