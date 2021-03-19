@@ -1,6 +1,6 @@
 """Miscellaneous plot functions."""
-import os
-from typing import Any, List, Iterator
+from pathlib import Path
+from typing import Any, Iterator, List, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,9 +10,11 @@ from scipy import stats
 
 plt.switch_backend('agg')
 
+PathLike = Union[str, Path]
+
 
 def create_scatter_plot(
-        predicted: np.ndarray, expected: np.ndarray, properties: List[str], workdir: str = ".") -> None:
+        predicted: np.ndarray, expected: np.ndarray, properties: List[str], workdir: PathLike = ".") -> None:
     """Plot the predicted vs the expected values."""
     sns.set()
 
@@ -27,9 +29,8 @@ def create_scatter_plot(
     nfeatures = predicted.shape[1]
 
     # Create a subplot with at most 3 features per line
-    rows = nfeatures // 3
+    rows = (nfeatures // 3) + (0 if nfeatures % 3 == 0 else 1)
     ncols = nfeatures if nfeatures < 3 else 3
-    rows = rows if rows > 1 else 1
     fig, axis = plt.subplots(nrows=rows, ncols=ncols, figsize=(20, 20), constrained_layout=True)
     # fig.tight_layout()
     if rows == 1:
@@ -40,7 +41,7 @@ def create_scatter_plot(
             ax = axis[row][col] if nfeatures > 1 else axis[0]
             sns.regplot(x=label_x, y=label_y, data=data, ax=ax)
 
-    path = os.path.join(workdir, "scatterplot.png")
+    path = Path(workdir) / "scatterplot.png"
     plt.savefig(path)
 
     print(f"{'name':40} slope intercept rvalue stderr")
