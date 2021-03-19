@@ -226,11 +226,6 @@ class Modeller:
             predicted = self.network(inp_data)
         return predicted
 
-    def to_numpy_detached(self, tensor: Tensor) -> np.ndarray:
-        """Create a view of a Numpy array in CPU."""
-        tensor = tensor.cpu() if self.use_cuda else tensor
-        return tensor.detach().numpy()
-
     def save_model(self,
                    epoch: int,
                    loss: float,
