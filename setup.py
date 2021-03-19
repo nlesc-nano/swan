@@ -34,12 +34,6 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
     ],
-    entry_points={
-        'console_scripts': [
-            'modeller=swan.modeller:main',
-            'save_dataset_in_db=swan.data.save_data:main'
-        ]
-    },
     install_requires=[
         'e3nn@git+https://github.com/e3nn/e3nn@main',
         'mendeleev', 'numpy', 'pandas', 'pyyaml', 'scikit-learn',
