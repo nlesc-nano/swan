@@ -6,6 +6,7 @@ import torch
 import torch_geometric as tg
 from torch_geometric.data import Data
 
+from .geometry import guess_positions
 from .graph.molecular_graph import create_molecular_torch_geometric_graph
 from .swan_data_base import SwanDataBase
 
@@ -18,7 +19,9 @@ class GraphData(SwanDataBase):
                  data_path: PathLike,
                  properties: Union[str, List[str]] = None,
                  sanitize: bool = True,
-                 file_geometries: Optional[PathLike] = None) -> None:
+                 file_geometries: Optional[PathLike] = None,
+                 optimize_molecule: bool = False
+                 ) -> None:
         """Generate a dataset using graphs
 
         Parameters
@@ -31,8 +34,9 @@ class GraphData(SwanDataBase):
             Check that molecules have a valid conformer
         file_geometries
             Path to a file with the geometries in PDB format
+        optimize_molecule
+            Optimize the geometry beforing guessing the coordinates if ``file_geometries`` not provided
         """
-
         super().__init__()
 
         # create the dataframe
@@ -41,6 +45,10 @@ class GraphData(SwanDataBase):
 
         # clean the dataframe
         self.clean_dataframe(sanitize=sanitize)
+
+        # Add positions if they don't exists in Dataframe
+        if "positions" not in self.dataframe:
+            self.dataframe["positions"] = guess_positions(self.dataframe.molecules, optimize_molecule)
 
         # extract the labels from the dataframe
         self.labels = self.get_labels(properties)
@@ -57,11 +65,6 @@ class GraphData(SwanDataBase):
 
     def compute_graph(self) -> List[Data]:
         """compute the graphs in advance."""
-
-        # initialize positions if they are not in the df
-        if "positions" not in self.dataframe:
-            self.dataframe["positions"] = None
-
         # create the graphs
         molecular_graphs = []
         for idx in range(len(self.labels)):

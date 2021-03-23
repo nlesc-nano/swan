@@ -7,7 +7,7 @@ import pandas as pd
 import torch
 from rdkit.Chem import PandasTools
 from sklearn.preprocessing import RobustScaler
-from torch.utils.data import random_split, Dataset, DataLoader
+from torch.utils.data import DataLoader, Dataset, random_split
 
 from .geometry import read_geometries_from_files
 from .sanitize_data import sanitize_data
@@ -47,9 +47,9 @@ class SwanDataBase:
 
         Parameters
         ----------
-        data : PathLike
+        data
             filename of the data
-        file_geometries : Optional[PathLike], optional
+        file_geometries
             file containing the geometry of the molecules, by default None
 
         Returns
@@ -57,9 +57,9 @@ class SwanDataBase:
         pd.DataFrame
             data frame
         """
-
         # create data frame
         dataframe = pd.read_csv(data).reset_index(drop=True)
+        dataframe = dataframe.loc[:, ~dataframe.columns.str.contains('^Unnamed')]
 
         # read geometries from file
         if file_geometries is not None:
@@ -76,7 +76,6 @@ class SwanDataBase:
             PandasTools.AddMoleculeColumnToFrame(dataframe,
                                                  smilesCol='smiles',
                                                  molCol='molecules')
-
         return dataframe
 
     def get_labels(self, properties: Union[str, List[str],
@@ -106,8 +105,8 @@ class SwanDataBase:
 
         Parameters
         ----------
-        sanitize : bool, optional
-            [description], by default True
+        sanitize
+            Remove molecules without conformer
         """
         if sanitize:
             self.dataframe = sanitize_data(self.dataframe)

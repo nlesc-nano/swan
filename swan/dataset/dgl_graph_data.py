@@ -9,6 +9,7 @@ from typing import List, Optional, Tuple, Union
 import torch
 from torch.utils.data import Dataset
 
+from .geometry import guess_positions
 from .graph.molecular_graph import create_molecular_dgl_graph
 from .swan_data_base import SwanDataBase
 
@@ -29,7 +30,8 @@ class DGLGraphData(SwanDataBase):
                  data_path: PathLike,
                  properties: Union[str, List[str]] = None,
                  sanitize: bool = True,
-                 file_geometries: Optional[PathLike] = None) -> None:
+                 file_geometries: Optional[PathLike] = None,
+                 optimize_molecule: bool = False) -> None:
         """Generate a dataset using graphs
 
         Parameters
@@ -42,6 +44,8 @@ class DGLGraphData(SwanDataBase):
             Check that molecules have a valid conformer
         file_geometries
             Path to a file with the geometries in PDB format
+        optimize_molecule
+            Perform a molecular optimization using a force field.
         """
         # create the dataframe
         self.dataframe = self.process_data(data_path,
@@ -49,6 +53,11 @@ class DGLGraphData(SwanDataBase):
 
         # clean the dataframe
         self.clean_dataframe(sanitize=sanitize)
+
+        # Add positions if they don't exists in Dataframe
+        if "positions" not in self.dataframe:
+            self.dataframe["positions"] = guess_positions(
+                self.dataframe.molecules, optimize_molecule)
 
         # extract the labels from the dataframe
         self.labels = self.get_labels(properties)
@@ -65,11 +74,6 @@ class DGLGraphData(SwanDataBase):
 
     def compute_graph(self) -> List[dgl.DGLGraph]:
         """compute the graphs in advance."""
-
-        # initialize positions if they are not in the df
-        if "positions" not in self.dataframe:
-            self.dataframe["positions"] = None
-
         # create the graphs
         molecular_graphs = []
         for idx in range(len(self.labels)):
@@ -78,6 +82,8 @@ class DGLGraphData(SwanDataBase):
                 positions=self.dataframe["positions"][idx],
                 labels=self.labels[idx])
             molecular_graphs.append(gm)
+
+        return molecular_graphs
 
     def get_item(self, batch_data: List[torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
         """get the data/ground truth of a minibatch
