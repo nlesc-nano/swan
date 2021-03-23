@@ -70,7 +70,7 @@ class GraphData(SwanDataBase):
         for idx in range(len(self.labels)):
             gm = create_molecular_torch_geometric_graph(
                 self.dataframe["molecules"][idx],
-                positions=self.dataframe["positions"][idx],
+                self.dataframe["positions"][idx],
                 labels=self.labels[idx])
             molecular_graphs.append(gm)
 

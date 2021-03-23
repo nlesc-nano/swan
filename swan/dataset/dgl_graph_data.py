@@ -79,7 +79,7 @@ class DGLGraphData(SwanDataBase):
         for idx in range(len(self.labels)):
             gm = create_molecular_dgl_graph(
                 self.dataframe["molecules"][idx],
-                positions=self.dataframe["positions"][idx],
+                self.dataframe["positions"][idx],
                 labels=self.labels[idx])
             molecular_graphs.append(gm)
 
