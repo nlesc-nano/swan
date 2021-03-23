@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 
 from .geometry import guess_positions
 from .graph.molecular_graph import create_molecular_dgl_graph
@@ -22,6 +22,17 @@ __all__ = ["DGLGraphData"]
 
 
 PathLike = Union[str, Path]
+
+
+def collate_fn(samples):
+    """Aggregate graphs."""
+    graphs, y = map(list, zip(*samples))
+    return dgl.batch(graphs), torch.cat(y)
+
+
+def dgl_data_loader(*args, **kwargs):
+    """Load the data using a customize collate function."""
+    return DataLoader(*args, collate_fn=collate_fn, **kwargs)
 
 
 class DGLGraphData(SwanDataBase):
@@ -47,6 +58,8 @@ class DGLGraphData(SwanDataBase):
         optimize_molecule
             Perform a molecular optimization using a force field.
         """
+        super().__init__()
+
         # create the dataframe
         self.dataframe = self.process_data(data_path,
                                            file_geometries=file_geometries)
@@ -70,7 +83,7 @@ class DGLGraphData(SwanDataBase):
         self.dataset = DGLGraphDataset(self.molecular_graphs, self.labels)
 
         # define the loader type
-        self.data_loader_fun = dgl.dataloading.DataLoader
+        self.data_loader_fun = dgl_data_loader
 
     def compute_graph(self) -> List[dgl.DGLGraph]:
         """compute the graphs in advance."""
