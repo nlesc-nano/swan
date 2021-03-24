@@ -35,7 +35,6 @@ setup(
         'Programming Language :: Python :: 3.8',
     ],
     install_requires=[
-        'lie_learn@git+https://github.com/AMLab-Amsterdam/lie_learn',
         'e3nn@git+https://github.com/e3nn/e3nn@main',
         'equivariant_attention@git+https://github.com/nlesc-nano/se3-transformer-public@dev',
         'mendeleev', 'numpy', 'pandas', 'pyyaml', 'scikit-learn',
