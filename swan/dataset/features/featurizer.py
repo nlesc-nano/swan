@@ -61,7 +61,7 @@ def generate_molecular_features(mol: Chem.rdchem.Mol) -> Tuple[np.ndarray, np.nd
     * Distance: Euclidean distance between the pair (size 1)
     """
     number_atoms = mol.GetNumAtoms()
-    atomic_features = np.zeros((number_atoms, NUMBER_ATOMIC_GRAPH_FEATURES))
+    atomic_features = np.zeros((number_atoms, NUMBER_ATOMIC_GRAPH_FEATURES), dtype=DTYPE)
     len_elements = len(ELEMENTS)
     for i, atom in enumerate(mol.GetAtoms()):
         atomic_features[i, : len_elements + 3] = dict_element_features[atom.GetSymbol()]
@@ -71,13 +71,13 @@ def generate_molecular_features(mol: Chem.rdchem.Mol) -> Tuple[np.ndarray, np.nd
         atomic_features[i, -1] = float(atom.GetIsAromatic())
 
     # Represent an undirectional graph using two arrows for each bond
-    bond_features = np.zeros((2 * mol.GetNumBonds(), NUMBER_BOND_GRAPH_FEATURES))
+    bond_features = np.zeros((2 * mol.GetNumBonds(), NUMBER_BOND_GRAPH_FEATURES), dtype=DTYPE)
     for i, bond in enumerate(mol.GetBonds()):
         feats = generate_bond_features(mol, bond)
         bond_features[2 * i] = feats
         bond_features[2 * i + 1] = feats
 
-    return atomic_features.astype(DTYPE), bond_features.astype(DTYPE)
+    return atomic_features, bond_features
 
 
 def generate_bond_features(mol: Chem.rdchem.Mol, bond: Chem.rdchem.Bond) -> np.ndarray:

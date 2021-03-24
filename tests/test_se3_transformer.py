@@ -7,8 +7,8 @@ from swan.modeller.models import TFN, SE3Transformer
 
 from .utils_test import PATH_TEST
 
-NUM_LAYERS = 1     # Number of equivariant layers
-NUM_CHANNELS = 1  # Number of channels in middle layers
+NUM_LAYERS = 2     # Number of equivariant layers
+NUM_CHANNELS = 4  # Number of channels in middle layers
 
 
 def run_modeller(net: torch.nn.Module):
@@ -25,13 +25,13 @@ def run_modeller(net: torch.nn.Module):
     assert not np.isnan(err.item())
 
 
-def test_s3e_transformer():
-    """Check the SE3 transformer model."""
-    net = SE3Transformer(NUM_LAYERS, NUM_CHANNELS)
-    run_modeller(net)
-
-
 def test_tfn():
     """Check the TFN model."""
     net = TFN(NUM_LAYERS, NUM_CHANNELS)
+    run_modeller(net)
+
+
+def test_s3e_transformer():
+    """Check the SE3 transformer model."""
+    net = SE3Transformer(NUM_LAYERS, NUM_CHANNELS)
     run_modeller(net)

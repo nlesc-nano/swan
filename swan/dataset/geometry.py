@@ -38,4 +38,4 @@ def get_coordinates(optimize_molecule: bool, mol: Chem.rdchem.Mol) -> np.ndarray
     # AllChem.EmbedMolecule(mol)
     if optimize_molecule:
         AllChem.UFFOptimizeMolecule(mol)
-    return mol.GetConformer().GetPositions()
+    return np.asarray(mol.GetConformer().GetPositions(), dtype=DTYPE)

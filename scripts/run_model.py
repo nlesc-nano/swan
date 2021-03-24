@@ -23,7 +23,7 @@ path_geometries = path_files / "cdft_geometries.json"
 
 
 # Training variables
-nepoch = 50
+nepoch = 150
 batch_size = 64
 properties = [
     "Dissocation energy (nucleofuge)",
