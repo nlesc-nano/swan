@@ -8,7 +8,7 @@ from swan.modeller.models import TFN, SE3Transformer
 from .utils_test import PATH_TEST
 
 NUM_LAYERS = 1     # Number of equivariant layers
-NUM_CHANNELS = 4  # Number of channels in middle layers
+NUM_CHANNELS = 1  # Number of channels in middle layers
 
 
 def run_modeller(net: torch.nn.Module):
@@ -18,7 +18,7 @@ def run_modeller(net: torch.nn.Module):
     modeller = Modeller(net, data)
 
     modeller.data.scale_labels()
-    modeller.train_model(nepoch=5, batch_size=64)
+    modeller.train_model(nepoch=1, batch_size=64)
     expected, predicted = modeller.validate_model()
     err = torch.functional.F.mse_loss(expected, predicted)
     assert not np.isnan(err.item())
