@@ -13,6 +13,7 @@ NUM_CHANNELS = 1  # Number of channels in middle layers
 
 def run_modeller(net: torch.nn.Module):
     """Run a given model."""
+    torch.set_default_dtype(torch.float32)
     csv_file = PATH_TEST / "thousand.csv"
     data = DGLGraphData(csv_file, properties=["gammas"])
     modeller = Modeller(net, data)
