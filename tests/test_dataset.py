@@ -1,6 +1,7 @@
 
 from swan.dataset import FingerprintsData, GraphData, DGLGraphData
 from .utils_test import PATH_TEST
+from pathlib import Path
 
 PATH_CSV = PATH_TEST / "thousand.csv"
 
@@ -18,7 +19,7 @@ def test_torch_geometric_dataset():
 
 
 def test_torch_geometric_dataset_with_optimization():
-    """Check that the torch_geometric dataset generates a guess for the molecular coordinates."""
+    """Check that the torch_geometric dataset generates a guess for the molecular coordinate."""
     data = GraphData(PATH_CSV, properties=["gammas"], optimize_molecule=True)
     data.create_data_loader()
 
@@ -26,4 +27,14 @@ def test_torch_geometric_dataset_with_optimization():
 def test_dgl_dataset():
     """Check that the DGL dataset is loaded correctly."""
     data = DGLGraphData(PATH_CSV, properties=["gammas"])
+    data.create_data_loader()
+
+
+def test_dataset_with_geometries():
+    """Provide a Path with molecular geometries."""
+    path_csv = PATH_TEST / "cdft_properties.csv"
+    path_geometries = PATH_TEST / "cdft_geometries.json"
+
+    data = GraphData(
+        path_csv, properties=["Electrophilicity index (w=omega)"], file_geometries=path_geometries, sanitize=False)
     data.create_data_loader()
