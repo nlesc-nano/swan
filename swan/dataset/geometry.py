@@ -11,6 +11,7 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 
 PathLike = Union[str, Path]
+DTYPE = np.float32
 
 
 def read_geometries_from_files(file_geometries: PathLike) -> Tuple[List[Chem.rdchem.Mol], List[np.ndarray]]:
@@ -19,7 +20,7 @@ def read_geometries_from_files(file_geometries: PathLike) -> Tuple[List[Chem.rdc
         strings = json.load(handler)
 
     molecules = [Chem.MolFromPDBBlock(s, sanitize=False) for s in strings]
-    positions = [mol.GetConformer().GetPositions() for mol in molecules]
+    positions = [np.asarray(mol.GetConformer().GetPositions(), dtype=DTYPE) for mol in molecules]
     return molecules, positions
 
 
