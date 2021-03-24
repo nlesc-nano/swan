@@ -27,7 +27,7 @@ PathLike = Union[str, Path]
 def collate_fn(samples):
     """Aggregate graphs."""
     graphs, y = map(list, zip(*samples))
-    return dgl.batch(graphs), torch.cat(y)
+    return dgl.batch(graphs), torch.cat(y).unsqueeze(-1)
 
 
 def dgl_data_loader(*args, **kwargs):

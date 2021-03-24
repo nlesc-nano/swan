@@ -65,7 +65,7 @@ def create_molecular_dgl_graph(
 
     # Add node features to graph
     graph.ndata['x'] = positions         # [num_atoms, 3]
-    graph.ndata['f'] = atomic_features   # [num_atoms, NUMBER_ATOMIC_GRAPH_FEATURES]
+    graph.ndata['f'] = atomic_features.unsqueeze(-1)   # [num_atoms, NUMBER_ATOMIC_GRAPH_FEATURES]
 
     # Add edge features to graph
     graph.edata['d'] = positions[dst] - positions[src]  # [num_atoms, 3]

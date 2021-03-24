@@ -30,9 +30,9 @@ class TFN(torch.nn.Module):
 
         blocks = self._build_gcn(self.fibers, 1)
         self.block0, self.block1, self.block2 = blocks
-        print(self.block0)
-        print(self.block1)
-        print(self.block2)
+        # print(self.block0)
+        # print(self.block1)
+        # print(self.block2)
 
     def _build_gcn(self, fibers, out_dim):
 
@@ -92,8 +92,8 @@ class SE3Transformer(torch.nn.Module):
 
         blocks = self._build_gcn(self.fibers, 1)
         self.Gblock, self.FCblock = blocks
-        print(self.Gblock)
-        print(self.FCblock)
+        # print(self.Gblock)
+        # print(self.FCblock)
 
     def _build_gcn(self, fibers, out_dim):
         # Equivariant layers
@@ -132,5 +132,7 @@ class SE3Transformer(torch.nn.Module):
 
         for layer in self.FCblock:
             h = layer(h)
+
+        # print("G: ", G)
 
         return h
