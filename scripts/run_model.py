@@ -23,7 +23,7 @@ path_geometries = path_files / "cdft_geometries.json"
 
 
 # Training variables
-nepoch = 1
+nepoch = 50
 batch_size = 64
 properties = [
     "Dissocation energy (nucleofuge)",
@@ -61,10 +61,10 @@ data = DGLGraphData(
 # # net = InvariantPolynomial(irreps_out=f"{num_labels}x0e")
 
 # se3 transformers
-num_layers = 4     # Number of equivariant layers
+num_layers = 2     # Number of equivariant layers
 num_channels = 8   # Number of channels in middle layers
 num_nlayers = 0    # Number of layers for nonlinearity
-num_degrees = 4    # Number of irreps {0,1,...,num_degrees-1}
+num_degrees = 2    # Number of irreps {0,1,...,num_degrees-1}
 div = 4            # Low dimensional embedding fraction
 pooling = 'avg'    # Choose from avg or max
 n_heads = 1        # Number of attention heads
