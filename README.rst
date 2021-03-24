@@ -53,6 +53,8 @@ Using the conda environment the following packages should be installed:
 
 - install `Pytorch_Geometric dependencies <https://github.com/rusty1s/pytorch_geometric#installation>`_.
 
+- install `DGL using conda <https://www.dgl.ai/pages/start.html>`_
+
 
 .. _installation:
 
@@ -61,7 +63,7 @@ Package installation
 Finally install the package:
 
 - Install **swan** using pip:
-  - ``pip install git+https://github.com/nlesc-nano/swan.git@master``
+  - ``pip install git+https://github.com/nlesc-nano/swan.git``
 
 Now you are ready to use *swan*.
 
