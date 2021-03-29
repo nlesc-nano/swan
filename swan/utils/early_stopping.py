@@ -13,8 +13,10 @@ class EarlyStopping:
         """
         Parameters
         -----------
-        patience: How long to wait after last time validation loss improved.
-        delta: Minimum change in the monitored quantity to qualify as an improvement.
+        patience
+            How long to wait after last time validation loss improved.
+        delta
+            Minimum change in the monitored quantity to qualify as an improvement.
 
         """
         self.patience = patience
@@ -25,6 +27,19 @@ class EarlyStopping:
         self.delta = delta
 
     def __call__(self, saver: Callable, epoch: int, val_loss: float):
+        """Update the early stopping state.
+
+        Parameters
+        ----------
+        saver
+            Function to save the current state of the network and the other training parameters
+        epoch
+            Current epoch
+        val_loss
+            Validation loss
+
+        """
+
         score = -val_loss
 
         if self.best_score is None:
@@ -40,8 +55,19 @@ class EarlyStopping:
             self.save_checkpoint(saver, epoch, val_loss)
             self.counter = 0
 
-    def save_checkpoint(self, saver: Callable, epoch: int, val_loss: float):
-        """Saves model when validation loss decrease."""
+    def save_checkpoint(self, saver: Callable[[int, float], None], epoch: int, val_loss: float):
+        """Saves model when validation loss decrease.
+
+        Parameters
+        ----------
+        saver
+            Function to save the current state of the network and the other training parameters
+        epoch
+            Current epoch
+        val_loss
+            Validation loss
+
+        """
         LOGGER.debug(f"Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model")
         saver(epoch, val_loss)
         self.val_loss_min = val_loss

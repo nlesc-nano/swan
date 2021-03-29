@@ -17,7 +17,7 @@ class TorchGeometricGraphData(SwanDataBase):
     """Data loader for graph data."""
     def __init__(self,
                  data_path: PathLike,
-                 properties: Union[str, List[str]] = None,
+                 properties: Optional[Union[str, List[str]]] = None,
                  sanitize: bool = True,
                  file_geometries: Optional[PathLike] = None,
                  optimize_molecule: bool = False
@@ -82,13 +82,13 @@ class TorchGeometricGraphData(SwanDataBase):
 
         Parameters
         ----------
-        batch_data : List[Data]
+        batch_data
             data of the mini batch
 
         Returns
         -------
-        [type]
-            feature, label
+        Tuple with the graph features and the ground true array
+
         """
         return batch_data, batch_data.y.view(-1, self.nlabels)
 

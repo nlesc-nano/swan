@@ -39,7 +39,7 @@ class DGLGraphData(SwanDataBase):
     """Dataset construction for DGL."""
     def __init__(self,
                  data_path: PathLike,
-                 properties: Union[str, List[str]] = None,
+                 properties: Optional[Union[str, List[str]]] = None,
                  sanitize: bool = True,
                  file_geometries: Optional[PathLike] = None,
                  optimize_molecule: bool = False) -> None:

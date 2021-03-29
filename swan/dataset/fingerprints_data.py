@@ -1,6 +1,6 @@
 """Module to process dataset."""
 from pathlib import Path
-from typing import Any, List, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import torch
 from torch.utils.data import Dataset
@@ -16,7 +16,7 @@ __all__ = ["FingerprintsData"]
 class FingerprintsData(SwanDataBase):
     def __init__(self,
                  path_data: PathLike,
-                 properties: Union[str, List[str]] = None,
+                 properties: Optional[Union[str, List[str]]] = None,
                  type_fingerprint: str = 'atompair',
                  fingerprint_size: int = 2048,
                  sanitize: bool = True) -> None:
