@@ -9,20 +9,18 @@ API
 """
 
 from itertools import chain
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import AllChem
-from typing import Tuple
 
-from .atomic_features import (ELEMENTS, BONDS, compute_hybridization_index, dict_element_features)
+from .atomic_features import (BONDS, ELEMENTS, compute_hybridization_index,
+                              dict_element_features)
 
 __all__ = ["compute_molecular_graph_edges", "generate_fingerprints", "generate_molecular_features"]
 
-
-#: Floating point used to stored the features
-DTYPE = np.float32
 
 dictionary_functions = {
     "morgan": AllChem.GetMorganFingerprintAsBitVect,
@@ -59,9 +57,19 @@ def generate_molecular_features(mol: Chem.rdchem.Mol) -> Tuple[np.ndarray, np.nd
     * Same Ring: Whether the atoms are in the same ring (size 1)
     * Is conjugated:  whether or not the bond is considered to be conjugated (size 1)
     * Distance: Euclidean distance between the pair (size 1)
+
+    Parameters
+    ----------
+    mol
+        RDKit molecule
+
+    Returns
+    -------
+    Tuple with the atoms and bonds features
+
     """
     number_atoms = mol.GetNumAtoms()
-    atomic_features = np.zeros((number_atoms, NUMBER_ATOMIC_GRAPH_FEATURES), dtype=DTYPE)
+    atomic_features = np.zeros((number_atoms, NUMBER_ATOMIC_GRAPH_FEATURES), dtype=np.float32)
     len_elements = len(ELEMENTS)
     for i, atom in enumerate(mol.GetAtoms()):
         atomic_features[i, : len_elements + 3] = dict_element_features[atom.GetSymbol()]
@@ -71,7 +79,7 @@ def generate_molecular_features(mol: Chem.rdchem.Mol) -> Tuple[np.ndarray, np.nd
         atomic_features[i, -1] = float(atom.GetIsAromatic())
 
     # Represent an undirectional graph using two arrows for each bond
-    bond_features = np.zeros((2 * mol.GetNumBonds(), NUMBER_BOND_GRAPH_FEATURES), dtype=DTYPE)
+    bond_features = np.zeros((2 * mol.GetNumBonds(), NUMBER_BOND_GRAPH_FEATURES), dtype=np.float32)
     for i, bond in enumerate(mol.GetBonds()):
         feats = generate_bond_features(mol, bond)
         bond_features[2 * i] = feats
@@ -131,13 +139,29 @@ def generate_fingerprints(molecules: pd.Series, fingerprint: str, bits: int,
     * morgan https://doi.org/10.1021/ci100050t
     * atompair
     * torsion
+
+    Parameters
+    ----------
+    molecules
+        Pandas Series with the RDKit molecules
+    fingerprint
+        Name of the fingerprint to apply
+    bits
+        Number of bits to use
+    use_chirality
+        Whether or not to use chirality
+
+    Returns
+    -------
+    Numpy array containing a molecular fingerprint in a row
+
     """
     size = len(molecules)
 
     it = (compute_fingerprint(molecules[i], fingerprint, bits, use_chirality) for i in molecules.index)
     result = np.fromiter(
         chain.from_iterable(it),
-        DTYPE,
+        np.float32,
         size * bits
     )
 
@@ -145,11 +169,28 @@ def generate_fingerprints(molecules: pd.Series, fingerprint: str, bits: int,
 
 
 def compute_fingerprint(molecule, fingerprint: str, nbits: int, use_chirality: bool) -> np.ndarray:
-    """Calculate a single fingerprint."""
+    """Calculate a single fingerprint.
+
+    Parameters
+    ----------
+    molecule
+        RDKit molecule
+    fingerprint
+        Name of the fingerprint to apply
+    bits
+        Number of bits to use
+    use_chirality
+        Whether or not to use chirality
+
+    Returns
+    -------
+    Numpy array containing the molecular fingerprint
+
+    """
     # Select the fingerprint calculator
     fingerprint_calculator = dictionary_functions[fingerprint]
     if fingerprint == "morgan":
         bit_vector = fingerprint_calculator(molecule, 2, nBits=nbits, useChirality=use_chirality)
     else:
         bit_vector = fingerprint_calculator(molecule, nBits=nbits, includeChirality=use_chirality)
-    return np.fromiter(bit_vector.ToBitString(), DTYPE, nbits)
+    return np.fromiter(bit_vector.ToBitString(), np.float32, nbits)

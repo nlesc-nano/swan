@@ -1,7 +1,7 @@
 
 from swan.dataset import FingerprintsData, GraphData, DGLGraphData
 from .utils_test import PATH_TEST
-from pathlib import Path
+
 
 PATH_CSV = PATH_TEST / "thousand.csv"
 

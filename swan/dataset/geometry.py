@@ -1,31 +1,53 @@
 """Module to help building the geometric representations."""
 import json
 import multiprocessing
-from pathlib import Path
-from typing import List, Tuple, Union
 from functools import partial
+from pathlib import Path
+from typing import Collection, List, Tuple, Union
 
 import numpy as np
-import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
 PathLike = Union[str, Path]
-DTYPE = np.float32
 
 
 def read_geometries_from_files(file_geometries: PathLike) -> Tuple[List[Chem.rdchem.Mol], List[np.ndarray]]:
-    """Read the molecular geometries from a file."""
+    """Read the molecular geometries from a file.
+
+    Parameters
+    ----------
+    file_geometries
+        Path to the files with the geometries in JSON format
+
+    Returns
+    -------
+    Tuple with a list of rdkit geometries and a list of matrices with the molecular geometries.
+
+    """
     with open(file_geometries, 'r') as handler:
         strings = json.load(handler)
 
     molecules = [Chem.MolFromPDBBlock(s, sanitize=False) for s in strings]
-    positions = [np.asarray(mol.GetConformer().GetPositions(), dtype=DTYPE) for mol in molecules]
+    positions = [np.asarray(mol.GetConformer().GetPositions(), dtype=np.float32) for mol in molecules]
     return molecules, positions
 
 
-def guess_positions(molecules: pd.Series, optimize_molecule: bool) -> List[np.ndarray]:
-    """Compute a guess for the molecular coordinates."""
+def guess_positions(molecules: Collection[Chem.rdchem.Mol], optimize_molecule: bool) -> List[np.ndarray]:
+    """Compute a guess for the molecular coordinates.
+
+    Parameters
+    ----------
+    molecules
+        Collection containing the molecules
+    optimize_molecule
+        Whether or not to perform a molecular optimization
+
+    Returns
+    -------
+    List of the molecular coordinates
+
+    """
     chunksize = 2 * len(molecules) // multiprocessing.cpu_count()
     function = partial(get_coordinates, optimize_molecule)
     with multiprocessing.Pool() as p:
@@ -35,7 +57,20 @@ def guess_positions(molecules: pd.Series, optimize_molecule: bool) -> List[np.nd
 
 
 def get_coordinates(optimize_molecule: bool, mol: Chem.rdchem.Mol) -> np.ndarray:
+    """Extract the coordinates of a given RDKit molecule.
+    Parameters
+    ----------
+    optimize_molecule
+        Whether or not to perform a molecular optimization
+    mol
+        RDKit molecule
+
+    Returns
+    -------
+    Array with the molecular coordinates
+
+    """
     # AllChem.EmbedMolecule(mol)
     if optimize_molecule:
         AllChem.UFFOptimizeMolecule(mol)
-    return np.asarray(mol.GetConformer().GetPositions(), dtype=DTYPE)
+    return np.asarray(mol.GetConformer().GetPositions(), dtype=np.float32)

@@ -4,7 +4,6 @@ import logging
 from pathlib import Path
 from typing import List, Tuple
 
-import numpy as np
 import torch
 from torch import Tensor, nn
 
@@ -32,7 +31,7 @@ class Modeller:
         use_cuda
             Train the model using Cuda
         """
-
+        torch.set_default_dtype(torch.float32)
         # Early stopping functionality
         self.early_stopping = EarlyStopping()
 

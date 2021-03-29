@@ -8,7 +8,18 @@ LOGGER = logging.getLogger(__name__)
 
 
 def sanitize_data(data: pd.DataFrame) -> pd.DataFrame:
-    """Check that the data in the DataFrame is valid."""
+    """Check that the data in the DataFrame is valid.
+
+    Parameters
+    ----------
+    data
+        Pandas Dataframe with the RDKit molecules
+
+    Returns
+    -------
+    Pandas Dataframe containing the sanitize molecules
+
+    """
     # discard nan values
     data.dropna(inplace=True)
 

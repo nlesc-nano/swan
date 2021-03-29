@@ -1,4 +1,4 @@
-
+    
 """See: https://github.com/FabianFuchsML/se3-transformer-public"""
 
 import torch
@@ -13,8 +13,28 @@ __all__ = ["TFN", "SE3Transformer"]
 
 
 class TFN(torch.nn.Module):
-    """SE(3) equivariant GCN"""
+    """Implementation of the neural network reported at https://arxiv.org/abs/2006.10503."""
     def __init__(self, num_layers: int, num_channels: int, num_nlayers: int = 1, num_degrees: int = 4):
+        """Initialize the class.
+
+        Parameters
+        ----------
+        num_layers
+            Number of equivariant layers
+        num_channels
+            Number of channels in middle layers
+        num_nlayers
+            Number of layers for nonlinearity
+        num_degrees
+            Number of irreps {0,1,...,num_degrees-1}
+        div
+            Low dimensional embedding fraction
+        pooling
+            Choose from avg or max
+        n_heads
+            Number of attention heads
+
+        """
         super().__init__()
         # Build the network
         self.num_layers = num_layers

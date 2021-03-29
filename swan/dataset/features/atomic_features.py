@@ -16,7 +16,18 @@ hybridization = {rdchem.HybridizationType.SP: 0,
 
 
 def generate_atomic_features(symbol: str) -> np.ndarray:
-    """Get the features for a single atom."""
+    """Get the features for a single atom.
+
+    parameters
+    ----------
+    symbol
+        Atomic symbol of a given atom
+
+    Returns
+    -------
+    Numpy array with the atomic features for the given atom type
+
+    """
     len_elements = len(ELEMENTS)
     features = np.zeros(len_elements + 3)
     el = mendeleev.element(symbol)
@@ -30,7 +41,18 @@ def generate_atomic_features(symbol: str) -> np.ndarray:
 
 
 def compute_hybridization_index(atom: rdchem.Atom) -> float:
-    """Return whether the atoms' hybridization is: SP, SP2, SP3 or Other."""
+    """Return whether the atoms' hybridization is: SP, SP2, SP3 or Other.
+
+    Parameters
+    ----------
+    atom
+        RDKit atom representation
+
+    Returns
+    -------
+    float where: 1 => SP; 2 => SP2; 3 => SP3; other => 4
+
+    """
     hyb = atom.GetHybridization()
     index = hybridization.get(hyb)
     return index if index is not None else 4

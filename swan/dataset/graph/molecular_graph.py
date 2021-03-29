@@ -30,6 +30,18 @@ def create_molecular_torch_geometric_graph(
     See torch-geometry documentation:
     https://pytorch-geometric.readthedocs.io/en/latest/?badge=latest
     The graph nodes contains atomic and bond pair information.
+
+    Parameters
+    ----------
+    mol
+        RDKit molecule
+    coordinates
+        Numpy array with a XYZ coordinate per row
+    labels
+        Torch Vector containing the ground true
+
+    A torch-geometric Data class with the molecular features as a graph
+
     """
     atomic_features, bond_features = [
         torch.from_numpy(array) for array in generate_molecular_features(mol)]
@@ -51,6 +63,19 @@ def create_molecular_dgl_graph(
 
     See: https://www.dgl.ai/
     The graph nodes contains atomic and bond pair information.
+
+    Parameters
+    ----------
+    mol
+        RDKit molecule
+    coordinates
+        Numpy array with a XYZ coordinate per row
+    labels
+        Torch Vector containing the ground true
+
+    Returns
+    -------
+    A DGLGraph with the molecular features as a graph
 
     """
     atomic_features, bond_features = [
