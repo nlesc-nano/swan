@@ -3,7 +3,7 @@ import torch
 from swan.modeller import Modeller
 from swan.modeller.models.graph_models import MPNN
 import unittest
-from swan.dataset import GraphData
+from swan.dataset import TorchGeometricGraphData
 
 from .utils_test import PATH_TEST
 
@@ -13,7 +13,7 @@ class TestGraphModeller(unittest.TestCase):
     """
     def setUp(self):
         self.data = PATH_TEST / "thousand.csv"
-        self.data = GraphData(self.data, properties=["gammas"])
+        self.data = TorchGeometricGraphData(self.data, properties=["gammas"])
         self.net = MPNN()
         self.modeller = Modeller(self.net, self.data)
 

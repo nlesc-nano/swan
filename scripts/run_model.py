@@ -3,7 +3,7 @@
 import logging
 from pathlib import Path
 import torch
-from swan.dataset import GraphData, FingerprintsData, DGLGraphData
+from swan.dataset import TorchGeometricGraphData, FingerprintsData, DGLGraphData
 from swan.modeller import Modeller
 from swan.modeller.models import FingerprintFullyConnected, MPNN, InvariantPolynomial
 from swan.modeller.models.se3_transformer import TFN, SE3Transformer

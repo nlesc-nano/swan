@@ -13,7 +13,7 @@ from .swan_data_base import SwanDataBase
 PathLike = Union[str, Path]
 
 
-class GraphData(SwanDataBase):
+class TorchGeometricGraphData(SwanDataBase):
     """Data loader for graph data."""
     def __init__(self,
                  data_path: PathLike,
@@ -35,7 +35,8 @@ class GraphData(SwanDataBase):
         file_geometries
             Path to a file with the geometries in PDB format
         optimize_molecule
-            Optimize the geometry beforing guessing the coordinates if ``file_geometries`` not provided
+            Optimize the geometry if the ``file_geometries`` is not provided
+
         """
         super().__init__()
 
