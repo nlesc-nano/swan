@@ -6,14 +6,13 @@ import torch
 import torch_geometric as tg
 from torch_geometric.data import Data
 
-from .geometry import guess_positions
 from .graph.molecular_graph import create_molecular_torch_geometric_graph
-from .swan_data_base import SwanDataBase
+from .data_graph_base import SwanGraphData
 
 PathLike = Union[str, Path]
 
 
-class TorchGeometricGraphData(SwanDataBase):
+class TorchGeometricGraphData(SwanGraphData):
     """Data loader for graph data."""
     def __init__(self,
                  data_path: PathLike,
@@ -38,25 +37,9 @@ class TorchGeometricGraphData(SwanDataBase):
             Optimize the geometry if the ``file_geometries`` is not provided
 
         """
-        super().__init__()
-
-        # create the dataframe
-        self.dataframe = self.process_data(data_path,
-                                           file_geometries=file_geometries)
-
-        # clean the dataframe
-        self.clean_dataframe(sanitize=sanitize)
-
-        # Add positions if they don't exists in Dataframe
-        if "positions" not in self.dataframe:
-            self.dataframe["positions"] = guess_positions(self.dataframe.molecules, optimize_molecule)
-
-        # extract the labels from the dataframe
-        self.labels = self.get_labels(properties)
-        self.nlabels = self.labels.shape[1]
-
-        # create the graphs
-        self.molecular_graphs = self.compute_graph()
+        super().__init__(
+            data_path, properties=properties, sanitize=sanitize,
+            file_geometries=file_geometries, optimize_molecule=optimize_molecule)
 
         # create the dataset
         self.dataset = GraphDataset(self.molecular_graphs)
@@ -103,19 +86,23 @@ class GraphDataset(tg.data.Dataset):
         self.normalize_feature = False
         self.norm = tg.transforms.NormalizeFeatures()
 
-    def _download(self):
-        pass
-
-    def _process(self):
-        pass
-
     def __len__(self) -> int:
         """Return dataset length."""
         return len(self.molecular_graphs)
 
     def __getitem__(self, idx: int) -> Data:
-        """Return the idx dataset element."""
+        """Return the idx dataset element.
 
+        Parameters
+        ----------
+        idx
+            Index of the graph to retrieve
+
+        Returns
+        -------
+        ``Data`` representing the graph
+
+        """
         # get elements
         out = self.molecular_graphs[idx]
 

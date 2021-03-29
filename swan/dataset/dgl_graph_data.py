@@ -11,7 +11,7 @@ from torch.utils.data import Dataset, DataLoader
 
 from .geometry import guess_positions
 from .graph.molecular_graph import create_molecular_dgl_graph
-from .swan_data_base import SwanDataBase
+from .data_graph_base import SwanGraphData
 
 try:
     import dgl
@@ -35,7 +35,7 @@ def dgl_data_loader(*args, **kwargs):
     return DataLoader(*args, collate_fn=collate_fn, **kwargs)
 
 
-class DGLGraphData(SwanDataBase):
+class DGLGraphData(SwanGraphData):
     """Dataset construction for DGL."""
     def __init__(self,
                  data_path: PathLike,
@@ -58,26 +58,9 @@ class DGLGraphData(SwanDataBase):
         optimize_molecule
             Perform a molecular optimization using a force field.
         """
-        super().__init__()
-
-        # create the dataframe
-        self.dataframe = self.process_data(data_path,
-                                           file_geometries=file_geometries)
-
-        # clean the dataframe
-        self.clean_dataframe(sanitize=sanitize)
-
-        # Add positions if they don't exists in Dataframe
-        if "positions" not in self.dataframe:
-            self.dataframe["positions"] = guess_positions(
-                self.dataframe.molecules, optimize_molecule)
-
-        # extract the labels from the dataframe
-        self.labels = self.get_labels(properties)
-        self.nlabels = self.labels.shape[1]
-
-        # create the graphs
-        self.molecular_graphs = self.compute_graph()
+        super().__init__(
+            data_path, properties=properties, sanitize=sanitize,
+            file_geometries=file_geometries, optimize_molecule=optimize_molecule)
 
         # create the dataset
         self.dataset = DGLGraphDataset(self.molecular_graphs, self.labels)
