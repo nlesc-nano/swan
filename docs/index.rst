@@ -13,6 +13,8 @@ Welcome to SWAN!
    includereadme
    tutorial_models
    available_models
+   training_and_validation
+   api_data
    api_models
 
 

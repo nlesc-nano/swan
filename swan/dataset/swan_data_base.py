@@ -1,14 +1,21 @@
+"""Base class representing the data."""
 import pickle
 from pathlib import Path
-from typing import Any, List, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 import torch
+from rdkit.Chem import PandasTools
 from sklearn.preprocessing import RobustScaler
-from torch.utils.data import random_split
+from torch.utils.data import DataLoader, Dataset, random_split
 
+from .geometry import read_geometries_from_files
 from .sanitize_data import sanitize_data
+
+PathLike = Union[str, Path]
+
+__all__ = ["SwanDataBase"]
 
 
 class SwanDataBase:
@@ -16,15 +23,15 @@ class SwanDataBase:
     def __init__(self) -> None:
 
         self.dataframe = pd.DataFrame()
-        self.dataset = None
-        self.train_dataset = None
-        self.valid_dataset = None
+        self.dataset = Dataset()  # type: torch.utils.data.Dataset
+        self.train_dataset = Dataset()  # type: torch.utils.data.Dataset
+        self.valid_dataset = Dataset()  # type: torch.utils.data.Dataset
 
-        self.train_loader = None
-        self.valid_loader = None
-        self.data_loader_fun = None
+        self.train_loader = DataLoader(Dataset())  # type: DataLoader
+        self.valid_loader = DataLoader(Dataset())  # type: DataLoader
+        self.data_loader_fun = DataLoader
 
-        self.labels = None
+        self.labels = torch.tensor([])
 
         # Set of transformation apply to the dataset
         self.transformer = RobustScaler()
@@ -33,8 +40,46 @@ class SwanDataBase:
         self.workdir = Path('.')
         self.path_scales = self.workdir / "swan_scales.pkl"
 
-    def get_labels(self, properties: Union[str, List[str],
-                                           None]) -> torch.Tensor:
+    def process_data(
+            self,
+            data: PathLike,
+            file_geometries: Optional[PathLike] = None) -> pd.DataFrame:
+        """process the data frame
+
+        Parameters
+        ----------
+        data
+            filename of the data
+        file_geometries
+            file containing the geometry of the molecules, by default None
+
+        Returns
+        -------
+        pd.DataFrame
+            data frame
+        """
+        # create data frame
+        dataframe = pd.read_csv(data).reset_index(drop=True)
+        dataframe = dataframe.loc[:, ~dataframe.columns.str.contains('^Unnamed')]
+
+        # read geometries from file
+        if file_geometries is not None:
+            # i would say that if we want to read the geometry
+            # it has to be in the dataframe instead of a separate file
+            molecules, positions = read_geometries_from_files(file_geometries)
+            dataframe["molecules"] = molecules
+            dataframe["positions"] = positions
+
+        # ignore geometries
+        # do not initialize positions as sanitize_data
+        # will then erase all entries
+        else:
+            PandasTools.AddMoleculeColumnToFrame(dataframe,
+                                                 smilesCol='smiles',
+                                                 molCol='molecules')
+        return dataframe
+
+    def get_labels(self, properties: Optional[Union[str, List[str]]]) -> torch.Tensor:
         """extract the labels from the dataframe
 
         Parameters
@@ -60,8 +105,8 @@ class SwanDataBase:
 
         Parameters
         ----------
-        sanitize : bool, optional
-            [description], by default True
+        sanitize
+            Remove molecules without conformer
         """
         if sanitize:
             self.dataframe = sanitize_data(self.dataframe)
@@ -92,7 +137,7 @@ class SwanDataBase:
         self.valid_loader = self.data_loader_fun(dataset=self.valid_dataset,
                                                  batch_size=batch_size)
 
-    def scale_labels(self):
+    def scale_labels(self) -> None:
         """Create a new column with the transformed target."""
         self.labels = self.transformer.fit_transform(self.labels)
         self.dump_scale()
@@ -107,8 +152,7 @@ class SwanDataBase:
         with open(self.path_scales, 'rb') as handler:
             self.transformer = pickle.load(handler)
 
-    @staticmethod
-    def get_item(batch_data: Any) -> Tuple[Any, torch.Tensor]:
+    def get_item(self, batch_data: Any) -> Tuple[Any, torch.Tensor]:
         """get the data/ground truth of a minibatch
 
         Parameters

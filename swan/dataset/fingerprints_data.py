@@ -1,10 +1,8 @@
 """Module to process dataset."""
 from pathlib import Path
-from typing import Any, List, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
-import pandas as pd
 import torch
-from rdkit.Chem import PandasTools
 from torch.utils.data import Dataset
 
 from .features.featurizer import generate_fingerprints
@@ -12,11 +10,13 @@ from .swan_data_base import SwanDataBase
 
 PathLike = Union[str, Path]
 
+__all__ = ["FingerprintsData"]
+
 
 class FingerprintsData(SwanDataBase):
     def __init__(self,
                  path_data: PathLike,
-                 properties: Union[str, List[str]] = None,
+                 properties: Optional[Union[str, List[str]]] = None,
                  type_fingerprint: str = 'atompair',
                  fingerprint_size: int = 2048,
                  sanitize: bool = True) -> None:
@@ -62,30 +62,7 @@ class FingerprintsData(SwanDataBase):
         # data loader type
         self.data_loader_fun = torch.utils.data.DataLoader
 
-    def process_data(self, path_data: PathLike) -> pd.DataFrame:
-        """process the data frame
-
-        Parameters
-        ----------
-        path_data : PathLike
-            file name of the data
-
-        Returns
-        -------
-        pd.DataFrame
-            data frame
-        """
-
-        # convert to pd dataFrame if necessaryS
-        dataframe = pd.read_csv(path_data).reset_index(drop=True)
-        PandasTools.AddMoleculeColumnToFrame(dataframe,
-                                             smilesCol='smiles',
-                                             molCol='molecules')
-
-        return dataframe
-
-    @staticmethod
-    def get_item(batch_data: List[Any]) -> Tuple[torch.Tensor, torch.Tensor]:
+    def get_item(self, batch_data: List[Any]) -> Tuple[Any, torch.Tensor]:
         """get the data/ground truth of a minibatch
 
         Parameters

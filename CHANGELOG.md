@@ -1,11 +1,13 @@
 # Change Log
 
-# 0.4.1 [Unreleased]
+# 0.5.0 [Unreleased]
 ## Changed
 * Fix graph neural network implementation (#59)
 * Rename the graph neural network to MPNN (message passing NN)
 
 ## New
+* Interface to [se3-transformer](https://www.dgl.ai/pages/start.html) (#57)
+* Calculate a guess to the molecular coordinates using a force field optimization
 * Add bond distance as feature for the GNN using the optimized geometries (#59)
 * Add early stopping functionality
 

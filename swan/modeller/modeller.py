@@ -4,7 +4,6 @@ import logging
 from pathlib import Path
 from typing import List, Tuple
 
-import numpy as np
 import torch
 from torch import Tensor, nn
 
@@ -32,7 +31,7 @@ class Modeller:
         use_cuda
             Train the model using Cuda
         """
-
+        torch.set_default_dtype(torch.float32)
         # Early stopping functionality
         self.early_stopping = EarlyStopping()
 
@@ -78,10 +77,10 @@ class Modeller:
             self.network.parameters(), *args, **kwargs)
 
     def set_loss(self, name: str, *args, **kwargs) -> None:
-        """Set the loss function for the training
+        """Set the loss function for the training.
 
-        Parameter
-        ---------
+        Parameters
+        ----------
         name
             Loss function name
 
@@ -225,11 +224,6 @@ class Modeller:
             self.network.eval()  # Set model to evaluation mode
             predicted = self.network(inp_data)
         return predicted
-
-    def to_numpy_detached(self, tensor: Tensor) -> np.ndarray:
-        """Create a view of a Numpy array in CPU."""
-        tensor = tensor.cpu() if self.use_cuda else tensor
-        return tensor.detach().numpy()
 
     def save_model(self,
                    epoch: int,

@@ -2,23 +2,26 @@ API Statistical Models
 ======================
 Available models
 
-.. currentmodule:: swan.models.modeller
+.. currentmodule:: swan.modeller.models
 
-.. autoclass:: swan.Modeller
-   :members:
-
- 
 Deep Feedforward Network
+########################
 
-.. currentmodule:: swan.models.models
 
-.. autoclass:: swan.models.FingerprintFullyConnected
+.. autoclass:: FingerprintFullyConnected
    :members:
 
 
-Molecular Graph Neural Network
+Message Passing Graph Neural Network
+####################################
 
-.. currentmodule:: swan.models.models
-
-.. autoclass:: swan.models.MPNN
+.. autoclass:: MPNN
    :members:
+
+
+Equivariant Neural Networks
+###########################
+
+.. autoclass:: TFN
+
+.. autoclass:: SE3Transformer
