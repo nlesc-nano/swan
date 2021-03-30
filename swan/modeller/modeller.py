@@ -1,10 +1,4 @@
-"""Base class to configure the statistical model.
-
-API
----
-.. autoclass:: Modeller
-
-"""
+"""Base class to configure the statistical model."""
 
 import logging
 from pathlib import Path
@@ -83,10 +77,10 @@ class Modeller:
             self.network.parameters(), *args, **kwargs)
 
     def set_loss(self, name: str, *args, **kwargs) -> None:
-        """Set the loss function for the training
+        """Set the loss function for the training.
 
-        Parameter
-        ---------
+        Parameters
+        ----------
         name
             Loss function name
 

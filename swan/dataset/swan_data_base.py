@@ -1,10 +1,4 @@
-"""Base class representing the data.
-
-API
----
-.. autoclass:: SwanDataBase
-
-"""
+"""Base class representing the data."""
 import pickle
 from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union

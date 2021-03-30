@@ -1,10 +1,4 @@
-"""Interface to build a Dataset for DGL. see: https://www.dgl.ai/
-
-API
----
-.. autoclass:: DGLGraphData
-
-"""
+"""Interface to build a Dataset for DGL. see: https://www.dgl.ai/"""
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
