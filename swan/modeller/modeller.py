@@ -1,4 +1,10 @@
-"""Base class to configure the statistical model."""
+"""Base class to configure the statistical model.
+
+API
+---
+.. autoclass:: Modeller
+
+"""
 
 import logging
 from pathlib import Path

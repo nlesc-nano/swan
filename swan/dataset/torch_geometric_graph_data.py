@@ -1,4 +1,10 @@
-"""Module to process dataset."""
+"""Data representation for torch geometric.
+
+API
+---
+.. autoclass:: TorchGeometricGraphData
+
+"""
 from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
 
@@ -42,7 +48,7 @@ class TorchGeometricGraphData(SwanGraphData):
             file_geometries=file_geometries, optimize_molecule=optimize_molecule)
 
         # create the dataset
-        self.dataset = GraphDataset(self.molecular_graphs)
+        self.dataset = TorchGeometricGraphDataset(self.molecular_graphs)
 
         # define the loader type
         self.data_loader_fun = tg.data.DataLoader
@@ -76,7 +82,7 @@ class TorchGeometricGraphData(SwanGraphData):
         return batch_data, batch_data.y.view(-1, self.nlabels)
 
 
-class GraphDataset(tg.data.Dataset):
+class TorchGeometricGraphDataset(tg.data.Dataset):
     """Dataset for molecular graphs."""
     def __init__(self, molecular_graphs: List[tg.data.Data]):
         """Generate a dataset using graphs

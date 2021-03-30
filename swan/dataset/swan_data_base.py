@@ -1,3 +1,10 @@
+"""Base class representing the data.
+
+API
+---
+.. autoclass:: SwanDataBase
+
+"""
 import pickle
 from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
@@ -78,8 +85,7 @@ class SwanDataBase:
                                                  molCol='molecules')
         return dataframe
 
-    def get_labels(self, properties: Union[str, List[str],
-                                           None]) -> torch.Tensor:
+    def get_labels(self, properties: Optional[Union[str, List[str]]]) -> torch.Tensor:
         """extract the labels from the dataframe
 
         Parameters
@@ -137,7 +143,7 @@ class SwanDataBase:
         self.valid_loader = self.data_loader_fun(dataset=self.valid_dataset,
                                                  batch_size=batch_size)
 
-    def scale_labels(self):
+    def scale_labels(self) -> None:
         """Create a new column with the transformed target."""
         self.labels = self.transformer.fit_transform(self.labels)
         self.dump_scale()

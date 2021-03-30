@@ -1,17 +1,18 @@
-"""Interface to build a Dataset for DGL.
+"""Interface to build a Dataset for DGL. see: https://www.dgl.ai/
 
-see: https://www.dgl.ai/
+API
+---
+.. autoclass:: DGLGraphData
 
 """
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader, Dataset
 
-from .geometry import guess_positions
-from .graph.molecular_graph import create_molecular_dgl_graph
 from .data_graph_base import SwanGraphData
+from .graph.molecular_graph import create_molecular_dgl_graph
 
 try:
     import dgl

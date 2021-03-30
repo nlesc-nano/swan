@@ -1,4 +1,10 @@
-"""Base class for the Graph data representation."""
+"""Base class for the Graph data representation.
+
+API
+---
+.. autoclass:: SwanGraphData
+
+"""
 
 from abc import abstractclassmethod
 from pathlib import Path

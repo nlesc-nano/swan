@@ -26,7 +26,7 @@ class EarlyStopping:
         self.val_loss_min = np.Inf
         self.delta = delta
 
-    def __call__(self, saver: Callable, epoch: int, val_loss: float):
+    def __call__(self, saver: Callable, epoch: int, val_loss: float) -> None:
         """Update the early stopping state.
 
         Parameters
