@@ -2,11 +2,18 @@
 
 
 ## FullyConnectedFingerPrint
+| Parameter       | value |
+| :-------------: | :---: |
+| num_labels      | 1     |
+| num_iterations  | 3     |
+| output_channels | 10    |
+| batch_size      | 20    |
+| learning rate   | 5e-4  |
 
 
 ## MPNN
 
-| Parameter       | value |
+|     Parameter   | value |
 | :-------------: | :---: |
 | num_labels      | 1     |
 | num_iterations  | 3     |
