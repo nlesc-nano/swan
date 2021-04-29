@@ -45,14 +45,13 @@ properties = [
 num_labels = len(properties)
 
 # Datasets
-# data = FingerprintsData(
-#     path_data, properties=properties, sanitize=False)
-data = DGLGraphData(
-    path_data, properties=properties, file_geometries=path_geometries, sanitize=False)
+data = FingerprintsData(
+    path_data, properties=properties, sanitize=False)
+# data = DGLGraphData(
+#     path_data, properties=properties, file_geometries=path_geometries, sanitize=False)
 
-
-# # FullyConnected NN
-# # net = FingerprintFullyConnected(hidden_cells=200, num_labels=num_labels)
+# FullyConnected NN
+net = FingerprintFullyConnected(hidden_cells=200, num_labels=num_labels)
 
 # # Graph NN configuration
 # net = MPNN(batch_size=batch_size, output_channels=40, num_labels=num_labels)
@@ -60,18 +59,18 @@ data = DGLGraphData(
 # # # e3nn Network
 # # net = InvariantPolynomial(irreps_out=f"{num_labels}x0e")
 
-# se3 transformers
-num_layers = 2     # Number of equivariant layers
-num_channels = 8   # Number of channels in middle layers
-num_nlayers = 0    # Number of layers for nonlinearity
-num_degrees = 2    # Number of irreps {0,1,...,num_degrees-1}
-div = 4            # Low dimensional embedding fraction
-pooling = 'avg'    # Choose from avg or max
-n_heads = 1        # Number of attention heads
+# # se3 transformers
+# num_layers = 2     # Number of equivariant layers
+# num_channels = 8   # Number of channels in middle layers
+# num_nlayers = 0    # Number of layers for nonlinearity
+# num_degrees = 2    # Number of irreps {0,1,...,num_degrees-1}
+# div = 4            # Low dimensional embedding fraction
+# pooling = 'avg'    # Choose from avg or max
+# n_heads = 1        # Number of attention heads
 
-net = SE3Transformer(
-    num_layers, num_channels, num_nlayers=num_nlayers, num_degrees=num_degrees, div=div,
-    pooling=pooling, n_heads=n_heads)
+# net = SE3Transformer(
+#     num_layers, num_channels, num_nlayers=num_nlayers, num_degrees=num_degrees, div=div,
+#     pooling=pooling, n_heads=n_heads)
 
 # training and validation
 torch.set_default_dtype(torch.float32)

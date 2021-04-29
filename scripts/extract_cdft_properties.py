@@ -20,7 +20,6 @@ def main():
     parser = argparse.ArgumentParser()
     # configure logger
     parser.add_argument("-c", "--csv", help="CSV files with the smiles")
-    parser.add_argument("-n", "--name", help="N")
     args = parser.parse_args()
     extract_data(args.csv)
 
