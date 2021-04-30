@@ -6,19 +6,24 @@ from collections import OrderedDict
 from typing import List
 
 import pandas as pd
+import numpy as np
 
 
 def remove_elements(file_csv: str, file_geometries: str, elements: List[str]) -> None:
     """Remove them smiles and geometries containing ``elements``."""
     df = pd.read_csv(file_csv, index_col=0)
+    df.reset_index(inplace=True, drop=True)
     gs = OrderedDict({k: v for k, v in enumerate(read_geometries(file_geometries))})
-    for elem in elements:
-        indices_to_drop = df[df.smiles.str.contains(elem)].index
-        df.drop(indices_to_drop, inplace=True)
-        for i in indices_to_drop:
-            gs.pop(i)
+
+    indices_to_drop = np.concatenate([df[df.smiles.str.contains(elem)].index.to_numpy() for elem in elements])
+
+    # Drop non-organic molecules
+    df.drop(indices_to_drop, inplace=True)
+    for i in indices_to_drop:
+        gs.pop(i)
 
     # Store new smiles
+    df.reset_index(inplace=True, drop=True)
     df.to_csv("new_smiles.csv")
 
     # store new geometries
