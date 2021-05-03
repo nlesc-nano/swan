@@ -1,5 +1,10 @@
 # Hyperparameters used to train the NN
 
+The hyperparameters are taken from the following references:
+
+* [Simple Feedforward NN](https://arxiv.org/abs/1509.09292) (No convolution is performed)
+* [Neural Message Passing for Quantum Chemistry](https://arxiv.org/abs/1704.01212)
+* [SE(3)-Transformer](https://arxiv.org/abs/2006.10503)
 
 ## FullyConnectedFingerPrint
 | Parameter       | value |
