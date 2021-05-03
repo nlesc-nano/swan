@@ -18,7 +18,7 @@ def test_molecular_features():
     atomic, bond = generate_molecular_features(MOL)
 
     # There are four heavy atoms with 18 atomic features each
-    assert atomic.shape == (4, 18)
+    assert atomic.shape == (4, 20)
 
     # There are 3 x 2 bidirectional edges (Bonds) with 7 features each
     assert bond.shape == (6, 7)

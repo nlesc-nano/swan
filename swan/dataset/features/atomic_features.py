@@ -6,7 +6,7 @@ from rdkit.Chem import rdchem
 
 __all__ = ["BONDS", "ELEMENTS", "dict_element_features", "compute_hybridization_index"]
 
-ELEMENTS = ["H", "C", "N", "O", "F", "P", "S", "Cl", "Br", "I"]
+ELEMENTS = ["H", "B", "C", "N", "O", "F", "Si", "P", "S", "Cl", "Br", "I"]
 BONDS = [rdchem.BondType.SINGLE, rdchem.BondType.AROMATIC,
          rdchem.BondType.DOUBLE, rdchem.BondType.TRIPLE]
 

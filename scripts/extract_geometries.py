@@ -45,10 +45,10 @@ def store_as_json_array(
 
 
 def main():
-    parser = argparse.ArgumentParser("modeller")
+    parser = argparse.ArgumentParser()
     # configure logger
     parser.add_argument("-f", "--files", help="HDF5 files", nargs="+")
-    parser.add_argument("-c", "--csv", help="CSV files with the smiles")
+    parser.add_argument("-c", "--csv", help="CSV file with the smiles")
     args = parser.parse_args()
     extract_data(args.files, args.csv)
 

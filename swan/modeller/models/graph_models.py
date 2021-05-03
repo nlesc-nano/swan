@@ -15,7 +15,22 @@ class MPNN(torch.nn.Module):
     Use the convolution NN reported at: https://arxiv.org/abs/1704.01212
     This network was taking from: https://github.com/rusty1s/pytorch_geometric/blob/master/examples/qm9_nn_conv.py
     """
-    def __init__(self, num_labels: int = 1, output_channels: int = 10, batch_size: int = 128, num_iterations: int = 3):
+    def __init__(self, num_labels: int = 1, num_iterations: int = 3, output_channels: int = 10, batch_size: int = 128):
+        """NN initialization.
+
+        Parameters
+        ----------
+        num_labels
+            How many labels to predict
+        num_iterations
+            Time steps (T)
+        output_channels
+            Number of output message channels
+        batch_size
+            Batch size used for training
+
+        """
+
         super(MPNN, self).__init__()
         # Number of iterations to propagate the message
         self.iterations = num_iterations

@@ -67,3 +67,5 @@ scatterplot.png
 # Local data
 data/*
 *pkl
+Results
+cache
