@@ -1,11 +1,15 @@
 # Machine learning model to predict CDFT properties
 
 The following table shows the **mean rvalue** resulting from the linear regression
-between the predicted as function of the ground true labels. The mean values where
-computing with the results of **3** training/validation datasets picked randomly
+between the predicted as function of the ground true labels. Therefore, the closer
+these values are to 1 the better the better the model is to predict the properties *with
+the available amount of training data*.
+
+The mean values where computing with the results of **3** training/validation datasets picked randomly
 in a 0.8/0.2 proportion, respectively.
 
 The hyperparameters use to perform the training can be found at [model's hyperparameters](Training_hyperparameters.md).
+
 
 ## Amines
 
