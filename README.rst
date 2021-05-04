@@ -7,7 +7,9 @@
    :target: https://github.com/nlesc-nano/swan/actions
 .. image:: https://codecov.io/gh/nlesc-nano/swan/branch/main/graph/badge.svg?token=1527ficjjx
    :target: https://codecov.io/gh/nlesc-nano/swan
-
+.. image:: https://zenodo.org/badge/191957101.svg
+   :target: https://zenodo.org/badge/latestdoi/191957101
+	    
 #####################################
 Screening Workflows And Nanomaterials
 #####################################
