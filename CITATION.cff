@@ -6,12 +6,15 @@ authors:
   -
     family-names: Zapata
     given-names: Felipe
-    orcid: "https://orcid.org/0000-0001-8286-677X"
-cff-version: "1.0.3"
+    orcid: "0000-0001-8286-677X"
+  -
+    family-names: Nicolas
+    given-names: Renaud
+    orcid: "0000-0001-9589-2694"
+cff-version: "1.1.0"
 keywords: 
   - "quantum-chemistry"
   - "materials-science"
   - "machine-learning"
 license: "Apache-2.0"
 message: "If you use this software, please cite it using these metadata."
-...

@@ -1,6 +1,6 @@
 # Change Log
 
-# 0.5.0 [Unreleased]
+# 0.5.0 [04/05/2021]
 ## Changed
 * Fix graph neural network implementation (#59)
 * Rename the graph neural network to MPNN (message passing NN)
