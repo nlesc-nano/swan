@@ -13,30 +13,29 @@ The hyperparameters use to perform the training can be found at [model's hyperpa
 
 ## Amines
 
-**Number of molecules in dataset: 6277**
+**Number of molecules in dataset: 3109**
 
 |          Property name             | FingerprintFullyConnected | MPNN | SE3Transformer|
 |:----------------------------------:|:-------------------------:|:----:|:-------------:|
-| Dissocation energy (nucleofuge)    | 0.87   | 0.70  | 0.85 |
-| Dissociation energy (electrofuge)  | 0.82	  | 0.56  | 0.62 |
-| Electroaccepting power(w+)         | 0.71	  | 0.46  | 0.52 |
-| Electrodonating power (w-)         | 0.79	  | 0.64  | 0.71 |
-| Electronegativity (chi=-mu)        | 0.89	  | 0.57  | 0.74 |
-| Electronic chemical potential (mu) | 0.85	  | 0.53  | 0.75 |
-| Electronic chemical potential (mu+)| 0.85	  | 0.28  | 0.69 |
-| Electronic chemical potential (mu-)| 0.89	  | 0.83  | 0.87 |
-| Electrophilicity index (w=omega)   | 0.70	  | 0.57  | 0.74 |
-| Global Dual Descriptor Deltaf+     | 0.65	  | 0.27  | 0.54 |
-| Global Dual Descriptor Deltaf-     | 0.67	  | 0.31  | 0.55 |
-| Hardness (eta)                     | 0.86	  | 0.62  | 0.79 |
-| Hyperhardness (gamma)              | 0.83	  | 0.45  | 0.62 |
-| Net Electrophilicity               | 0.66	  | 0.59  | 0.74 |
-| Softness (S)                       | 0.88	  | 0.14  | 0.54 |
+| Dissocation energy (nucleofuge)    | 0.73
+| Dissociation energy (electrofuge)  | 0.39
+| Electroaccepting power(w+)         | 0.42
+| Electrodonating power (w-)         | 0.52
+| Electronegativity (chi=-mu)        | 0.54
+| Electronic chemical potential (mu) | 0.54
+| Electronic chemical potential (mu+)| 0.38
+| Electronic chemical potential (mu-)| 0.78
+| Electrophilicity index (w=omega)   | 0.51
+| Global Dual Descriptor Deltaf+     | 0.33
+| Global Dual Descriptor Deltaf-     | 0.35
+| Hardness (eta)                     | 0.53
+| Hyperhardness (gamma)              | 0.39
+| Net Electrophilicity               | 0.47
+| Softness (S)                       | 0.42
 
 
 
-
-**Number of molecules in dataset: 14334**
+**Number of molecules in dataset: 11044**
 
 
 ## Carboxylic acids
@@ -44,18 +43,18 @@ The hyperparameters use to perform the training can be found at [model's hyperpa
 
 |          Property name             | FingerprintFullyConnected | MPNN | SE3Transformer|
 |:----------------------------------:|:-------------------------:|:----:|:-------------:|
-| Dissocation energy (nucleofuge)    |  0.87  | 0.85  | 0.90 | 
-| Dissociation energy (electrofuge)  | 	0.79  | 0.82  | 0.80 | 
-| Electroaccepting power(w+)         | 	0.68  | 0.69  | 0.75 | 
-| Electrodonating power (w-)         | 	0.82  | 0.79  | 0.82 | 
-| Electronegativity (chi=-mu)        | 	0.86  | 0.84  | 0.88 | 
-| Electronic chemical potential (mu) | 	0.86  | 0.63  | 0.88 | 
-| Electronic chemical potential (mu+)| 	0.78  | 0.59  | 0.79 | 
-| Electronic chemical potential (mu-)| 	0.89  | 0.85  | 0.91 | 
-| Electrophilicity index (w=omega)   | 	0.74  | 0.75  | 0.79 | 
-| Global Dual Descriptor Deltaf+     | 	0.65  | 0.64  | 0.63 | 
-| Global Dual Descriptor Deltaf-     | 	0.65  | 0.60  | 0.61 | 
-| Hardness (eta)                     | 	0.82  | 0.79  | 0.81 | 
-| Hyperhardness (gamma)              | 	0.76  | 0.72  | 0.74 | 
-| Net Electrophilicity               | 	0.78  | 0.76  | 0.81 | 
-| Softness (S)                       |	0.62  | 0.51  | 0.52 |
+| Dissocation energy (nucleofuge)    | 0.85
+| Dissociation energy (electrofuge)  | 0.75	 
+| Electroaccepting power(w+)         | 0.63	 
+| Electrodonating power (w-)         | 0.79	 
+| Electronegativity (chi=-mu)        | 0.81	 
+| Electronic chemical potential (mu) | 0.81	 
+| Electronic chemical potential (mu+)| 0.72	 
+| Electronic chemical potential (mu-)| 0.86	 
+| Electrophilicity index (w=omega)   | 0.72	 
+| Global Dual Descriptor Deltaf+     | 0.59	 
+| Global Dual Descriptor Deltaf-     | 0.59	 
+| Hardness (eta)                     | 0.80	 
+| Hyperhardness (gamma)              | 0.67	 
+| Net Electrophilicity               | 0.72	 
+| Softness (S)                       | 0.41	
