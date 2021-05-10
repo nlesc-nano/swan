@@ -43,18 +43,18 @@ The hyperparameters use to perform the training can be found at [model's hyperpa
 |          Property name             | FingerprintFullyConnected | MPNN | SE3Transformer|
 |:----------------------------------:|:-------------------------:|:----:|:-------------:|
 | Dissocation energy (nucleofuge)    | 0.85   | 0.85 |  0.87 |
-| Dissociation energy (electrofuge)  | 0.75   | 0.81 | 	0.83 |
-| Electroaccepting power(w+)         | 0.63	  | 0.62 | 	0.66 |
-| Electrodonating power (w-)         | 0.79	  | 0.78 | 	0.84 |
-| Electronegativity (chi=-mu)        | 0.81	  | 0.84 | 	0.88 |
-| Electronic chemical potential (mu) | 0.81	  | 0.79 | 	0.88 |
-| Electronic chemical potential (mu+)| 0.72	  | 0.77 | 	0.77 |
-| Electronic chemical potential (mu-)| 0.86	  | 0.84 | 	0.91 |
-| Electrophilicity index (w=omega)   | 0.72	  | 0.78 | 	0.79 |
-| Global Dual Descriptor Deltaf+     | 0.59	  | 0.56 | 	0.61 |
-| Global Dual Descriptor Deltaf-     | 0.59	  | 0.66 | 	0.60 |
-| Hardness (eta)                     | 0.80	  | 0.71 | 	0.83 |
+| Dissociation energy (electrofuge)  | 0.75   | 0.83 | 	0.83 |
+| Electroaccepting power(w+)         | 0.63	  | 0.64 | 	0.66 |
+| Electrodonating power (w-)         | 0.79	  | 0.79 | 	0.84 |
+| Electronegativity (chi=-mu)        | 0.81	  | 0.85 | 	0.88 |
+| Electronic chemical potential (mu) | 0.81	  | 0.80 | 	0.88 |
+| Electronic chemical potential (mu+)| 0.72	  | 0.78 | 	0.77 |
+| Electronic chemical potential (mu-)| 0.86	  | 0.86 | 	0.91 |
+| Electrophilicity index (w=omega)   | 0.72	  | 0.75 | 	0.79 |
+| Global Dual Descriptor Deltaf+     | 0.59	  | 0.59 | 	0.61 |
+| Global Dual Descriptor Deltaf-     | 0.59	  | 0.59 | 	0.60 |
+| Hardness (eta)                     | 0.80	  | 0.74 | 	0.83 |
 | Hyperhardness (gamma)              | 0.67	  | 0.68 | 	0.70 |
-| Net Electrophilicity               | 0.72	  | 0.79 | 	0.80 |
-| Softness (S)                       | 0.41	  | 0.58 | 	0.44 |
+| Net Electrophilicity               | 0.72	  | 0.78 | 	0.80 |
+| Softness (S)                       | 0.41	  | 0.57 | 	0.44 |
 
