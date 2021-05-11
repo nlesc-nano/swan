@@ -12,8 +12,12 @@ The hyperparameters use to perform the training can be found at [model's hyperpa
 
 
 ## Amines
+The [amines CDFT dataset](https://github.com/nlesc-nano/swan/blob/main/data/Amines/CDFT/all_amines.csv) has the following properties:
+* Number of molecules in dataset: **3109**
+* Number of labels: **15**
 
-**Number of molecules in dataset: 3109**
+The [geometries file](https://github.com/nlesc-nano/swan/blob/main/data/Amines/CDFT/all_amines.csv) contains all the optimized geometries for the previous dataset.
+
 
 |          Property name             | FingerprintFullyConnected | MPNN | SE3Transformer|
 |:----------------------------------:|:-------------------------:|:----:|:-------------:|
@@ -34,10 +38,13 @@ The hyperparameters use to perform the training can be found at [model's hyperpa
 | Softness (S)                       | 0.42	  | 0.07   | 0.20 |
 
 
-**Number of molecules in dataset: 11044**
-
 
 ## Carboxylic acids
+The [carboxylic acids CDFT dataset](https://github.com/nlesc-nano/swan/blob/main/data/Carboxylic_acids/CDFT/all_carboxylics.csv) has the following properties:
+* Number of molecules in dataset: **11044**
+* Number of labels: **15**
+
+The [geometries file](https://github.com/nlesc-nano/swan/blob/main/data/Carboxylic_acids/CDFT/all_geometries_carboxylics.json) contains all the optimized geometries for the previous dataset.
 
 
 |          Property name             | FingerprintFullyConnected | MPNN | SE3Transformer|
