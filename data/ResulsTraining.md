@@ -1,8 +1,8 @@
 # Machine learning model to predict CDFT properties
 
 The following table shows the **mean rvalue** resulting from the linear regression
-between the predicted as function of the ground true labels. Therefore, the closer
-these values are to 1 the better the better the model is to predict the properties *with
+between the predicted properties as function of the ground true computed properties. Therefore, the closer
+these values are to 1 the better the model is to predict the properties *with
 the available amount of training data*.
 
 The mean values where computing with the results of **5** training/validation datasets picked randomly
