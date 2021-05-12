@@ -15,12 +15,12 @@ path_files = Path("data/Carboxylic_acids/CDFT")
 path_data = path_files / "cdft_random_500.csv"
 
 properties = [
-    "Dissocation energy (nucleofuge)",
+    # "Dissocation energy (nucleofuge)",
     # "Dissociation energy (electrofuge)",
     # "Electroaccepting power(w+)",
     # "Electrodonating power (w-)",
     # "Electronegativity (chi=-mu)",
-    # "Electronic chemical potential (mu)",
+    "Electronic chemical potential (mu)",
     # "Electronic chemical potential (mu+)",
     # "Electronic chemical potential (mu-)",
     # "Electrophilicity index (w=omega)",
@@ -69,7 +69,6 @@ predicted = researcher.predict(data.fingerprints)
 
 # Scale the predicted data
 data.load_scale()
-print("labales: ", data.labels)
 predicted = data.transformer.inverse_transform(predicted.numpy())
 
 # Print the predicted vs the ground_true

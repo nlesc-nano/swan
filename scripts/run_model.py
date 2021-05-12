@@ -26,12 +26,12 @@ path_geometries = path_files / "cdft_geometries.json"
 nepoch = 150
 batch_size = 64
 properties = [
-    "Dissocation energy (nucleofuge)",
+    # "Dissocation energy (nucleofuge)",
     # "Dissociation energy (electrofuge)",
     # "Electroaccepting power(w+)",
     # "Electrodonating power (w-)",
     # "Electronegativity (chi=-mu)",
-    # "Electronic chemical potential (mu)",
+    "Electronic chemical potential (mu)",
     # "Electronic chemical potential (mu+)",
     # "Electronic chemical potential (mu-)",
     # "Electrophilicity index (w=omega)",
@@ -51,7 +51,7 @@ data = FingerprintsData(
 #     path_data, properties=properties, file_geometries=path_geometries, sanitize=False)
 
 # FullyConnected NN
-net = FingerprintFullyConnected(hidden_cells=200, num_labels=num_labels)
+net = FingerprintFullyConnected(hidden_cells=100, num_labels=num_labels)
 
 # # Graph NN configuration
 # net = MPNN(batch_size=batch_size, output_channels=40, num_labels=num_labels)
