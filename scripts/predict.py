@@ -1,30 +1,19 @@
 #!/usr/bin/env python
-
-import logging
 from pathlib import Path
+
+import pandas as pd
 import torch
-from swan.dataset import TorchGeometricGraphData, FingerprintsData, DGLGraphData
+
+from swan.dataset import (DGLGraphData, FingerprintsData,
+                          TorchGeometricGraphData)
 from swan.modeller import Modeller
-from swan.modeller.models import FingerprintFullyConnected, MPNN, InvariantPolynomial
-from swan.modeller.models.se3_transformer import TFN, SE3Transformer
-from swan.utils.log_config import configure_logger
+from swan.modeller.models import MPNN, FingerprintFullyConnected
+from swan.modeller.models.se3_transformer import SE3Transformer
 from swan.utils.plot import create_scatter_plot
 
-configure_logger(Path("."))
+path_files = Path("data/Carboxylic_acids/CDFT")
+path_data = path_files / "cdft_random_500.csv"
 
-# Starting logger
-LOGGER = logging.getLogger(__name__)
-
-
-# Path to the DATASET
-path_files = Path("tests/files")
-path_data = path_files / "cdft_properties.csv"
-path_geometries = path_files / "cdft_geometries.json"
-
-
-# Training variables
-nepoch = 150
-batch_size = 64
 properties = [
     "Dissocation energy (nucleofuge)",
     # "Dissociation energy (electrofuge)",
@@ -46,12 +35,12 @@ num_labels = len(properties)
 
 # Datasets
 data = FingerprintsData(
-    path_data, properties=properties, sanitize=False)
+    path_data, properties=properties, sanitize=True)
 # data = DGLGraphData(
 #     path_data, properties=properties, file_geometries=path_geometries, sanitize=False)
 
 # FullyConnected NN
-net = FingerprintFullyConnected(hidden_cells=200, num_labels=num_labels)
+net = FingerprintFullyConnected(hidden_cells=100, num_labels=num_labels)
 
 # # Graph NN configuration
 # net = MPNN(batch_size=batch_size, output_channels=40, num_labels=num_labels)
@@ -72,12 +61,20 @@ net = FingerprintFullyConnected(hidden_cells=200, num_labels=num_labels)
 #     num_layers, num_channels, num_nlayers=num_nlayers, num_degrees=num_degrees, div=div,
 #     pooling=pooling, n_heads=n_heads)
 
-# training and validation
+# Predict data
 torch.set_default_dtype(torch.float32)
 researcher = Modeller(net, data, use_cuda=False)
-researcher.set_optimizer("Adam", lr=0.0005)
-researcher.set_scheduler("StepLR", 0.1)
-researcher.data.scale_labels()
-researcher.train_model(nepoch=nepoch, batch_size=batch_size)
-expected, predicted = [x.cpu().detach().numpy() for x in researcher.validate_model()]
-create_scatter_plot(predicted, expected, properties)
+researcher.load_model("swan_chk.pt")
+predicted = researcher.predict(data.fingerprints)
+
+# Scale the predicted data
+data.load_scale()
+print("labales: ", data.labels)
+predicted = data.transformer.inverse_transform(predicted.numpy())
+
+# Print the predicted vs the ground_true
+ground_true = pd.read_csv(path_data, index_col=0)[properties].to_numpy()
+create_scatter_plot(predicted, ground_true, properties)
+df = pd.DataFrame({"expected": ground_true.flatten(), "predicted": predicted.flatten()})
+df.to_csv("expected.csv")
+

@@ -11,10 +11,9 @@ from .utils_test import PATH_TEST
 class TestFingerprintModeller(unittest.TestCase):
     """Test the finger print models"""
     def setUp(self):
-        self.data = PATH_TEST / "thousand.csv"
-        self.data = FingerprintsData(self.data, properties=["gammas"])
+        data = FingerprintsData(PATH_TEST / "thousand.csv", properties=["gammas"])
         self.net = FingerprintFullyConnected()
-        self.modeller = Modeller(self.net, self.data)
+        self.modeller = Modeller(self.net, data)
 
     def test_train(self):
         self.modeller.data.scale_labels()
@@ -22,3 +21,8 @@ class TestFingerprintModeller(unittest.TestCase):
         expected, predicted = self.modeller.validate_model()
         err = torch.functional.F.mse_loss(expected, predicted)
         assert not np.isnan(err.item())
+
+    def test_predict(self):
+        fingerprints = self.modeller.data.fingerprints
+        predicted = self.modeller.predict(fingerprints)
+        assert len(predicted) == fingerprints.shape[0]
