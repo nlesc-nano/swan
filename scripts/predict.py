@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 
 import torch
+import torch_geometric as tg
 
 from swan.dataset import (DGLGraphData, FingerprintsData,
                           TorchGeometricGraphData)
@@ -26,7 +27,7 @@ def predict_fingerprints():
     data = FingerprintsData(PATH_DATA, sanitize=True)
     # FullyConnected NN
     net = FingerprintFullyConnected(hidden_cells=100, num_labels=NUMLABELS)
-    call_modeller(net, data, "fingerprints")
+    call_modeller(net, data, data.fingerprints)
 
 
 def predict_MPNN():
@@ -38,7 +39,11 @@ def predict_MPNN():
     # Graph NN configuration
     net = MPNN(batch_size=batch_size, output_channels=output_channels, num_labels=NUMLABELS)
 
-    call_modeller(net, data, "molecular_graphs")
+    graphs = data.molecular_graphs
+    inp_data = tg.data.DataLoader(graphs, batch_size=len(graphs))
+    item, _ = data.get_item(next(iter(inp_data)))
+
+    call_modeller(net, data, item)
 
 
 def predict_SE3Transformer():
@@ -60,11 +65,11 @@ def predict_SE3Transformer():
     call_modeller(net, data, "molecular_graphs")
 
 
-def call_modeller(net, data, name_input):
+def call_modeller(net, data, inp_data):
     """Call the Modeller class to predict new data."""
     researcher = Modeller(net, data, use_cuda=False)
     researcher.load_model("swan_chk.pt")
-    predicted = researcher.predict(getattr(data, name_input))
+    predicted = researcher.predict(inp_data)
 
     # Scale the predicted data
     data.load_scale()
@@ -99,6 +104,7 @@ def compare_prediction(predicted):
 
 def main():
     predict_fingerprints()
+    # predict_MPNN()
 
 
 if __name__ == "__main__":

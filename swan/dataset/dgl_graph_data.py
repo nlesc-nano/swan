@@ -67,11 +67,12 @@ class DGLGraphData(SwanGraphData):
         """compute the graphs in advance."""
         # create the graphs
         molecular_graphs = []
-        for idx in range(len(self.labels)):
+        for idx in range(len(self.dataframe)):
+            labels = None if self.labels is None else self.labels[idx]
             gm = create_molecular_dgl_graph(
                 self.dataframe["molecules"][idx],
                 self.dataframe["positions"][idx],
-                labels=self.labels[idx])
+                labels=labels)
             molecular_graphs.append(gm)
 
         return molecular_graphs

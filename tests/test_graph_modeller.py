@@ -24,3 +24,10 @@ class TestGraphModeller(unittest.TestCase):
         expected, predicted = self.modeller.validate_model()
         err = torch.functional.F.mse_loss(expected, predicted)
         assert not np.isnan(err.item())
+
+    # def test_predict(self):
+    #     graphs = self.modeller.data.molecular_graphs
+    #     predicted = self.modeller.predict(graphs)
+    #     print(len(graphs))
+    #     print(len(predicted))
+    #     assert False

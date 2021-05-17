@@ -45,16 +45,16 @@ properties = [
 num_labels = len(properties)
 
 # Datasets
-data = FingerprintsData(
-    path_data, properties=properties, sanitize=False)
+# data = FingerprintsData(
+#     path_data, properties=properties, sanitize=False)
 # data = DGLGraphData(
 #     path_data, properties=properties, file_geometries=path_geometries, sanitize=False)
+data = TorchGeometricGraphData(path_data, properties=properties, file_geometries=path_geometries, sanitize=False)
+# # FullyConnected NN
+# net = FingerprintFullyConnected(hidden_cells=100, num_labels=num_labels)
 
-# FullyConnected NN
-net = FingerprintFullyConnected(hidden_cells=100, num_labels=num_labels)
-
-# # Graph NN configuration
-# net = MPNN(batch_size=batch_size, output_channels=40, num_labels=num_labels)
+# Graph NN configuration
+net = MPNN(batch_size=batch_size, output_channels=40, num_labels=num_labels)
 
 # # # e3nn Network
 # # net = InvariantPolynomial(irreps_out=f"{num_labels}x0e")
