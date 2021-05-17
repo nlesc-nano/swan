@@ -2,7 +2,6 @@
 from pathlib import Path
 
 import argparse
-from matplotlib.pyplot import sca
 import pandas as pd
 import torch
 import torch_geometric as tg
@@ -14,7 +13,6 @@ from swan.modeller import Modeller
 from swan.modeller.models import MPNN, FingerprintFullyConnected
 from swan.modeller.models.se3_transformer import SE3Transformer
 from swan.utils.plot import create_scatter_plot
-from collections import defaultdict
 
 torch.set_default_dtype(torch.float32)
 
@@ -42,19 +40,17 @@ PROPERTIES = [
 ]
 
 
-def predict_fingerprints(path_parameters: Path, path_scales: Path):
+def predict_fingerprints(data, path_parameters: Path, path_scales: Path):
     """Predict data using a previously trained fingerprint model."""
-    data = FingerprintsData(PATH_DATA, sanitize=True)
     # FullyConnected NN
     net = FingerprintFullyConnected(hidden_cells=100, num_labels=NUMLABELS)
     return call_modeller(net, data, data.fingerprints, path_parameters, path_scales)
 
 
-def predict_MPNN(path_parameters: Path, path_scales: Path):
+def predict_MPNN(data, path_parameters: Path, path_scales: Path):
     """Predict data using a previously trained MPNN model."""
-    batch_size = 64
-    output_channels = 40
-    data = TorchGeometricGraphData(PATH_DATA, sanitize=True)
+    batch_size = 20
+    output_channels = 10
 
     # Graph NN configuration
     net = MPNN(batch_size=batch_size, output_channels=output_channels, num_labels=NUMLABELS)
@@ -66,12 +62,12 @@ def predict_MPNN(path_parameters: Path, path_scales: Path):
     return call_modeller(net, data, item, path_parameters, path_scales)
 
 
-def predict_SE3Transformer(path_parameters: Path, path_scales: Path):
+def predict_SE3Transformer(data, path_parameters: Path, path_scales: Path):
     # se3 transformers
-    num_layers = 2     # Number of equivariant layers
-    num_channels = 8   # Number of channels in middle layers
+    num_layers = 4     # Number of equivariant layers
+    num_channels = 16  # Number of channels in middle layers
     num_nlayers = 0    # Number of layers for nonlinearity
-    num_degrees = 2    # Number of irreps {0,1,...,num_degrees-1}
+    num_degrees = 4    # Number of irreps {0,1,...,num_degrees-1}
     div = 4            # Low dimensional embedding fraction
     pooling = 'avg'    # Choose from avg or max
     n_heads = 1        # Number of attention heads
@@ -79,8 +75,6 @@ def predict_SE3Transformer(path_parameters: Path, path_scales: Path):
     net = SE3Transformer(
         num_layers, num_channels, num_nlayers=num_nlayers, num_degrees=num_degrees, div=div,
         pooling=pooling, n_heads=n_heads)
-
-    data = DGLGraphData(PATH_DATA, sanitize=True)
 
     graphs = data.molecular_graphs
     inp_data = dgl_data_loader(data.dataset, batch_size=len(graphs))
@@ -108,7 +102,7 @@ def compare_prediction(predicted):
     df.to_csv("expected.csv")
 
 
-def compute_statistics(workdir: str, predictor):
+def compute_statistics(workdir: str, predictor, data):
     root = (workdir / "Results").absolute()
     ndirs = len(list(root.iterdir()))
     results = {name: [] for name in PROPERTIES}
@@ -118,7 +112,7 @@ def compute_statistics(workdir: str, predictor):
             print("processing: ", path)
             parameters = next(path.glob("swan_chk.pt"))
             scales = next(path.glob("swan_scales.pkl"))
-            results[name].append(predictor(parameters, scales))
+            results[name].append(predictor(data, parameters, scales))
     print(len(results))
 
 
@@ -131,13 +125,16 @@ def main():
     group.add_argument("-s", "--se3transformer", action="store_true")
     args = parser.parse_args()
     if args.fingerprint:
+        data = FingerprintsData(PATH_DATA, sanitize=True)
         predictor = predict_fingerprints
     elif args.mpnn:
+        data = TorchGeometricGraphData(PATH_DATA, sanitize=True)
         predictor = predict_MPNN
     else:
+        data = DGLGraphData(PATH_DATA, sanitize=True)
         predictor = predict_SE3Transformer
 
-    compute_statistics(args.workdir, predictor)
+    compute_statistics(args.workdir, predictor, data)
 
 
 if __name__ == "__main__":
