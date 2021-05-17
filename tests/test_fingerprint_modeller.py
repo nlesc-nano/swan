@@ -25,4 +25,7 @@ class TestFingerprintModeller(unittest.TestCase):
     def test_predict(self):
         fingerprints = self.modeller.data.fingerprints
         predicted = self.modeller.predict(fingerprints)
+        self.modeller.data.load_scale()
+        predicted = self.modeller.data.transformer.inverse_transform(predicted.detach().numpy())
+
         assert len(predicted) == fingerprints.shape[0]

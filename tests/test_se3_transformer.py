@@ -20,7 +20,7 @@ DATA = DGLGraphData(CSV_FILE, properties=["gammas"])
 
 def run_modeller(net: torch.nn.Module):
     """Run a given model."""
-    modeller = Modeller(net, DATA)
+    modeller = Modeller(net, DATA, use_cuda=False)
 
     modeller.data.scale_labels()
     modeller.train_model(nepoch=1, batch_size=64)
@@ -52,4 +52,9 @@ def test_se3Transformer_predict():
     inp_data = dgl_data_loader(DATA.dataset, batch_size=len(graphs))
     item = next(iter(inp_data))[0]
     predicted = net(item)
+
+    # Scale the predicted data
+    DATA.load_scale()
+    predicted = DATA.transformer.inverse_transform(predicted.detach().numpy())
+
     assert len(graphs) == len(predicted)
