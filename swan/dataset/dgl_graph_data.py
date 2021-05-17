@@ -22,7 +22,11 @@ PathLike = Union[str, Path]
 def collate_fn(samples):
     """Aggregate graphs."""
     graphs, y = map(list, zip(*samples))
-    return dgl.batch(graphs), torch.cat(y).unsqueeze(-1)
+    batch = dgl.batch(graphs)
+    if not any(item is None for item in y):
+        return batch, torch.cat(y).unsqueeze(-1)
+    else:
+        return batch, None
 
 
 def dgl_data_loader(*args, **kwargs):
@@ -95,5 +99,6 @@ class DGLGraphDataset(Dataset):
 
     def __getitem__(self, idx: int) -> Tuple[dgl.DGLGraph, torch.Tensor]:
         """Return the idx dataset element."""
+        label = None if len(self.labels) == 0 else self.labels[idx]
 
-        return self.molecular_graphs[idx], self.labels[idx]
+        return self.molecular_graphs[idx], label

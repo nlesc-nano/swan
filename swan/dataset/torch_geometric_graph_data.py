@@ -68,7 +68,10 @@ class TorchGeometricGraphData(SwanGraphData):
         Tuple with the graph features and the ground true array
 
         """
-        return batch_data, batch_data.y.view(-1, self.nlabels)
+        if len(self.labels) == 0:
+            return batch_data, None
+        else:
+            return batch_data, batch_data.y.view(-1, self.nlabels)
 
 
 class TorchGeometricGraphDataset(tg.data.Dataset):

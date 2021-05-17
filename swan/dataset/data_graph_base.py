@@ -64,7 +64,7 @@ class SwanGraphData(SwanDataBase):
         """Computhe the graph representing the data."""
         molecular_graphs = []
         for idx in range(len(self.dataframe)):
-            labels = None if self.labels is None else self.labels[idx]
+            labels = None if len(self.labels) == 0 else self.labels[idx]
             gm = self.graph_creator(
                 self.dataframe["molecules"][idx],
                 self.dataframe["positions"][idx],

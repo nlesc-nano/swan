@@ -27,7 +27,7 @@ def predict_fingerprints():
     data = FingerprintsData(PATH_DATA, sanitize=True)
     # FullyConnected NN
     net = FingerprintFullyConnected(hidden_cells=100, num_labels=NUMLABELS)
-    call_modeller(net, data, data.fingerprints)
+    return call_modeller(net, data, data.fingerprints)
 
 
 def predict_MPNN():
@@ -43,7 +43,7 @@ def predict_MPNN():
     inp_data = tg.data.DataLoader(graphs, batch_size=len(graphs))
     item, _ = data.get_item(next(iter(inp_data)))
 
-    call_modeller(net, data, item)
+    return call_modeller(net, data, item)
 
 
 def predict_SE3Transformer():
@@ -66,7 +66,7 @@ def predict_SE3Transformer():
     inp_data = dgl_data_loader(data.dataset, batch_size=len(graphs))
     item = next(iter(inp_data))[0]
 
-    call_modeller(net, data, item)
+    return call_modeller(net, data, item)
 
 
 def call_modeller(net, data, inp_data):
@@ -77,7 +77,7 @@ def call_modeller(net, data, inp_data):
 
     # Scale the predicted data
     data.load_scale()
-    predicted = data.transformer.inverse_transform(predicted.numpy())
+    return data.transformer.inverse_transform(predicted.numpy())
 
 
 def compare_prediction(predicted):
@@ -107,8 +107,10 @@ def compare_prediction(predicted):
 
 
 def main():
-    predict_fingerprints()
-    # predict_MPNN()
+    predicted = predict_fingerprints()
+    # predicted = predict_MPNN()
+    # predicted = predict_SE3Transformer()
+    print(predicted)
 
 
 if __name__ == "__main__":
