@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from pathlib import Path
-
 import pandas as pd
+
 import torch
 
 from swan.dataset import (DGLGraphData, FingerprintsData,
@@ -11,69 +11,96 @@ from swan.modeller.models import MPNN, FingerprintFullyConnected
 from swan.modeller.models.se3_transformer import SE3Transformer
 from swan.utils.plot import create_scatter_plot
 
-path_files = Path("data/Carboxylic_acids/CDFT")
-path_data = path_files / "cdft_random_500.csv"
 
-properties = [
-    # "Dissocation energy (nucleofuge)",
-    # "Dissociation energy (electrofuge)",
-    # "Electroaccepting power(w+)",
-    # "Electrodonating power (w-)",
-    # "Electronegativity (chi=-mu)",
-    "Electronic chemical potential (mu)",
-    # "Electronic chemical potential (mu+)",
-    # "Electronic chemical potential (mu-)",
-    # "Electrophilicity index (w=omega)",
-    # "Global Dual Descriptor Deltaf+",
-    # "Global Dual Descriptor Deltaf-",
-    # "Hardness (eta)",
-    # "Hyperhardness (gamma)",
-    # "Net Electrophilicity",
-    # "Softness (S)"
-]
-num_labels = len(properties)
+torch.set_default_dtype(torch.float32)
+
+path_files = Path("data/Carboxylic_acids/CDFT")
+PATH_DATA = "smiles.csv"  # path_files / "cdft_random_500.csv"
 
 # Datasets
-data = FingerprintsData(
-    path_data, properties=properties, sanitize=True)
-# data = DGLGraphData(
-#     path_data, properties=properties, file_geometries=path_geometries, sanitize=False)
+NUMLABELS = 1
 
-# FullyConnected NN
-net = FingerprintFullyConnected(hidden_cells=100, num_labels=num_labels)
 
-# # Graph NN configuration
-# net = MPNN(batch_size=batch_size, output_channels=40, num_labels=num_labels)
+def predict_fingerprints():
+    """Predict data using a previously trained fingerprint model."""
+    data = FingerprintsData(PATH_DATA, sanitize=True)
+    # FullyConnected NN
+    net = FingerprintFullyConnected(hidden_cells=100, num_labels=NUMLABELS)
+    call_modeller(net, data, "fingerprints")
 
-# # # e3nn Network
-# # net = InvariantPolynomial(irreps_out=f"{num_labels}x0e")
 
-# # se3 transformers
-# num_layers = 2     # Number of equivariant layers
-# num_channels = 8   # Number of channels in middle layers
-# num_nlayers = 0    # Number of layers for nonlinearity
-# num_degrees = 2    # Number of irreps {0,1,...,num_degrees-1}
-# div = 4            # Low dimensional embedding fraction
-# pooling = 'avg'    # Choose from avg or max
-# n_heads = 1        # Number of attention heads
+def predict_MPNN():
+    """Predict data using a previously trained MPNN model."""
+    batch_size = 64
+    output_channels = 40
+    data = TorchGeometricGraphData(PATH_DATA, sanitize=True)
 
-# net = SE3Transformer(
-#     num_layers, num_channels, num_nlayers=num_nlayers, num_degrees=num_degrees, div=div,
-#     pooling=pooling, n_heads=n_heads)
+    # Graph NN configuration
+    net = MPNN(batch_size=batch_size, output_channels=output_channels, num_labels=NUMLABELS)
 
-# Predict data
-torch.set_default_dtype(torch.float32)
-researcher = Modeller(net, data, use_cuda=False)
-researcher.load_model("swan_chk.pt")
-predicted = researcher.predict(data.fingerprints)
+    call_modeller(net, data, "molecular_graphs")
 
-# Scale the predicted data
-data.load_scale()
-predicted = data.transformer.inverse_transform(predicted.numpy())
 
-# Print the predicted vs the ground_true
-ground_true = pd.read_csv(path_data, index_col=0)[properties].to_numpy()
-create_scatter_plot(predicted, ground_true, properties)
-df = pd.DataFrame({"expected": ground_true.flatten(), "predicted": predicted.flatten()})
-df.to_csv("expected.csv")
+def predict_SE3Transformer():
+    # se3 transformers
+    num_layers = 2     # Number of equivariant layers
+    num_channels = 8   # Number of channels in middle layers
+    num_nlayers = 0    # Number of layers for nonlinearity
+    num_degrees = 2    # Number of irreps {0,1,...,num_degrees-1}
+    div = 4            # Low dimensional embedding fraction
+    pooling = 'avg'    # Choose from avg or max
+    n_heads = 1        # Number of attention heads
+
+    net = SE3Transformer(
+        num_layers, num_channels, num_nlayers=num_nlayers, num_degrees=num_degrees, div=div,
+        pooling=pooling, n_heads=n_heads)
+
+    data = DGLGraphData(PATH_DATA, sanitize=True)
+
+    call_modeller(net, data, "molecular_graphs")
+
+
+def call_modeller(net, data, name_input):
+    """Call the Modeller class to predict new data."""
+    researcher = Modeller(net, data, use_cuda=False)
+    researcher.load_model("swan_chk.pt")
+    predicted = researcher.predict(getattr(data, name_input))
+
+    # Scale the predicted data
+    data.load_scale()
+    predicted = data.transformer.inverse_transform(predicted.numpy())
+
+
+def compare_prediction(predicted):
+    "Print the predicted vs the ground_true."""
+    properties = [
+        # "Dissocation energy (nucleofuge)",
+        # "Dissociation energy (electrofuge)",
+        # "Electroaccepting power(w+)",
+        # "Electrodonating power (w-)",
+        # "Electronegativity (chi=-mu)",
+        "Electronic chemical potential (mu)",
+        # "Electronic chemical potential (mu+)",
+        # "Electronic chemical potential (mu-)",
+        # "Electrophilicity index (w=omega)",
+        # "Global Dual Descriptor Deltaf+",
+        # "Global Dual Descriptor Deltaf-",
+        # "Hardness (eta)",
+        # "Hyperhardness (gamma)",
+        # "Net Electrophilicity",
+        # "Softness (S)"
+    ]
+
+    ground_true = pd.read_csv(PATH_DATA, index_col=0)[properties].to_numpy()
+    create_scatter_plot(predicted, ground_true, properties)
+    df = pd.DataFrame({"expected": ground_true.flatten(), "predicted": predicted.flatten()})
+    df.to_csv("expected.csv")
+
+
+def main():
+    predict_fingerprints()
+
+
+if __name__ == "__main__":
+    main()
 

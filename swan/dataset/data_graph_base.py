@@ -54,8 +54,9 @@ class SwanGraphData(SwanDataBase):
                 self.dataframe.molecules, optimize_molecule)
 
         # extract the labels from the dataframe
-        self.labels = self.get_labels(properties)
-        self.nlabels = self.labels.shape[1]
+        if properties is not None:
+            self.labels = self.get_labels(properties)
+            self.nlabels = self.labels.shape[1]
 
         # create the graphs
         self.molecular_graphs = self.compute_graph()
