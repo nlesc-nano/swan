@@ -104,7 +104,7 @@ def compare_prediction(predicted):
     df.to_csv("expected.csv")
 
 
-def compute_statistics(workdir: str, predictor, data):
+def compute_statistics(workdir: str, output: str, predictor, data):
     root = (workdir / "Results").absolute()
     ndirs = len(list(root.iterdir()))
     results = {name: [] for name in PROPERTIES}
@@ -116,13 +116,14 @@ def compute_statistics(workdir: str, predictor, data):
             scales = next(path.glob("swan_scales.pkl"))
             results[name].append(predictor(data, parameters, scales))
 
-    means = {name: np.mean(np.stack(val, axis=0), axis=0) for name, val in results.items()}
-    with open("means.json") as f:
+    means = {name: np.mean(np.stack(val, axis=0), axis=0).tolist() for name, val in results.items()}
+    with open(f"{output}.json", 'w') as f:
         json.dump(means, f)
 
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("-o", "--output", required=True)
     parser.add_argument("-w", "--workdir", default=Path("."), type=Path)
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-f", "--fingerprint", action="store_true")
@@ -139,7 +140,7 @@ def main():
         data = DGLGraphData(PATH_DATA, sanitize=True)
         predictor = predict_SE3Transformer
 
-    compute_statistics(args.workdir, predictor, data)
+    compute_statistics(args.workdir, args.output, predictor, data)
 
 
 if __name__ == "__main__":
