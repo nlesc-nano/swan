@@ -1,6 +1,5 @@
 """Base class for the Graph data representation."""
 
-from abc import abstractclassmethod
 from pathlib import Path
 from typing import List, Optional, Union
 

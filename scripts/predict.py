@@ -1,17 +1,17 @@
 #!/usr/bin/env python
 from pathlib import Path
-import pandas as pd
 
+import pandas as pd
 import torch
 import torch_geometric as tg
 
 from swan.dataset import (DGLGraphData, FingerprintsData,
                           TorchGeometricGraphData)
+from swan.dataset.dgl_graph_data import dgl_data_loader
 from swan.modeller import Modeller
 from swan.modeller.models import MPNN, FingerprintFullyConnected
 from swan.modeller.models.se3_transformer import SE3Transformer
 from swan.utils.plot import create_scatter_plot
-
 
 torch.set_default_dtype(torch.float32)
 
@@ -62,7 +62,11 @@ def predict_SE3Transformer():
 
     data = DGLGraphData(PATH_DATA, sanitize=True)
 
-    call_modeller(net, data, "molecular_graphs")
+    graphs = data.molecular_graphs
+    inp_data = dgl_data_loader(data.dataset, batch_size=len(graphs))
+    item = next(iter(inp_data))[0]
+
+    call_modeller(net, data, item)
 
 
 def call_modeller(net, data, inp_data):
