@@ -1,7 +1,9 @@
 #!/usr/bin/env python
+import argparse
+import json
 from pathlib import Path
 
-import argparse
+import numpy as np
 import pandas as pd
 import torch
 import torch_geometric as tg
@@ -113,7 +115,10 @@ def compute_statistics(workdir: str, predictor, data):
             parameters = next(path.glob("swan_chk.pt"))
             scales = next(path.glob("swan_scales.pkl"))
             results[name].append(predictor(data, parameters, scales))
-    print(len(results))
+
+    means = {name: np.mean(np.stack(val, axis=0), axis=0) for name, val in results.items()}
+    with open("means.json") as f:
+        json.dump(means, f)
 
 
 def main():
