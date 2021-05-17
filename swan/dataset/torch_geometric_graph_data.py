@@ -43,6 +43,8 @@ class TorchGeometricGraphData(SwanGraphData):
             Optimize the geometry if the ``file_geometries`` is not provided
 
         """
+        self.graph_creator = create_molecular_torch_geometric_graph
+
         super().__init__(
             data_path, properties=properties, sanitize=sanitize,
             file_geometries=file_geometries, optimize_molecule=optimize_molecule)
@@ -52,20 +54,6 @@ class TorchGeometricGraphData(SwanGraphData):
 
         # define the loader type
         self.data_loader_fun = tg.data.DataLoader
-
-    def compute_graph(self) -> List[Data]:
-        """compute the graphs in advance."""
-        # create the graphs
-        molecular_graphs = []
-        for idx in range(len(self.dataframe)):
-            labels = None if self.labels is None else self.labels[idx]
-            gm = create_molecular_torch_geometric_graph(
-                self.dataframe["molecules"][idx],
-                self.dataframe["positions"][idx],
-                labels=labels)
-            molecular_graphs.append(gm)
-
-        return molecular_graphs
 
     def get_item(self, batch_data: Any) -> Tuple[Any, torch.Tensor]:
         """get the data/ground truth of a minibatch
