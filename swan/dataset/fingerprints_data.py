@@ -47,8 +47,9 @@ class FingerprintsData(SwanDataBase):
         self.clean_dataframe(sanitize=sanitize)
 
         # extract the labels from the dataframe
-        self.labels = self.get_labels(properties)
-        self.nlabels = self.labels.shape[1]
+        if properties is not None:
+            self.labels = self.get_labels(properties)
+            self.nlabels = self.labels.shape[1]
 
         # compute fingerprints
         fingerprints = generate_fingerprints(self.dataframe["molecules"],

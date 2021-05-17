@@ -1,6 +1,5 @@
 """Base class for the Graph data representation."""
 
-from abc import abstractclassmethod
 from pathlib import Path
 from typing import List, Optional, Union
 
@@ -54,13 +53,22 @@ class SwanGraphData(SwanDataBase):
                 self.dataframe.molecules, optimize_molecule)
 
         # extract the labels from the dataframe
-        self.labels = self.get_labels(properties)
-        self.nlabels = self.labels.shape[1]
+        if properties is not None:
+            self.labels = self.get_labels(properties)
+            self.nlabels = self.labels.shape[1]
 
         # create the graphs
         self.molecular_graphs = self.compute_graph()
 
-    @abstractclassmethod
     def compute_graph(self):
         """Computhe the graph representing the data."""
-        pass
+        molecular_graphs = []
+        for idx in range(len(self.dataframe)):
+            labels = None if len(self.labels) == 0 else self.labels[idx]
+            gm = self.graph_creator(
+                self.dataframe["molecules"][idx],
+                self.dataframe["positions"][idx],
+                labels=labels)
+            molecular_graphs.append(gm)
+
+        return molecular_graphs

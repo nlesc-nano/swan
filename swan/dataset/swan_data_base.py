@@ -79,7 +79,7 @@ class SwanDataBase:
                                                  molCol='molecules')
         return dataframe
 
-    def get_labels(self, properties: Optional[Union[str, List[str]]]) -> torch.Tensor:
+    def get_labels(self, properties: Union[str, List[str]]) -> torch.Tensor:
         """extract the labels from the dataframe
 
         Parameters
@@ -88,15 +88,15 @@ class SwanDataBase:
             names of the properties to extract
         """
         # get labels
-        if properties is not None:
+        if not isinstance(properties, list):
+            properties = [properties]
 
-            if not isinstance(properties, list):
-                properties = [properties]
-
+        if all(p in self.dataframe.columns for p in properties):
             labels = torch.tensor(self.dataframe[properties].to_numpy(
                 np.float32)).view(-1, len(properties))
         else:
-            labels = torch.tensor([None] * self.dataframe.shape[0]).view(-1, 1)
+            msg = f"Not all properties are present in the dataframe. Properties are: {properties}"
+            raise RuntimeError(msg)
 
         return labels
 
@@ -147,9 +147,10 @@ class SwanDataBase:
         with open(self.path_scales, 'wb') as handler:
             pickle.dump(self.transformer, handler)
 
-    def load_scale(self) -> None:
+    def load_scale(self, path_scales: Optional[PathLike] = None) -> None:
         """Read the scales used for the features."""
-        with open(self.path_scales, 'rb') as handler:
+        path_scales = self.path_scales if path_scales is None else path_scales
+        with open(path_scales, 'rb') as handler:
             self.transformer = pickle.load(handler)
 
     def get_item(self, batch_data: Any) -> Tuple[Any, torch.Tensor]:

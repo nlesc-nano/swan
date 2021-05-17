@@ -4,6 +4,7 @@
 ## Changed
 * Fix graph neural network implementation (#59)
 * Rename the graph neural network to MPNN (message passing NN)
+* Fix prediction functionality (#81)
 
 ## New
 * Interface to [se3-transformer](https://www.dgl.ai/pages/start.html) (#57)
