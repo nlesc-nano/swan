@@ -105,7 +105,7 @@ class Modeller:
     def train_model(self,
                     nepoch: int,
                     frac: List[float] = [0.8, 0.2],
-                    batch_size: int = 64) -> None:
+                    batch_size: int = 64) -> Tuple[Tensor, Tensor]:
         """Train the model
 
         Parameters
@@ -126,6 +126,8 @@ class Modeller:
         # run over the epochs
         for epoch in range(self.epoch, self.epoch + nepoch):
             LOGGER.info(f"epoch: {epoch}")
+            results = []
+            expected = []
 
             # set the model to train mode
             # and init loss
@@ -137,8 +139,10 @@ class Modeller:
                 x_batch, y_batch = self.data.get_item(batch_data)
                 x_batch = x_batch.to(self.device)
                 y_batch = y_batch.to(self.device)
-                loss_all += self.train_batch(x_batch,
-                                             y_batch)  # * len(y_batch)
+                loss_batch, predicted = self.train_batch(x_batch, y_batch)
+                loss_all += loss_batch
+                results.append(predicted)
+                expected.append(y_batch)
             LOGGER.info(
                 f"Loss: {loss_all / self.data.train_dataset.__len__()}")
 
@@ -156,7 +160,9 @@ class Modeller:
         # Save the models
         self.save_model(epoch, loss_all)
 
-    def train_batch(self, inp_data: Tensor, ground_truth: Tensor) -> float:
+        return torch.cat(results), torch.cat(expected)
+
+    def train_batch(self, inp_data: Tensor, ground_truth: Tensor) -> Tuple[float, Tensor]:
         """Train a single mini batch
 
         Parameters
@@ -177,7 +183,7 @@ class Modeller:
         self.optimizer.step()
         self.optimizer.zero_grad()
 
-        return loss.item()
+        return loss.item(), prediction
 
     def validate_model(self) -> Tuple[Tensor, Tensor]:
         """compute the output of the model on the validation set

@@ -14,7 +14,8 @@ PathLike = Union[str, Path]
 
 
 def create_scatter_plot(
-        predicted: np.ndarray, expected: np.ndarray, properties: List[str], workdir: PathLike = ".") -> None:
+        predicted: np.ndarray, expected: np.ndarray, properties: List[str],
+        output_name: str = "scatterplot") -> None:
     """Plot the predicted vs the expected values."""
     sns.set()
 
@@ -41,7 +42,7 @@ def create_scatter_plot(
             ax = axis[row][col] if nfeatures > 1 else axis[0]
             sns.regplot(x=label_x, y=label_y, data=data, ax=ax)
 
-    path = Path(workdir) / "scatterplot.png"
+    path = Path(".") / f"{output_name}.png"
     plt.savefig(path)
 
     print(f"{'name':40} slope intercept rvalue stderr")
