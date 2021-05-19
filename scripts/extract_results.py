@@ -12,13 +12,14 @@ import numpy as np
 import pandas as pd
 
 MAP_NAMES = {"11k": 11043, "1k": 1000, "2k": 2000, "500": 500, "5k": 5000, "7k": 7500}
+MODELS = ("Fingerprints", "MPNN", "SE3Transformer")
 
 
 def read_info(file_name: Path, column: str = "rvalue") -> np.ndarray:
     """Read the rvalues from the table."""
     with open(file_name, 'r') as f:
         data = f.readlines()
-    
+
     # Indices of the columns with the regression info
     names = {"slope": 0, "intercept": 1, "rvalue": 2, "stderr": 3}
     index = names[column]
@@ -53,11 +54,10 @@ def extract_subfolder(folder: Path, nfiles: int, nsamples: int) -> pd.DataFrame:
 def extract_all_results(root: Path) -> None:
     """Extract all the rvalues from all the subfolders."""
     folders = [p for p in root.iterdir() if p.is_dir()]
-    models = ("Fingerprints", "MPNN", "SE3Transformer")
     results = {}
     for directory in folders:
         nsamples = MAP_NAMES[directory.name]
-        for model in models:
+        for model in MODELS:
             workdir = directory / model / "Results"
             nresults = count_results(workdir)
             df = extract_subfolder(workdir, nresults, nsamples)
@@ -69,31 +69,21 @@ def extract_all_results(root: Path) -> None:
 
     new_results = process_data(results)
     plot_results_all_models(new_results)
-    for name, df in new_results.items():
-        plot_results_for_model(name, df)
 
 
 def plot_results_all_models(results):
     # Create subplots to accomodate the results
     _, axis = plt.subplots(nrows=5, ncols=3, figsize=(20, 20), constrained_layout=True)
 
-    # merge the models results
-    columns = results["Fingerprints"].columns
-    for k, c in enumerate(columns):
-        data = pd.concat([df[c] for df in results.values()], axis=1)
-        sns.lineplot(data=data, ax=axis[k // 3][k % 3])
+    names = results["Fingerprints"].columns
+    for k, prop in enumerate(names):
+        ax = axis[k // 3][k % 3]
+        frames = pd.DataFrame({m: results[m][names[k]] for m in MODELS})
+        obj = sns.lineplot(data=frames, markers=True, ax=ax)
+        obj.set_title(prop)
+    plt.xlabel("Number of samples")
+    plt.ylabel("rvalue")
     plt.savefig("scaling.png")
-
-
-def plot_results_for_model(name: str, df: pd.DataFrame):
-    # Create subplots to accomodate the results
-    _, axis = plt.subplots(nrows=5, ncols=3, figsize=(20, 20), constrained_layout=True)
-
-    # merge the models results
-    for k, c in enumerate(df.columns):
-        sns.lineplot(data=df[c], ax=axis[k // 3][k % 3])
-    plt.suptitle(f"Scaling for {name}", fontsize=14)        
-    plt.savefig(f"{name}_scaling.png")
 
 
 def process_data(results):
