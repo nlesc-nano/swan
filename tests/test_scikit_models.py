@@ -1,6 +1,8 @@
+from scipy import stats
+from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel
+
 from swan.dataset import FingerprintsData
 from swan.modeller import SKModeller
-from scipy import stats
 
 from .utils_test import PATH_TEST
 
@@ -23,6 +25,19 @@ def test_svm():
 
     data.scale_labels()
     modeller = SKModeller(data, "svm")
+    modeller.train_model()
+    predicted, expected = modeller.valid_model()
+    reg = stats.linregress(predicted.flatten(), expected.flatten())
+    assert reg.rvalue > 0
+
+
+def test_gaussian_process():
+    """Check the interface to the support vector machine."""
+    data = FingerprintsData(PATH_TEST / "thousand.csv", properties=["gammas"], sanitize=False)
+
+    data.scale_labels()
+    kernel = DotProduct() + WhiteKernel()
+    modeller = SKModeller(data, "gaussianprocess", kernel=kernel)
     modeller.train_model()
     predicted, expected = modeller.valid_model()
     reg = stats.linregress(predicted.flatten(), expected.flatten())
