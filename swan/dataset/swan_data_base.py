@@ -113,15 +113,15 @@ class SwanDataBase:
         self.dataframe.reset_index(drop=True, inplace=True)
 
     def create_data_loader(self,
-                           frac=[0.8, 0.2],
+                           frac: Tuple[float, float] = (0.8, 0.2),
                            batch_size: int = 64) -> None:
         """create the train/valid data loaders
 
         Parameters
         ----------
-        frac : list, optional
+        frac
             fraction to divide the dataset, by default [0.8, 0.2]
-        batch_size : int, optional
+        batch_size
             batchsize, by default 64
         """
         ntotal = len(self.dataset)

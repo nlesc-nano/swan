@@ -2,7 +2,8 @@
 
 import logging
 from pathlib import Path
-from typing import List, Tuple
+from swan.dataset.fingerprints_data import PathLike
+from typing import Tuple
 
 import torch
 from torch import Tensor, nn
@@ -104,7 +105,7 @@ class Modeller:
 
     def train_model(self,
                     nepoch: int,
-                    frac: List[float] = [0.8, 0.2],
+                    frac: Tuple[float, float] = (0.8, 0.2),
                     batch_size: int = 64) -> Tuple[Tensor, Tensor]:
         """Train the model
 
@@ -245,7 +246,7 @@ class Modeller:
                 'loss': loss
             }, path)
 
-    def load_model(self, filename) -> None:
+    def load_model(self, filename: PathLike) -> None:
         """Load the model from the state file."""
         checkpoint = torch.load(filename)
         self.network.load_state_dict(checkpoint['model_state_dict'])
