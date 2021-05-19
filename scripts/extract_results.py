@@ -19,7 +19,7 @@ def read_info(file_name: Path, column: str = "rvalue") -> np.ndarray:
     """Read the rvalues from the table."""
     with open(file_name, 'r') as f:
         data = f.readlines()
-    
+
     # Indices of the columns with the regression info
     names = {"slope": 0, "intercept": 1, "rvalue": 2, "stderr": 3}
     index = names[column]

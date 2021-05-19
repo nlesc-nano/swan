@@ -14,6 +14,7 @@ MAP_NAMES = {"11k": 11043, "1k": 1000, "2k": 2000, "500": 500, "5k": 5000, "7k":
 PATH_GROUND_TRUE = Path("data/Carboxylic_acids/CDFT/cdft_random_500.csv")
 MSE_FILE = "MSE.json"
 
+
 def read_data():
     ground_true = pd.read_csv(PATH_GROUND_TRUE, index_col=0)
     ground_true.drop("smiles", axis=1, inplace=True)
