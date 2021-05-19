@@ -45,29 +45,29 @@ properties = [
 num_labels = len(properties)
 
 # Datasets
-# data = FingerprintsData(
-#     path_data, properties=properties, sanitize=False)
-data = DGLGraphData(
-    path_data, properties=properties, file_geometries=path_geometries, sanitize=False)
+data = FingerprintsData(
+    path_data, properties=properties, sanitize=False)
+# data = DGLGraphData(
+#     path_data, properties=properties, file_geometries=path_geometries, sanitize=False)
 # data = TorchGeometricGraphData(path_data, properties=properties, file_geometries=path_geometries, sanitize=False)
-# # FullyConnected NN
-# net = FingerprintFullyConnected(hidden_cells=100, num_labels=num_labels)
+# FullyConnected NN
+net = FingerprintFullyConnected(hidden_cells=100, num_labels=num_labels)
 
 # # Graph NN configuration
 # net = MPNN(batch_size=batch_size, output_channels=40, num_labels=num_labels)
 
-# se3 transformers
-num_layers = 2     # Number of equivariant layers
-num_channels = 8   # Number of channels in middle layers
-num_nlayers = 0    # Number of layers for nonlinearity
-num_degrees = 2    # Number of irreps {0,1,...,num_degrees-1}
-div = 4            # Low dimensional embedding fraction
-pooling = 'avg'    # Choose from avg or max
-n_heads = 1        # Number of attention heads
+# # se3 transformers
+# num_layers = 2     # Number of equivariant layers
+# num_channels = 8   # Number of channels in middle layers
+# num_nlayers = 0    # Number of layers for nonlinearity
+# num_degrees = 2    # Number of irreps {0,1,...,num_degrees-1}
+# div = 4            # Low dimensional embedding fraction
+# pooling = 'avg'    # Choose from avg or max
+# n_heads = 1        # Number of attention heads
 
-net = SE3Transformer(
-    num_layers, num_channels, num_nlayers=num_nlayers, num_degrees=num_degrees, div=div,
-    pooling=pooling, n_heads=n_heads)
+# net = SE3Transformer(
+#     num_layers, num_channels, num_nlayers=num_nlayers, num_degrees=num_degrees, div=div,
+#     pooling=pooling, n_heads=n_heads)
 
 # training and validation
 torch.set_default_dtype(torch.float32)
@@ -75,6 +75,10 @@ researcher = Modeller(net, data, use_cuda=False)
 researcher.set_optimizer("Adam", lr=0.0005)
 researcher.set_scheduler("StepLR", 0.1)
 researcher.data.scale_labels()
-researcher.train_model(nepoch=nepoch, batch_size=batch_size)
-expected, predicted = [x.cpu().detach().numpy() for x in researcher.validate_model()]
-create_scatter_plot(predicted, expected, properties)
+trained_data = researcher.train_model(nepoch=nepoch, batch_size=batch_size)
+predicted_train, expected_train = [x.cpu().detach().numpy() for x in trained_data]
+create_scatter_plot(predicted_train, expected_train, properties, "trained_scatterplot")
+
+# Print validation scatterplot
+predicted_validation, expected_validation = [x.cpu().detach().numpy() for x in researcher.validate_model()]
+create_scatter_plot(predicted_validation, expected_validation, properties, "validation_scatterplot")

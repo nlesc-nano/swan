@@ -9,10 +9,8 @@ The hyperparameters are taken from the following references:
 ## FullyConnectedFingerPrint
 | Parameter       | value |
 | :-------------: | :---: |
-| num_labels      | 1     |
-| num_iterations  | 3     |
-| output_channels | 10    |
-| batch_size      | 20    |
+| hidden_cells    | 100   |
+| batch_size      | 100   |
 | learning rate   | 5e-4  |
 
 
