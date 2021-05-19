@@ -15,3 +15,15 @@ def test_decision_tree():
     predicted, expected = modeller.valid_model()
     reg = stats.linregress(predicted.flatten(), expected.flatten())
     assert reg.rvalue > 0
+
+
+def test_svm():
+    """Check the interface to the support vector machine."""
+    data = FingerprintsData(PATH_TEST / "thousand.csv", properties=["gammas"], sanitize=False)
+
+    data.scale_labels()
+    modeller = SKModeller(data, "svm")
+    modeller.train_model()
+    predicted, expected = modeller.valid_model()
+    reg = stats.linregress(predicted.flatten(), expected.flatten())
+    assert reg.rvalue > 0

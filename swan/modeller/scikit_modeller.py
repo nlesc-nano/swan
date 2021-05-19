@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Optional, Tuple, Union
 
 import numpy as np
-from sklearn import tree
+from sklearn import tree, gaussian_process, svm
 
 from ..dataset.fingerprints_data import FingerprintsData
 
@@ -27,7 +27,11 @@ class SKModeller:
         self.labels = data.dataset.labels.numpy()
         self.path_model = "swan_skmodeller.pkl"
 
-        supported_models = {"decisiontree": tree.DecisionTreeRegressor}
+        supported_models = {
+            "decisiontree": tree.DecisionTreeRegressor,
+            "svm": svm.SVR,
+            "gaussianprocess": gaussian_process.GaussianProcessRegressor
+        }
 
         if name.lower() in supported_models:
             self.model = supported_models[name.lower()](**kwargs)
