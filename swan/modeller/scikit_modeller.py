@@ -71,7 +71,7 @@ class SKModeller:
         with open(self.path_model, 'wb') as handler:
             pickle.dump(self.model, handler)
 
-    def valid_model(self) -> Tuple[np.ndarray, np.ndarray]:
+    def validate_model(self) -> Tuple[np.ndarray, np.ndarray]:
         """Check the model prediction power."""
         return self.model.predict(self.features_validset), self.labels_validset
 
