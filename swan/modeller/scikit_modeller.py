@@ -83,7 +83,11 @@ class SKModeller:
 
     def validate_model(self) -> Tuple[np.ndarray, np.ndarray]:
         """Check the model prediction power."""
-        return self.model.predict(self.features_validset), self.labels_validset
+        predicted = self.model.predict(self.features_validset)
+        expected = self.labels_validset
+        score = self.model.score(self.features_validset, expected)
+        LOGGER.info(f"Validation R^2 score: {score}")
+        return predicted, expected
 
     def load_model(self, path_model: Optional[PathLike]) -> None:
         """Load the model from the state file."""
