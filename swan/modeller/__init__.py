@@ -1,2 +1,4 @@
 from .modeller import Modeller
-_all__ = ["Modeller"]
+from .scikit_modeller import SKModeller
+
+_all__ = ["Modeller", "SKModeller"]

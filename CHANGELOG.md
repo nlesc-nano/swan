@@ -1,10 +1,16 @@
 # Change Log
 
+# 0.6.0 [Unreleased]
+## New
+* Add interface to scikit regressors (#85)
+
+## Changed
+* Fix prediction functionality (#81)
+
 # 0.5.0 [04/05/2021]
 ## Changed
 * Fix graph neural network implementation (#59)
 * Rename the graph neural network to MPNN (message passing NN)
-* Fix prediction functionality (#81)
 
 ## New
 * Interface to [se3-transformer](https://www.dgl.ai/pages/start.html) (#57)
