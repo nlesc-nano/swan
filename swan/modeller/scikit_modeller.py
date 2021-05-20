@@ -1,15 +1,18 @@
 """Module to create statistical models using scikit learn."""
 
+import logging
 import pickle
 from pathlib import Path
 from typing import Optional, Tuple, Union
 
 import numpy as np
-from sklearn import tree, gaussian_process, svm
+from sklearn import gaussian_process, svm, tree
 
 from ..dataset.fingerprints_data import FingerprintsData
 
 PathLike = Union[str, Path]
+
+LOGGER = logging.getLogger(__name__)
 
 
 class SKModeller:
@@ -67,7 +70,13 @@ class SKModeller:
         """
         self.split_data(frac)
         self.model.fit(self.features_trainset, self.labels_trainset)
+        score = self.model.score()
+        LOGGER.info(f"Training score: {score}")
 
+        self.save_model()
+
+    def save_model(self):
+        """Store the trained model."""
         with open(self.path_model, 'wb') as handler:
             pickle.dump(self.model, handler)
 
