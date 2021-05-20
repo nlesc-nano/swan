@@ -22,7 +22,7 @@ def run_test(model: str, **kwargs):
 
 def test_decision_tree():
     """Check the interface to the Decisiontree class."""
-    run_test("tree")
+    run_test("decision_tree")
 
 
 def test_svm():
@@ -33,4 +33,4 @@ def test_svm():
 def test_gaussian_process():
     """Check the interface to the support vector machine."""
     kernel = ConstantKernel(constant_value=10)
-    run_test("gaussian", kernel=kernel)
+    run_test("gaussian_process", kernel=kernel)

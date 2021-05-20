@@ -40,9 +40,9 @@ properties = [
 
 
 supported_models = {
-    "tree": tree.DecisionTreeRegressor,
+    "decision_tree": tree.DecisionTreeRegressor,
     "svm": svm.SVR,
-    "gaussian": gaussian_process.GaussianProcessRegressor
+    "gaussian_process": gaussian_process.GaussianProcessRegressor
 }
 
 supported_parameters = {
@@ -96,7 +96,7 @@ def search_for_hyperparameters(model_name: str, nsamples: Optional[int]):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-m", "--model", choices=["tree", "svm", "gaussian"], default="tree")
+    parser.add_argument("-m", "--model", choices=["decision_tree", "svm", "gaussian_process"], default="decision_tree")
     parser.add_argument("-n", "--nsamples", help="Number of sample to use", default=None)
     args = parser.parse_args()
 
