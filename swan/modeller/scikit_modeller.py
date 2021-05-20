@@ -33,9 +33,9 @@ class SKModeller:
         self.path_model = "swan_skmodeller.pkl"
 
         supported_models = {
-            "decisiontree": tree.DecisionTreeRegressor,
+            "tree": tree.DecisionTreeRegressor,
             "svm": svm.SVR,
-            "gaussianprocess": gaussian_process.GaussianProcessRegressor
+            "gaussian": gaussian_process.GaussianProcessRegressor
         }
 
         if name.lower() in supported_models:
