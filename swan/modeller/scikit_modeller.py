@@ -23,6 +23,8 @@ class SKModeller:
 
         Parameters
         ----------
+        data
+            FingerprintsData object containing the dataset
         name
             scikit learn model to use
         """
@@ -41,13 +43,15 @@ class SKModeller:
         else:
             raise RuntimeError(f"There is not model name: {name}")
 
+        LOGGER.info(f"Created {name} model")
+
     def split_data(self, frac: Tuple[float, float]):
         """Split the data into a training and validation set.
 
         Parameters
         ----------
         frac
-        fraction to divide the dataset, by default [0.8, 0.2]
+            fraction to divide the dataset, by default [0.8, 0.2]
         """
         # Generate random indices to train and validate the model
         size = len(self.fingerprints)
@@ -70,9 +74,6 @@ class SKModeller:
         """
         self.split_data(frac)
         self.model.fit(self.features_trainset, self.labels_trainset)
-        score = self.model.score()
-        LOGGER.info(f"Training score: {score}")
-
         self.save_model()
 
     def save_model(self):
@@ -91,5 +92,15 @@ class SKModeller:
             self.model = pickle.load(handler)
 
     def predict(self, inp_data: np.ndarray) -> np.ndarray:
-        """Used the previously trained model to predict properties."""
+        """Used the previously trained model to predict properties.
+
+        Parameters
+        ----------
+        inp_data
+            Matrix containing a given fingerprint for each row
+
+        Returns
+        -------
+        Array containing the predicted results
+        """
         return self.model.predict(inp_data)
