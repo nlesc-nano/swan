@@ -33,9 +33,9 @@ class SKModeller:
         self.path_model = "swan_skmodeller.pkl"
 
         supported_models = {
-            "decisiontree": tree.DecisionTreeRegressor,
+            "decision_tree": tree.DecisionTreeRegressor,
             "svm": svm.SVR,
-            "gaussianprocess": gaussian_process.GaussianProcessRegressor
+            "gaussian_process": gaussian_process.GaussianProcessRegressor
         }
 
         if name.lower() in supported_models:
@@ -73,7 +73,7 @@ class SKModeller:
             fraction to divide the dataset, by default [0.8, 0.2]
         """
         self.split_data(frac)
-        self.model.fit(self.features_trainset, self.labels_trainset)
+        self.model.fit(self.features_trainset, self.labels_trainset.flatten())
         self.save_model()
 
     def save_model(self):
