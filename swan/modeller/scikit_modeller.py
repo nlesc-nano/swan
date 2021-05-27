@@ -9,6 +9,7 @@ import numpy as np
 from sklearn import gaussian_process, svm, tree
 
 from ..dataset.fingerprints_data import FingerprintsData
+from ..state import StateH5
 
 PathLike = Union[str, Path]
 
@@ -28,6 +29,7 @@ class SKModeller:
         name
             scikit learn model to use
         """
+        self.state = StateH5()
         self.fingerprints = data.fingerprints.numpy()
         self.labels = data.dataset.labels.numpy()
         self.path_model = "swan_skmodeller.pkl"

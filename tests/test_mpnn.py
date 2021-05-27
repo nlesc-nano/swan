@@ -8,7 +8,7 @@ from swan.dataset import TorchGeometricGraphData
 from swan.modeller import Modeller
 from swan.modeller.models.graph_models import MPNN
 
-from .utils_test import PATH_TEST
+from .utils_test import PATH_TEST, remove_files
 
 
 class TestMPNN(unittest.TestCase):
@@ -27,6 +27,7 @@ class TestMPNN(unittest.TestCase):
         expected, predicted = self.modeller.validate_model()
         err = torch.functional.F.mse_loss(expected, predicted)
         assert not np.isnan(err.item())
+        remove_files()
 
     def test_predict(self):
         graphs = self.modeller.data.molecular_graphs

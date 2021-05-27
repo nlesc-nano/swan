@@ -7,7 +7,7 @@ from swan.dataset import TorchGeometricGraphData
 from swan.modeller import Modeller
 from swan.modeller.models import InvariantPolynomial
 
-from .utils_test import PATH_TEST
+from .utils_test import PATH_TEST, remove_files
 
 
 def test_e3nn_equivariant():
@@ -23,3 +23,4 @@ def test_e3nn_equivariant():
     expected, predicted = modeller.validate_model()
     err = torch.functional.F.mse_loss(expected, predicted)
     assert not np.isnan(err.item())
+    remove_files()

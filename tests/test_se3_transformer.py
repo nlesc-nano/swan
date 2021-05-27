@@ -6,7 +6,7 @@ from swan.dataset.dgl_graph_data import dgl_data_loader
 from swan.modeller import Modeller
 from swan.modeller.models import TFN, SE3Transformer
 
-from .utils_test import PATH_TEST
+from .utils_test import PATH_TEST, remove_files
 
 NUM_LAYERS = 2     # Number of equivariant layers
 NUM_CHANNELS = 4  # Number of channels in middle layers
@@ -27,6 +27,7 @@ def run_modeller(net: torch.nn.Module):
     expected, predicted = modeller.validate_model()
     err = torch.functional.F.mse_loss(expected, predicted)
     assert not np.isnan(err.item())
+    remove_files()
 
 
 def test_tfn():

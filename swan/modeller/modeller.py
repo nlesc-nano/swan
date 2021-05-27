@@ -10,6 +10,7 @@ from torch import Tensor, nn
 
 from ..dataset.swan_data_base import SwanDataBase
 from ..utils.early_stopping import EarlyStopping
+from ..state import StateH5
 
 # Starting logger
 LOGGER = logging.getLogger(__name__)
@@ -32,6 +33,7 @@ class Modeller:
         use_cuda
             Train the model using Cuda
         """
+        self.state = StateH5()
         torch.set_default_dtype(torch.float32)
         # Early stopping functionality
         self.early_stopping = EarlyStopping()
@@ -64,6 +66,10 @@ class Modeller:
 
         # current number of epoch
         self.epoch = 0
+
+        # Loss data
+        self.train_losses = []
+        self.validation_losses = []
 
     def set_optimizer(self, name: str, *args, **kwargs) -> None:
         """Set an optimizer using the config file
@@ -144,8 +150,11 @@ class Modeller:
                 loss_all += loss_batch
                 results.append(predicted)
                 expected.append(y_batch)
-            LOGGER.info(
-                f"Loss: {loss_all / self.data.train_dataset.__len__()}")
+
+            # Train loss
+            loss = loss_all / len(self.data.train_dataset)
+            self.train_losses.append(loss)
+            LOGGER.info(f"Loss: {loss}")
 
             # decrease the LR if necessary
             if self.scheduler is not None:
@@ -153,6 +162,7 @@ class Modeller:
 
             # Check for early stopping
             self.validate_model()
+            self.validation_losses.append(self.validation_loss)
             self.early_stopping(self.save_model, epoch, self.validation_loss)
             if self.early_stopping.early_stop:
                 LOGGER.info("EARLY STOPPING")
@@ -160,6 +170,10 @@ class Modeller:
 
         # Save the models
         self.save_model(epoch, loss_all)
+
+        # Store the loss
+        self.state.store_array("train_loss", self.train_losses)
+        self.state.store_array("validation_loss", self.validation_losses)
 
         return torch.cat(results), torch.cat(expected)
 
@@ -210,7 +224,7 @@ class Modeller:
                 loss_all += loss.item() * len(x_val)
                 results.append(predicted)
                 expected.append(y_val)
-            self.validation_loss = loss_all / self.data.valid_dataset.__len__()
+            self.validation_loss = loss_all / len(self.data.valid_dataset)
             LOGGER.info(f"validation loss: {self.validation_loss}")
         return torch.cat(results), torch.cat(expected)
 
