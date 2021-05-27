@@ -37,7 +37,7 @@ class StateH5:
             else:
                 return data in f5
 
-    def store_array(self, node: str, data: np.ndarray, dtype: Any = float) -> None:
+    def store_array(self, node: str, data: np.ndarray, dtype: str = "float") -> None:
         """Store a tensor in the HDF5.
 
         Parameters
@@ -47,6 +47,13 @@ class StateH5:
         data
             Numpy array or list of array to store
         """
+        supported_types = {'float': float, 'str': h5py.string_dtype(encoding='utf-8')}
+        if dtype in supported_types:
+            dtype = supported_types[dtype]
+        else:
+            msg = f"It is not possible to store data using type: {dtype}"
+            raise RuntimeError(msg)
+
         with h5py.File(self.path, 'r+') as f5:
             f5.require_dataset(node, shape=np.shape(data), data=data, dtype=dtype)
 
@@ -68,7 +75,7 @@ class StateH5:
             The property has not been found
         """
         try:
-            with h5py.File(self.path, 'r') as f5:
+            with h5py.File(self.path, 'r+') as f5:
                 if isinstance(paths_to_prop, list):
                     return [f5[path][()] for path in paths_to_prop]
                 else:
@@ -76,6 +83,3 @@ class StateH5:
         except KeyError:
             msg = f"There is not {paths_to_prop} stored in the HDF5\n"
             raise KeyError(msg)
-        except FileNotFoundError:
-            msg = "there is not HDF5 file containing the numerical results"
-            raise RuntimeError(msg)
