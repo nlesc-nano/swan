@@ -8,15 +8,15 @@ import torch
 from torch import Tensor, nn
 
 from ..dataset.swan_data_base import SwanDataBase
-from ..utils.early_stopping import EarlyStopping
-from ..state import StateH5
 from ..type_hints import PathLike
+from ..utils.early_stopping import EarlyStopping
+from .base_modeller import BaseModeller
 
 # Starting logger
 LOGGER = logging.getLogger(__name__)
 
 
-class Modeller:
+class Modeller(BaseModeller):
     """Object to create statistical models."""
     def __init__(self,
                  network: nn.Module,
@@ -33,7 +33,7 @@ class Modeller:
         use_cuda
             Train the model using Cuda
         """
-        self.state = StateH5()
+        super().__init__(data)
         torch.set_default_dtype(torch.float32)
         # Early stopping functionality
         self.early_stopping = EarlyStopping()

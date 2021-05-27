@@ -8,13 +8,13 @@ import numpy as np
 from sklearn import gaussian_process, svm, tree
 
 from ..dataset.fingerprints_data import FingerprintsData
-from ..state import StateH5
 from ..type_hints import PathLike
+from .base_modeller import BaseModeller
 
 LOGGER = logging.getLogger(__name__)
 
 
-class SKModeller:
+class SKModeller(BaseModeller):
     """Create statistical models using the scikit learn library."""
 
     def __init__(self, data: FingerprintsData, name: str, **kwargs):
@@ -27,9 +27,8 @@ class SKModeller:
         name
             scikit learn model to use
         """
-        self.state = StateH5()
+        super().__init__(data)
         self.fingerprints = data.fingerprints.numpy()
-        self.smiles = data.dataframe.smiles.to_numpy()
         self.labels = data.dataset.labels.numpy()
         self.path_model = "swan_skmodeller.pkl"
 
