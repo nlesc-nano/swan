@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
-from pandas.core.algorithms import mode
 import seaborn as sns
 import json
 from pathlib import Path
@@ -16,19 +14,26 @@ MSE_FILE = "MSE.json"
 
 
 def read_data():
-    ground_true = pd.read_csv(PATH_GROUND_TRUE, index_col=0)
-    ground_true.drop("smiles", axis=1, inplace=True)
+    # ground_true = pd.read_csv(PATH_GROUND_TRUE, index_col=0)
+    # ground_true.drop("smiles", axis=1, inplace=True)
     results = {}
     for m in MODELS:
         results[m] = {}
         for n in NSAMPLES:
             df = pd.read_json(f"means_{m}_{n}.json")
-            new = (df - ground_true) ** 2
-            mse = new.sum() / len(df)
-            results[m][n] = mse.to_dict()
+            # new = (df - ground_true) ** 2
+            # mse = new.sum() / len(df)
+            results[m][n] = df.sum().to_dict()
 
-    with open(MSE_FILE, 'w') as f:
-        json.dump(results, f, indent=4)
+    data = [pd.DataFrame(transpose_data(results[m])) for m in MODELS]
+    for df in data:
+        df.sort_index(inplace=True)
+    for df, model in zip(data, MODELS):
+        df.to_csv(f"{model}.csv")
+
+
+    # with open(MSE_FILE, 'w') as f:
+    #     json.dump(results, f, indent=4)
 
 
 def plot_data(model: str):
@@ -63,8 +68,8 @@ def transpose_data(data):
 
 
 def main():
-    # read_data()
-    plot_data(MODELS[0])
+    read_data()
+    # plot_data(MODELS[0])
 
 
 if __name__ == "__main__":
