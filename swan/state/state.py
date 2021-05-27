@@ -6,7 +6,7 @@ from typing import Any, List, Optional, Union
 import h5py
 import numpy as np
 
-PathLike = Union[str, Path]
+from ..type_hints import PathLike
 
 
 class StateH5:
@@ -37,7 +37,7 @@ class StateH5:
             else:
                 return data in f5
 
-    def store_array(self, node: str, data: np.ndarray, dtype: str = "float") -> None:
+    def store_array(self, node: str, data: Union[List[Any], np.ndarray], dtype: str = "float") -> None:
         """Store a tensor in the HDF5.
 
         Parameters

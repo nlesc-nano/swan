@@ -5,17 +5,15 @@ API
 .. autoclass:: TorchGeometricGraphData
 
 """
-from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
 
 import torch
 import torch_geometric as tg
 from torch_geometric.data import Data
 
-from .graph.molecular_graph import create_molecular_torch_geometric_graph
+from ..type_hints import PathLike
 from .data_graph_base import SwanGraphData
-
-PathLike = Union[str, Path]
+from .graph.molecular_graph import create_molecular_torch_geometric_graph
 
 
 class TorchGeometricGraphData(SwanGraphData):

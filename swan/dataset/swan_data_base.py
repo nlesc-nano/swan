@@ -10,10 +10,9 @@ from rdkit.Chem import PandasTools
 from sklearn.preprocessing import RobustScaler
 from torch.utils.data import DataLoader, Dataset, random_split
 
+from ..type_hints import PathLike
 from .geometry import read_geometries_from_files
 from .sanitize_data import sanitize_data
-
-PathLike = Union[str, Path]
 
 __all__ = ["SwanDataBase"]
 

@@ -2,7 +2,6 @@
 
 import logging
 from pathlib import Path
-from swan.dataset.fingerprints_data import PathLike
 from typing import Tuple
 
 import torch
@@ -11,6 +10,7 @@ from torch import Tensor, nn
 from ..dataset.swan_data_base import SwanDataBase
 from ..utils.early_stopping import EarlyStopping
 from ..state import StateH5
+from ..type_hints import PathLike
 
 # Starting logger
 LOGGER = logging.getLogger(__name__)
@@ -233,7 +233,7 @@ class Modeller:
 
         Parameters
         ----------
-        inp_data : Tensor
+        inp_data
             input data of the network
 
         Returns

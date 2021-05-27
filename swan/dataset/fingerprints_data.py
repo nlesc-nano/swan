@@ -1,5 +1,4 @@
 """Module to process dataset."""
-from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
 
 import torch
@@ -7,8 +6,7 @@ from torch.utils.data import Dataset
 
 from .features.featurizer import generate_fingerprints
 from .swan_data_base import SwanDataBase
-
-PathLike = Union[str, Path]
+from ..type_hints import PathLike
 
 __all__ = ["FingerprintsData"]
 
