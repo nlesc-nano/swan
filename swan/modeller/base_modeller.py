@@ -5,8 +5,10 @@ from typing import Optional, Tuple, TypeVar
 from ..dataset.swan_data_base import SwanDataBase
 from ..state import StateH5
 from ..type_hints import PathLike
+import numpy as np
+import torch
 
-T = TypeVar('T')
+T = TypeVar('T', np.ndarray, torch.Tensor)
 
 
 class BaseModeller:

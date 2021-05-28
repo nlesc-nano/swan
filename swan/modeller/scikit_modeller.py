@@ -64,6 +64,10 @@ class SKModeller(BaseModeller):
         self.labels_trainset = self.labels[indices[:ntrain]]
         self.labels_validset = self.labels[indices[ntrain:]]
 
+        # Store the smiles used for training and validation
+        self.state.store_array("smiles_train", self.smiles[indices[:ntrain]])
+        self.state.store_array("smiles_validate", self.smiles[indices[ntrain:]])
+
     def train_model(self, frac: Tuple[float, float] = (0.8, 0.2)):
         """Train the model using the given data.
 
