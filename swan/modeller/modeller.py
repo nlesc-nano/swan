@@ -118,7 +118,11 @@ class Modeller(BaseModeller[torch.Tensor]):
             fraction to divide the dataset, by default [0.8, 0.2]
         """
         # create the dataloader
-        self.data.create_data_loader(frac=frac, batch_size=batch_size)
+        indices_train, indices_validate = self.data.create_data_loader(frac=frac, batch_size=batch_size)
+
+        # Store the smiles used for training and validation
+        self.state.store_array("smiles_train", self.smiles[indices_train], dtype="str")
+        self.state.store_array("smiles_validate", self.smiles[indices_validate], dtype="str")
 
     def train_model(self,
                     nepoch: int,
