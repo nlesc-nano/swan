@@ -1,14 +1,10 @@
 
 import abc
-from typing import Optional, Tuple, TypeVar
+from typing import Any, Optional, Tuple
 
 from ..dataset.swan_data_base import SwanDataBase
 from ..state import StateH5
 from ..type_hints import PathLike
-import numpy as np
-import torch
-
-T = TypeVar('T', np.ndarray, torch.Tensor)
 
 
 class BaseModeller:
@@ -30,7 +26,7 @@ class BaseModeller:
         raise NotImplementedError
 
     @abc.abstractmethod
-    def validate_model(self) -> Tuple[T, T]:
+    def validate_model(self) -> Tuple[Any, Any]:
         """compute the output of the model on the validation set
 
         Returns
@@ -40,7 +36,7 @@ class BaseModeller:
         raise NotImplementedError
 
     @abc.abstractmethod
-    def predict(self, inp_data: T) -> T:
+    def predict(self, inp_data: Any) -> Any:
         """compute output of the model for a given input
 
         Parameters
