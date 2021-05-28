@@ -1,18 +1,12 @@
 """Module to interact with HDF5."""
 
 from pathlib import Path
-from typing import Any, List, Optional, Union, TYPE_CHECKING
+from typing import List, Optional
 
 import h5py
 import numpy as np
 
-from ..type_hints import PathLike
-
-if TYPE_CHECKING:
-    import numpy.typing as npt
-    ArrayLike = npt.ArrayLike
-else:
-    ArrayLike = Union[List[Any], np.ndarray]
+from ..type_hints import PathLike, ArrayLike
 
 
 class StateH5:
