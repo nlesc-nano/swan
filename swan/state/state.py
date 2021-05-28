@@ -12,9 +12,12 @@ from ..type_hints import PathLike
 class StateH5:
     """Class to interact with a HDF5 file storing the training step."""
 
-    def __init__(self, path_hdf5: Optional[PathLike] = None) -> None:
+    def __init__(self, path_hdf5: Optional[PathLike] = None, replace_state: bool = False) -> None:
         self.path = "swan_state.h5" if path_hdf5 is None else path_hdf5
         self.path = Path(self.path)
+
+        if replace_state and self.path.exists():
+            self.path.unlink()
 
         if not self.path.exists():
             self.path.touch()

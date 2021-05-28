@@ -17,7 +17,7 @@ LOGGER = logging.getLogger(__name__)
 class SKModeller(BaseModeller[np.ndarray]):
     """Create statistical models using the scikit learn library."""
 
-    def __init__(self, data: FingerprintsData, name: str, **kwargs):
+    def __init__(self, data: FingerprintsData, name: str, replace_state: bool = True, **kwargs):
         """Class constructor.
 
         Parameters
@@ -26,8 +26,10 @@ class SKModeller(BaseModeller[np.ndarray]):
             FingerprintsData object containing the dataset
         name
             scikit learn model to use
+        replace_state
+            Remove previous state file
         """
-        super().__init__(data)
+        super().__init__(data, replace_state)
         self.fingerprints = data.fingerprints.numpy()
         self.labels = data.dataset.labels.numpy()
         self.path_model = "swan_skmodeller.pkl"

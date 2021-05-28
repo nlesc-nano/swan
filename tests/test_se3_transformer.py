@@ -20,7 +20,7 @@ DATA = DGLGraphData(CSV_FILE, properties=["gammas"])
 
 def run_modeller(net: torch.nn.Module):
     """Run a given model."""
-    modeller = Modeller(net, DATA, use_cuda=False)
+    modeller = Modeller(net, DATA, use_cuda=False, replace_state=False)
 
     modeller.data.scale_labels()
     modeller.train_model(nepoch=1, batch_size=64)

@@ -15,7 +15,7 @@ def test_e3nn_equivariant():
     path_data = PATH_TEST / "thousand.csv"
     data = TorchGeometricGraphData(path_data, properties=["gammas"])
     net = InvariantPolynomial()
-    modeller = Modeller(net, data)
+    modeller = Modeller(net, data, replace_state=True)
     modeller.set_optimizer('Adam', lr=0.001)
     modeller.set_scheduler("StepLR", 0.1)
     modeller.data.scale_labels()

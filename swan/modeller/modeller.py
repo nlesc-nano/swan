@@ -21,6 +21,7 @@ class Modeller(BaseModeller[torch.Tensor]):
     def __init__(self,
                  network: nn.Module,
                  data: SwanDataBase,
+                 replace_state: bool = False,
                  use_cuda: bool = False):
         """Base class of the modeller
 
@@ -30,10 +31,12 @@ class Modeller(BaseModeller[torch.Tensor]):
             Torch Neural Network [description]
         dataset
             Torch Dataset
+        replace_state
+            Remove previous state file
         use_cuda
             Train the model using Cuda
         """
-        super().__init__(data)
+        super().__init__(data, replace_state)
         torch.set_default_dtype(torch.float32)
         # Early stopping functionality
         self.early_stopping = EarlyStopping()
