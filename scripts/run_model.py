@@ -77,8 +77,13 @@ researcher.set_scheduler("StepLR", 0.1)
 researcher.data.scale_labels()
 trained_data = researcher.train_model(nepoch=nepoch, batch_size=batch_size)
 predicted_train, expected_train = [x.cpu().detach().numpy() for x in trained_data]
+print("train regression")
 create_scatter_plot(predicted_train, expected_train, properties, "trained_scatterplot")
 
 # Print validation scatterplot
+print("validation regression")
 predicted_validation, expected_validation = [x.cpu().detach().numpy() for x in researcher.validate_model()]
 create_scatter_plot(predicted_validation, expected_validation, properties, "validation_scatterplot")
+
+print("properties stored in the HDF5")
+researcher.state.show()

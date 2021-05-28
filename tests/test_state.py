@@ -8,7 +8,7 @@ import pandas as pd
 from .utils_test import PATH_TEST
 
 
-def test_state(tmp_path: Path):
+def test_state(tmp_path: Path, capsys):
     """Check that the class behaves as expected."""
     path_hdf5 = tmp_path / "swan_state.h5"
     state = StateH5(path_hdf5)
@@ -20,6 +20,10 @@ def test_state(tmp_path: Path):
 
     tensor = state.retrieve_data(node)
     assert np.allclose(tensor, data)
+
+    state.show()
+    out, _ = capsys.readouterr()
+    assert "Available data" in out
 
 
 def test_state_unknown_key(tmp_path: Path):

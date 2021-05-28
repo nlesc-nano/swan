@@ -83,3 +83,11 @@ class StateH5:
         except KeyError:
             msg = f"There is not {paths_to_prop} stored in the HDF5\n"
             raise KeyError(msg)
+
+    def show(self):
+        """Print the keys store in the HDF5."""
+        with h5py.File(self.path, 'r') as f5:
+            keys = list(f5.keys())
+
+        data = "\n".join(keys)
+        print("Available data stored in the state file:\n", data)

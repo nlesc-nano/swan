@@ -184,8 +184,8 @@ class Modeller(BaseModeller[torch.Tensor]):
         self.save_model(epoch, loss_all)
 
         # Store the loss
-        self.state.store_array("train_loss", self.train_losses)
-        self.state.store_array("validation_loss", self.validation_losses)
+        self.state.store_array("loss_train", self.train_losses)
+        self.state.store_array("loss_validate", self.validation_losses)
 
         return torch.cat(results), torch.cat(expected)
 
