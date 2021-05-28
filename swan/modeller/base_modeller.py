@@ -1,13 +1,19 @@
 
 import abc
-from typing import Any, Optional, Tuple
+from typing import Generic, Optional, Tuple, TypeVar, Union
+
+import numpy as np
+import torch
 
 from ..dataset.swan_data_base import SwanDataBase
 from ..state import StateH5
 from ..type_hints import PathLike
 
+# `bound` preserves all sub-type information, which might be useful
+T_co = TypeVar('T_co', bound=Union[np.ndarray, torch.Tensor], covariant=True)
 
-class BaseModeller:
+
+class BaseModeller(Generic[T_co]):
     """Base class for the modellers."""
 
     def __init__(self, data: SwanDataBase) -> None:
@@ -26,7 +32,7 @@ class BaseModeller:
         raise NotImplementedError
 
     @abc.abstractmethod
-    def validate_model(self) -> Tuple[Any, Any]:
+    def validate_model(self) -> Tuple[T_co, T_co]:
         """compute the output of the model on the validation set
 
         Returns
@@ -36,7 +42,7 @@ class BaseModeller:
         raise NotImplementedError
 
     @abc.abstractmethod
-    def predict(self, inp_data: Any) -> Any:
+    def predict(self, inp_data: T_co) -> T_co:
         """compute output of the model for a given input
 
         Parameters
@@ -60,4 +66,3 @@ class BaseModeller:
     def save_model(self, *args, **kwargs):
         """Store the trained model."""
         raise NotImplementedError
-

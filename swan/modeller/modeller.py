@@ -16,7 +16,7 @@ from .base_modeller import BaseModeller
 LOGGER = logging.getLogger(__name__)
 
 
-class Modeller(BaseModeller):
+class Modeller(BaseModeller[torch.Tensor]):
     """Object to create statistical models."""
     def __init__(self,
                  network: nn.Module,
@@ -109,6 +109,17 @@ class Modeller(BaseModeller):
             self.scheduler = getattr(torch.optim.lr_scheduler,
                                      name)(self.optimizer, *args, **kwargs)
 
+    def split_data(self, frac: Tuple[float, float], batch_size: int):
+        """Split the data into a training and validation set.
+
+        Parameters
+        ----------
+        frac
+            fraction to divide the dataset, by default [0.8, 0.2]
+        """
+        # create the dataloader
+        self.data.create_data_loader(frac=frac, batch_size=batch_size)
+
     def train_model(self,
                     nepoch: int,
                     frac: Tuple[float, float] = (0.8, 0.2),
@@ -124,11 +135,8 @@ class Modeller(BaseModeller):
         batch_size : int, optional
             batchsize, by default 64
         """
-
         LOGGER.info("TRAINING STEP")
-
-        # create the dataloader
-        self.data.create_data_loader(frac=frac, batch_size=batch_size)
+        self.split_data(frac, batch_size)
 
         # run over the epochs
         for epoch in range(self.epoch, self.epoch + nepoch):

@@ -14,7 +14,7 @@ from .base_modeller import BaseModeller
 LOGGER = logging.getLogger(__name__)
 
 
-class SKModeller(BaseModeller):
+class SKModeller(BaseModeller[np.ndarray]):
     """Create statistical models using the scikit learn library."""
 
     def __init__(self, data: FingerprintsData, name: str, **kwargs):
