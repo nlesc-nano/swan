@@ -1,12 +1,18 @@
 """Module to interact with HDF5."""
 
 from pathlib import Path
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Union, TYPE_CHECKING
 
 import h5py
 import numpy as np
 
 from ..type_hints import PathLike
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
+    ArrayLike = npt.ArrayLike
+else:
+    ArrayLike = Union[List[Any], np.ndarray]
 
 
 class StateH5:
@@ -22,7 +28,7 @@ class StateH5:
         if not self.path.exists():
             self.path.touch()
 
-    def has_data(self, data: Union[str, List[str]]) -> bool:
+    def has_data(self, data: ArrayLike) -> bool:
         """Search if the node exists in the HDF5 file.
 
         Parameters
@@ -40,7 +46,7 @@ class StateH5:
             else:
                 return data in f5
 
-    def store_array(self, node: str, data: Union[List[Any], np.ndarray], dtype: str = "float") -> None:
+    def store_array(self, node: str, data: ArrayLike, dtype: str = "float") -> None:
         """Store a tensor in the HDF5.
 
         Parameters
@@ -60,13 +66,13 @@ class StateH5:
         with h5py.File(self.path, 'r+') as f5:
             f5.require_dataset(node, shape=np.shape(data), data=data, dtype=dtype)
 
-    def retrieve_data(self, paths_to_prop: Union[str, List[str]]) -> List[np.ndarray]:
+    def retrieve_data(self, paths_to_prop: str) -> List[np.ndarray]:
         """Read Numerical properties from ``paths_hdf5``.
 
         Parameters
         ----------
         path_to_prop
-            str or list of str to data
+            str
 
         Returns
         -------
