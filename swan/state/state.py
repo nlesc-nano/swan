@@ -79,10 +79,7 @@ class StateH5:
         """
         try:
             with h5py.File(self.path, 'r+') as f5:
-                if isinstance(paths_to_prop, list):
-                    return [f5[path][()] for path in paths_to_prop]
-                else:
-                    return f5[paths_to_prop][()]
+                return f5[paths_to_prop][()]
         except KeyError:
             msg = f"There is not {paths_to_prop} stored in the HDF5\n"
             raise KeyError(msg)
