@@ -8,12 +8,11 @@ import pandas as pd
 import torch
 from rdkit.Chem import PandasTools
 from sklearn.preprocessing import RobustScaler
-from torch.utils.data import DataLoader, Dataset, random_split
+from torch.utils.data import DataLoader, Dataset, Subset
 
+from ..type_hints import PathLike
 from .geometry import read_geometries_from_files
 from .sanitize_data import sanitize_data
-
-PathLike = Union[str, Path]
 
 __all__ = ["SwanDataBase"]
 
@@ -114,8 +113,8 @@ class SwanDataBase:
 
     def create_data_loader(self,
                            frac: Tuple[float, float] = (0.8, 0.2),
-                           batch_size: int = 64) -> None:
-        """create the train/valid data loaders
+                           batch_size: int = 64) -> Tuple[np.ndarray, np.ndarray]:
+        """create the train/valid data loaders using non-overlapping datasets.
 
         Parameters
         ----------
@@ -126,16 +125,20 @@ class SwanDataBase:
         """
         ntotal = len(self.dataset)
         ntrain = int(frac[0] * ntotal)
-        nvalid = ntotal - ntrain
 
-        self.train_dataset, self.valid_dataset = random_split(
-            self.dataset, [ntrain, nvalid])
+        indices = np.arange(ntotal)
+        np.random.shuffle(indices)
+
+        self.train_dataset = Subset(self.dataset, indices[:ntrain])
+        self.valid_dataset = Subset(self.dataset, indices[ntrain:])
 
         self.train_loader = self.data_loader_fun(dataset=self.train_dataset,
                                                  batch_size=batch_size)
 
         self.valid_loader = self.data_loader_fun(dataset=self.valid_dataset,
                                                  batch_size=batch_size)
+
+        return indices[:ntrain], indices[ntrain:]
 
     def scale_labels(self) -> None:
         """Create a new column with the transformed target."""

@@ -1,5 +1,4 @@
 """Interface to build a Dataset for DGL. see: https://www.dgl.ai/"""
-from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 import torch
@@ -7,6 +6,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from .data_graph_base import SwanGraphData
 from .graph.molecular_graph import create_molecular_dgl_graph
+from ..type_hints import PathLike
 
 try:
     import dgl
@@ -14,9 +14,6 @@ except ImportError:
     raise ImportError("DGL is a required dependency, see: https://www.dgl.ai/")
 
 __all__ = ["DGLGraphData"]
-
-
-PathLike = Union[str, Path]
 
 
 def collate_fn(samples):

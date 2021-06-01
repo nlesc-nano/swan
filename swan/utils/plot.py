@@ -1,6 +1,6 @@
 """Miscellaneous plot functions."""
 from pathlib import Path
-from typing import Any, Iterator, List, Union
+from typing import Any, Iterator, List
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,8 +9,6 @@ import seaborn as sns
 from scipy import stats
 
 plt.switch_backend('agg')
-
-PathLike = Union[str, Path]
 
 
 def create_scatter_plot(

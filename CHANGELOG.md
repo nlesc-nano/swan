@@ -3,6 +3,7 @@
 # 0.6.0 [Unreleased]
 ## New
 * Add interface to scikit regressors (#85)
+* Add interface to HDF5 to store the training results (#88)
 
 ## Changed
 * Fix prediction functionality (#81)

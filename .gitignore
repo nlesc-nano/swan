@@ -57,6 +57,7 @@ swan_models
 
 # data files
 *.hdf5
+swan_state.h5
 
 # Pytorch
 *.pt

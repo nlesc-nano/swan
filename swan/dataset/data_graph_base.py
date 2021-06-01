@@ -1,17 +1,14 @@
 """Base class for the Graph data representation."""
 
-from pathlib import Path
 from typing import List, Optional, Union
 
 
 from .geometry import guess_positions
 from .swan_data_base import SwanDataBase
+from ..type_hints import PathLike
 
 
 __all__ = ["SwanGraphData"]
-
-
-PathLike = Union[str, Path]
 
 
 class SwanGraphData(SwanDataBase):

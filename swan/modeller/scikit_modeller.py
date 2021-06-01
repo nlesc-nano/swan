@@ -2,23 +2,22 @@
 
 import logging
 import pickle
-from pathlib import Path
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple
 
 import numpy as np
 from sklearn import gaussian_process, svm, tree
 
 from ..dataset.fingerprints_data import FingerprintsData
-
-PathLike = Union[str, Path]
+from ..type_hints import PathLike
+from .base_modeller import BaseModeller
 
 LOGGER = logging.getLogger(__name__)
 
 
-class SKModeller:
+class SKModeller(BaseModeller[np.ndarray]):
     """Create statistical models using the scikit learn library."""
 
-    def __init__(self, data: FingerprintsData, name: str, **kwargs):
+    def __init__(self, data: FingerprintsData, name: str, replace_state: bool = True, **kwargs):
         """Class constructor.
 
         Parameters
@@ -27,7 +26,10 @@ class SKModeller:
             FingerprintsData object containing the dataset
         name
             scikit learn model to use
+        replace_state
+            Remove previous state file
         """
+        super().__init__(data, replace_state)
         self.fingerprints = data.fingerprints.numpy()
         self.labels = data.dataset.labels.numpy()
         self.path_model = "swan_skmodeller.pkl"
@@ -63,6 +65,10 @@ class SKModeller:
         self.features_validset = self.fingerprints[indices[ntrain:]]
         self.labels_trainset = self.labels[indices[:ntrain]]
         self.labels_validset = self.labels[indices[ntrain:]]
+
+        # Store the smiles used for training and validation
+        self.state.store_array("smiles_train", self.smiles[indices[:ntrain]], dtype="str")
+        self.state.store_array("smiles_validate", self.smiles[indices[ntrain:]], dtype="str")
 
     def train_model(self, frac: Tuple[float, float] = (0.8, 0.2)):
         """Train the model using the given data.

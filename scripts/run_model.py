@@ -5,8 +5,7 @@ from pathlib import Path
 import torch
 from swan.dataset import TorchGeometricGraphData, FingerprintsData, DGLGraphData
 from swan.modeller import Modeller
-from swan.modeller.models import FingerprintFullyConnected, MPNN, InvariantPolynomial
-from swan.modeller.models.se3_transformer import TFN, SE3Transformer
+from swan.modeller.models import FingerprintFullyConnected, MPNN, SE3Transformer
 from swan.utils.log_config import configure_logger
 from swan.utils.plot import create_scatter_plot
 
@@ -77,8 +76,13 @@ researcher.set_scheduler("StepLR", 0.1)
 researcher.data.scale_labels()
 trained_data = researcher.train_model(nepoch=nepoch, batch_size=batch_size)
 predicted_train, expected_train = [x.cpu().detach().numpy() for x in trained_data]
+print("train regression")
 create_scatter_plot(predicted_train, expected_train, properties, "trained_scatterplot")
 
 # Print validation scatterplot
+print("validation regression")
 predicted_validation, expected_validation = [x.cpu().detach().numpy() for x in researcher.validate_model()]
 create_scatter_plot(predicted_validation, expected_validation, properties, "validation_scatterplot")
+
+print("properties stored in the HDF5")
+researcher.state.show()

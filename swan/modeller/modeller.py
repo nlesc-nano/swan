@@ -2,24 +2,26 @@
 
 import logging
 from pathlib import Path
-from swan.dataset.fingerprints_data import PathLike
 from typing import Tuple
 
 import torch
 from torch import Tensor, nn
 
 from ..dataset.swan_data_base import SwanDataBase
+from ..type_hints import PathLike
 from ..utils.early_stopping import EarlyStopping
+from .base_modeller import BaseModeller
 
 # Starting logger
 LOGGER = logging.getLogger(__name__)
 
 
-class Modeller:
+class Modeller(BaseModeller[torch.Tensor]):
     """Object to create statistical models."""
     def __init__(self,
                  network: nn.Module,
                  data: SwanDataBase,
+                 replace_state: bool = False,
                  use_cuda: bool = False):
         """Base class of the modeller
 
@@ -29,9 +31,12 @@ class Modeller:
             Torch Neural Network [description]
         dataset
             Torch Dataset
+        replace_state
+            Remove previous state file
         use_cuda
             Train the model using Cuda
         """
+        super().__init__(data, replace_state)
         torch.set_default_dtype(torch.float32)
         # Early stopping functionality
         self.early_stopping = EarlyStopping()
@@ -64,6 +69,10 @@ class Modeller:
 
         # current number of epoch
         self.epoch = 0
+
+        # Loss data
+        self.train_losses = []
+        self.validation_losses = []
 
     def set_optimizer(self, name: str, *args, **kwargs) -> None:
         """Set an optimizer using the config file
@@ -103,6 +112,21 @@ class Modeller:
             self.scheduler = getattr(torch.optim.lr_scheduler,
                                      name)(self.optimizer, *args, **kwargs)
 
+    def split_data(self, frac: Tuple[float, float], batch_size: int):
+        """Split the data into a training and validation set.
+
+        Parameters
+        ----------
+        frac
+            fraction to divide the dataset, by default [0.8, 0.2]
+        """
+        # create the dataloader
+        indices_train, indices_validate = self.data.create_data_loader(frac=frac, batch_size=batch_size)
+
+        # Store the smiles used for training and validation
+        self.state.store_array("smiles_train", self.smiles[indices_train], dtype="str")
+        self.state.store_array("smiles_validate", self.smiles[indices_validate], dtype="str")
+
     def train_model(self,
                     nepoch: int,
                     frac: Tuple[float, float] = (0.8, 0.2),
@@ -118,11 +142,8 @@ class Modeller:
         batch_size : int, optional
             batchsize, by default 64
         """
-
         LOGGER.info("TRAINING STEP")
-
-        # create the dataloader
-        self.data.create_data_loader(frac=frac, batch_size=batch_size)
+        self.split_data(frac, batch_size)
 
         # run over the epochs
         for epoch in range(self.epoch, self.epoch + nepoch):
@@ -144,8 +165,11 @@ class Modeller:
                 loss_all += loss_batch
                 results.append(predicted)
                 expected.append(y_batch)
-            LOGGER.info(
-                f"Loss: {loss_all / self.data.train_dataset.__len__()}")
+
+            # Train loss
+            loss = loss_all / len(self.data.train_dataset)
+            self.train_losses.append(loss)
+            LOGGER.info(f"Loss: {loss}")
 
             # decrease the LR if necessary
             if self.scheduler is not None:
@@ -153,6 +177,7 @@ class Modeller:
 
             # Check for early stopping
             self.validate_model()
+            self.validation_losses.append(self.validation_loss)
             self.early_stopping(self.save_model, epoch, self.validation_loss)
             if self.early_stopping.early_stop:
                 LOGGER.info("EARLY STOPPING")
@@ -160,6 +185,10 @@ class Modeller:
 
         # Save the models
         self.save_model(epoch, loss_all)
+
+        # Store the loss
+        self.state.store_array("loss_train", self.train_losses)
+        self.state.store_array("loss_validate", self.validation_losses)
 
         return torch.cat(results), torch.cat(expected)
 
@@ -210,7 +239,7 @@ class Modeller:
                 loss_all += loss.item() * len(x_val)
                 results.append(predicted)
                 expected.append(y_val)
-            self.validation_loss = loss_all / self.data.valid_dataset.__len__()
+            self.validation_loss = loss_all / len(self.data.valid_dataset)
             LOGGER.info(f"validation loss: {self.validation_loss}")
         return torch.cat(results), torch.cat(expected)
 
@@ -219,7 +248,7 @@ class Modeller:
 
         Parameters
         ----------
-        inp_data : Tensor
+        inp_data
             input data of the network
 
         Returns
