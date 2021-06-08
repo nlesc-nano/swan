@@ -4,6 +4,7 @@
 ## New
 * Add interface to scikit regressors (#85)
 * Add interface to HDF5 to store the training results (#88)
+* Add interface to FlowMO (#90)
 
 ## Changed
 * Fix prediction functionality (#81)

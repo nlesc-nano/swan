@@ -1,14 +1,12 @@
 
-.. image:: https://api.codacy.com/project/badge/Grade/e410d9da7b654d2caf67481f33ae2de7
-    :target: https://www.codacy.com/app/nlesc-jcer/swan?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=nlesc-nano/swan&amp;utm_campaign=Badge_Grade
-.. image:: https://readthedocs.org/projects/swan/badge/?version=latest
-   :target: https://swan.readthedocs.io/en/latest/?badge=latest
 .. image:: https://github.com/nlesc-nano/swan/workflows/build%20with%20conda/badge.svg
    :target: https://github.com/nlesc-nano/swan/actions
 .. image:: https://codecov.io/gh/nlesc-nano/swan/branch/main/graph/badge.svg?token=1527ficjjx
    :target: https://codecov.io/gh/nlesc-nano/swan
 .. image:: https://zenodo.org/badge/191957101.svg
    :target: https://zenodo.org/badge/latestdoi/191957101
+.. image:: https://readthedocs.org/projects/swan/badge/?version=latest
+   :target: https://swan.readthedocs.io/en/latest/?badge=latest
 	    
 #####################################
 Screening Workflows And Nanomaterials
