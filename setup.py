@@ -37,8 +37,7 @@ setup(
     install_requires=[
         'e3nn@git+https://github.com/e3nn/e3nn@main',
         'equivariant_attention@git+https://github.com/nlesc-nano/se3-transformer-public@dev',
-        'gpflow@git+https://github.com/GPflow/GPflow.git@develop',
-        'h5py', 'mendeleev', 'numpy', 'pandas', 'pyyaml', 'scikit-learn',
+        'gpytorch', 'h5py', 'mendeleev', 'numpy', 'pandas', 'pyyaml', 'scikit-learn',
         'scipy', 'seaborn', 'schema',
         'torch-geometric'],
 
