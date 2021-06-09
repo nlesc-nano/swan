@@ -1,7 +1,7 @@
 """Gaussian Processes modeller."""
 
 import logging
-from typing import Optional, Tuple
+from typing import Tuple
 
 import gpytorch as gp
 import torch
@@ -9,8 +9,8 @@ from torch import Tensor
 
 from ..dataset.fingerprints_data import FingerprintsData
 from ..type_hints import PathLike
-from .base_modeller import BaseModeller
 from .torch_modeller import TorchModeller
+from ..dataset.splitter import SplitDataset
 
 # Starting logger
 LOGGER = logging.getLogger(__name__)
@@ -38,52 +38,62 @@ class GPModeller(TorchModeller):
         super(GPModeller, self).__init__(
             network, data, replace_state=replace_state, use_cuda=use_cuda)
 
-        # Store the attributes and labels to create the training and validation sets
-        self.fingerprints = data.fingerprints
-        self.labels = data.dataset.labels
-
         # set the default loss
         self.set_loss()
 
     def set_loss(self, *args, **kwargs) -> None:
         """Set the loss function for the training."""
-        model = self.network
-        likelihood = model.likelihood
-        self.loss_func = gp.mlls.ExactMarginalLogLikelihood(likelihood, model)
+        self.loss_func = gp.mlls.ExactMarginalLogLikelihood(self.network.likelihood, self.network)
+
+    def split_data(self, partition: SplitDataset) -> None:
+        """Save the smiles used for training and validation."""
+        self.features_trainset = partition.features_trainset
+        self.features_validset = partition.features_validset
+        self.labels_trainset = partition.labels_trainset
+        self.labels_validset = partition.labels_validset
+
+        indices = partition.indices
+        ntrain = partition.ntrain
+        self.state.store_array("smiles_train", self.smiles[indices[:ntrain]], dtype="str")
+        self.state.store_array("smiles_validate", self.smiles[indices[ntrain:]], dtype="str")
 
     def train_model(self,
                     nepoch: int,
-                    frac: Tuple[float, float] = (0.8, 0.2),
+                    partition: SplitDataset,
                     batch_size: int = 64) -> Tuple[Tensor, Tensor]:
         """Train the model
 
         Parameters
         ----------
-        nepoch : int
+        nepoch
             number of ecpoch to run
-        frac : List[int], optional
-            divide the dataset in train/valid, by default [0.8, 0.2]
-        batch_size : int, optional
+        partition
+            Dataset split into training and validation set
+        batch_size
             batchsize, by default 64
         """
         LOGGER.info("TRAINING STEP")
+        self.split_data(partition)
 
-        # Split data in training and validation set
-        self.split_fingerprint_data(frac)
+        # Find optimal model hyperparameters
+        self.network.train()
+        self.network.likelihood.train()
 
         # run over the epochs
         for epoch in range(self.epoch, self.epoch + nepoch):
+            self.optimizer.zero_grad()
             LOGGER.info(f"epoch: {epoch}")
 
             # set the model to train mode and init loss
             self.network.train()
 
+            print("shape train: ", self.features_trainset.shape)
             prediction = self.network(self.features_trainset)
-            loss = self.loss_func(prediction, self.labels_trainset)
+            loss = -self.loss_func(prediction, self.labels_trainset.flatten())
+            print("loss: ", loss.item())
             loss.backward()
             self.optimizer.step()
-            self.optimizer.zero_grad()
-            loss = loss.item() / len(self.data.train_dataset)
+            loss = loss.item() / len(self.labels_trainset)
             self.train_losses.append(loss)
             LOGGER.info(f"Loss: {loss}")
 
@@ -91,36 +101,36 @@ class GPModeller(TorchModeller):
             if self.scheduler is not None:
                 self.scheduler.step()
 
-            # Check for early stopping
-            self.validate_model()
-            self.validation_losses.append(self.validation_loss)
-            self.early_stopping(self.save_model, epoch, self.validation_loss)
-            if self.early_stopping.early_stop:
-                LOGGER.info("EARLY STOPPING")
-                break
+            # # Check for early stopping
+            # self.validate_model()
+            # self.validation_losses.append(self.validation_loss)
+            # self.early_stopping(self.save_model, epoch, self.validation_loss)
+            # if self.early_stopping.early_stop:
+            #     LOGGER.info("EARLY STOPPING")
+            #     break
 
         # Save the models
         self.save_model(epoch, loss)
 
         # Store the loss
         self.state.store_array("loss_train", self.train_losses)
-        self.state.store_array("loss_validate", self.validation_losses)
+        # self.state.store_array("loss_validate", self.validation_losses)
 
         return prediction, self.labels_trainset
 
-    def validate_model(self) -> Tuple[Tensor, Tensor]:
-        """compute the output of the model on the validation set
+    # def validate_model(self) -> Tuple[Tensor, Tensor]:
+    #     """compute the output of the model on the validation set
 
-        Returns
-        -------
-        Tuple[Tensor, Tensor]
-            output of the network, ground truth of the data
-        """
-        # Disable any gradient calculation
-        with torch.no_grad():
-            self.network.eval()
-            predicted = self.network(self.features_validset)
-            loss = self.loss_func(predicted, self.labels_validset)
-            self.validation_loss = loss.item() / len(self.data.valid_dataset)
-            LOGGER.info(f"validation loss: {self.validation_loss}")
-        return predicted, self.labels_validset
+    #     Returns
+    #     -------
+    #     Tuple[Tensor, Tensor]
+    #         output of the network, ground truth of the data
+    #     """
+    #     # Disable any gradient calculation
+    #     with torch.no_grad():
+    #         self.network.eval()
+    #         predicted = self.network(self.features_validset)
+    #         loss = self.loss_func(predicted, self.labels_validset)
+    #         self.validation_loss = loss.item() / len(self.valid_dataset)
+    #         LOGGER.info(f"validation loss: {self.validation_loss}")
+    #     return predicted, self.labels_validset
