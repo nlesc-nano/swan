@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 import torch
 from swan.dataset import TorchGeometricGraphData, FingerprintsData, DGLGraphData
-from swan.modeller import Modeller
+from swan.modeller import TorchModeller
 from swan.modeller.models import FingerprintFullyConnected, MPNN, SE3Transformer
 from swan.utils.log_config import configure_logger
 from swan.utils.plot import create_scatter_plot
@@ -70,7 +70,7 @@ net = FingerprintFullyConnected(hidden_cells=100, num_labels=num_labels)
 
 # training and validation
 torch.set_default_dtype(torch.float32)
-researcher = Modeller(net, data, use_cuda=False)
+researcher = TorchModeller(net, data, use_cuda=False)
 researcher.set_optimizer("Adam", lr=0.0005)
 researcher.set_scheduler("StepLR", 0.1)
 researcher.data.scale_labels()

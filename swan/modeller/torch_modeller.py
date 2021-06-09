@@ -236,7 +236,7 @@ class TorchModeller(BaseModeller[torch.Tensor]):
                 y_val = y_val.to(self.device)
                 predicted = self.network(x_val)
                 loss = self.loss_func(predicted, y_val)
-                loss_all += loss.item() * len(x_val)
+                loss_all += loss.item()
                 results.append(predicted)
                 expected.append(y_val)
             self.validation_loss = loss_all / len(self.data.valid_dataset)
