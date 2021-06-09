@@ -5,7 +5,7 @@ import torch
 import torch_geometric
 
 from swan.dataset import TorchGeometricGraphData
-from swan.modeller import Modeller
+from swan.modeller import TorchModeller
 from swan.modeller.models.graph_models import MPNN
 
 from .utils_test import PATH_TEST, remove_files
@@ -18,7 +18,7 @@ class TestMPNN(unittest.TestCase):
         self.data = PATH_TEST / "thousand.csv"
         self.data = TorchGeometricGraphData(self.data, properties=["gammas"])
         self.net = MPNN()
-        self.modeller = Modeller(self.net, self.data)
+        self.modeller = TorchModeller(self.net, self.data)
 
     def test_train_data_mpnn(self):
 

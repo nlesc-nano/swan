@@ -3,7 +3,7 @@ import torch
 
 from swan.dataset import DGLGraphData
 from swan.dataset.dgl_graph_data import dgl_data_loader
-from swan.modeller import Modeller
+from swan.modeller import TorchModeller
 from swan.modeller.models import TFN, SE3Transformer
 
 from .utils_test import PATH_TEST, remove_files
@@ -20,7 +20,7 @@ DATA = DGLGraphData(CSV_FILE, properties=["gammas"])
 
 def run_modeller(net: torch.nn.Module):
     """Run a given model."""
-    modeller = Modeller(net, DATA, use_cuda=False, replace_state=False)
+    modeller = TorchModeller(net, DATA, use_cuda=False, replace_state=False)
 
     modeller.data.scale_labels()
     modeller.train_model(nepoch=1, batch_size=64)
@@ -45,7 +45,7 @@ def test_s3eTransformer_train():
 def test_se3Transformer_predict():
     """Check the prediction functionality of the SE3Transformer."""
     net = SE3Transformer(NUM_LAYERS, NUM_CHANNELS)
-    researcher = Modeller(net, DATA, use_cuda=False)
+    researcher = TorchModeller(net, DATA, use_cuda=False)
     researcher.load_model("swan_chk.pt")
 
     # Predict the properties

@@ -4,7 +4,7 @@ import numpy as np
 import torch
 
 from swan.dataset import TorchGeometricGraphData
-from swan.modeller import Modeller
+from swan.modeller import TorchModeller
 from swan.modeller.models import InvariantPolynomial
 
 from .utils_test import PATH_TEST, remove_files
@@ -15,7 +15,7 @@ def test_e3nn_equivariant():
     path_data = PATH_TEST / "thousand.csv"
     data = TorchGeometricGraphData(path_data, properties=["gammas"])
     net = InvariantPolynomial()
-    modeller = Modeller(net, data, replace_state=True)
+    modeller = TorchModeller(net, data, replace_state=True)
     modeller.set_optimizer('Adam', lr=0.001)
     modeller.set_scheduler("StepLR", 0.1)
     modeller.data.scale_labels()

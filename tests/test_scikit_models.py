@@ -13,7 +13,7 @@ DATA.scale_labels()
 
 def run_test(model: str, **kwargs):
     """Run the training and validation step for the given model."""
-    modeller = SKModeller(DATA, model)
+    modeller = SKModeller(model, DATA)
     modeller.train_model()
     predicted, expected = modeller.validate_model()
     reg = stats.linregress(predicted.flatten(), expected.flatten())

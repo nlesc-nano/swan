@@ -1,4 +1,4 @@
-"""Base class to configure the statistical model."""
+"""class to create models with Pytorch statistical model."""
 
 import logging
 from pathlib import Path
@@ -16,7 +16,7 @@ from .base_modeller import BaseModeller
 LOGGER = logging.getLogger(__name__)
 
 
-class Modeller(BaseModeller[torch.Tensor]):
+class TorchModeller(BaseModeller[torch.Tensor]):
     """Object to create statistical models."""
     def __init__(self,
                  network: nn.Module,

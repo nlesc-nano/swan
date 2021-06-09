@@ -17,19 +17,19 @@ LOGGER = logging.getLogger(__name__)
 class SKModeller(BaseModeller[np.ndarray]):
     """Create statistical models using the scikit learn library."""
 
-    def __init__(self, data: FingerprintsData, name: str, replace_state: bool = True, **kwargs):
+    def __init__(self, name: str, data: FingerprintsData, replace_state: bool = False, **kwargs):
         """Class constructor.
 
         Parameters
         ----------
-        data
-            FingerprintsData object containing the dataset
         name
             scikit learn model to use
+        data
+            FingerprintsData object containing the dataset
         replace_state
             Remove previous state file
         """
-        super().__init__(data, replace_state)
+        super(SKModeller, self).__init__(data, replace_state)
         self.fingerprints = data.fingerprints.numpy()
         self.labels = data.dataset.labels.numpy()
         self.path_model = "swan_skmodeller.pkl"
@@ -47,29 +47,6 @@ class SKModeller(BaseModeller[np.ndarray]):
 
         LOGGER.info(f"Created {name} model")
 
-    def split_data(self, frac: Tuple[float, float]):
-        """Split the data into a training and validation set.
-
-        Parameters
-        ----------
-        frac
-            fraction to divide the dataset, by default [0.8, 0.2]
-        """
-        # Generate random indices to train and validate the model
-        size = len(self.fingerprints)
-        indices = np.arange(size)
-        np.random.shuffle(indices)
-
-        ntrain = int(size * frac[0])
-        self.features_trainset = self.fingerprints[indices[:ntrain]]
-        self.features_validset = self.fingerprints[indices[ntrain:]]
-        self.labels_trainset = self.labels[indices[:ntrain]]
-        self.labels_validset = self.labels[indices[ntrain:]]
-
-        # Store the smiles used for training and validation
-        self.state.store_array("smiles_train", self.smiles[indices[:ntrain]], dtype="str")
-        self.state.store_array("smiles_validate", self.smiles[indices[ntrain:]], dtype="str")
-
     def train_model(self, frac: Tuple[float, float] = (0.8, 0.2)):
         """Train the model using the given data.
 
@@ -78,7 +55,7 @@ class SKModeller(BaseModeller[np.ndarray]):
         frac
             fraction to divide the dataset, by default [0.8, 0.2]
         """
-        self.split_data(frac)
+        self.split_fingerprint_data(frac)
         self.model.fit(self.features_trainset, self.labels_trainset.flatten())
         self.save_model()
 

@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import torch
-from swan.modeller import Modeller
+from swan.modeller import TorchModeller
 from swan.modeller.models.fingerprint_models import FingerprintFullyConnected
 from swan.dataset import FingerprintsData
 
@@ -13,7 +13,7 @@ class TestFingerprintModeller(unittest.TestCase):
     def setUp(self):
         data = FingerprintsData(PATH_TEST / "thousand.csv", properties=["gammas"])
         self.net = FingerprintFullyConnected()
-        self.modeller = Modeller(self.net, data)
+        self.modeller = TorchModeller(self.net, data)
 
     def test_train(self):
         self.modeller.data.scale_labels()
