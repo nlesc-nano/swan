@@ -66,26 +66,3 @@ class BaseModeller(Generic[T_co]):
     def save_model(self, *args, **kwargs):
         """Store the trained model."""
         raise NotImplementedError
-
-    def split_fingerprint_data(self, frac: Tuple[float, float]):
-        """Split the fingerprint dataset into a training and validation set.
-
-        Parameters
-        ----------
-        frac
-            fraction to divide the dataset, by default [0.8, 0.2]
-        """
-        # Generate random indices to train and validate the model
-        size = len(self.fingerprints)
-        indices = np.arange(size)
-        np.random.shuffle(indices)
-
-        ntrain = int(size * frac[0])
-        self.features_trainset = self.fingerprints[indices[:ntrain]]
-        self.features_validset = self.fingerprints[indices[ntrain:]]
-        self.labels_trainset = self.labels[indices[:ntrain]]
-        self.labels_validset = self.labels[indices[ntrain:]]
-
-        # Store the smiles used for training and validation
-        self.state.store_array("smiles_train", self.smiles[indices[:ntrain]], dtype="str")
-        self.state.store_array("smiles_validate", self.smiles[indices[ntrain:]], dtype="str")

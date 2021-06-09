@@ -8,6 +8,7 @@ import numpy as np
 from sklearn import gaussian_process, svm, tree
 
 from ..dataset.fingerprints_data import FingerprintsData
+from ..dataset.splitter import split_dataset
 from ..type_hints import PathLike
 from .base_modeller import BaseModeller
 
@@ -47,7 +48,7 @@ class SKModeller(BaseModeller[np.ndarray]):
 
         LOGGER.info(f"Created {name} model")
 
-    def train_model(self, frac: Tuple[float, float] = (0.8, 0.2)):
+    def train_model(self, frac: Tuple[float, float] = (0.8, 0.2)) -> None:
         """Train the model using the given data.
 
         Parameters
@@ -55,9 +56,23 @@ class SKModeller(BaseModeller[np.ndarray]):
         frac
             fraction to divide the dataset, by default [0.8, 0.2]
         """
-        self.split_fingerprint_data(frac)
+        self.split_data(frac)
         self.model.fit(self.features_trainset, self.labels_trainset.flatten())
         self.save_model()
+
+    def split_data(self, frac: Tuple[float, float]) -> None:
+        """Split the dataset into a training and validation set."""
+        partition = split_dataset(self.fingerprints, self.labels, frac)
+        self.features_trainset = partition.features_trainset
+        self.features_validset = partition.features_validset
+        self.labels_trainset = partition.labels_trainset
+        self.labels_validset = partition.labels_validset
+
+        # Split the smiles using the same partition than the features
+        indices = partition.indices
+        ntrain = partition.ntrain
+        self.state.store_array("smiles_train", self.smiles[indices[:ntrain]], dtype="str")
+        self.state.store_array("smiles_validate", self.smiles[indices[ntrain:]], dtype="str")
 
     def save_model(self):
         """Store the trained model."""
