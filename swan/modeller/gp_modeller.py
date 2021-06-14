@@ -8,7 +8,6 @@ import torch
 from torch import Tensor
 
 from ..dataset.fingerprints_data import FingerprintsData
-from ..type_hints import PathLike
 from .torch_modeller import TorchModeller
 from ..dataset.splitter import SplitDataset
 
@@ -75,24 +74,21 @@ class GPModeller(TorchModeller):
         LOGGER.info("TRAINING STEP")
         self.split_data(partition)
 
-        # Find optimal model hyperparameters
-        self.network.train()
-        self.network.likelihood.train()
-
         # run over the epochs
         for epoch in range(self.epoch, self.epoch + nepoch):
-            self.optimizer.zero_grad()
+            self.network.train()
+            self.network.likelihood.train()
             LOGGER.info(f"epoch: {epoch}")
 
             # set the model to train mode and init loss
             self.network.train()
 
-            print("shape train: ", self.features_trainset.shape)
             prediction = self.network(self.features_trainset)
             loss = -self.loss_func(prediction, self.labels_trainset.flatten())
             print("loss: ", loss.item())
             loss.backward()
             self.optimizer.step()
+            self.optimizer.zero_grad()
             loss = loss.item() / len(self.labels_trainset)
             self.train_losses.append(loss)
             LOGGER.info(f"Loss: {loss}")
@@ -101,13 +97,13 @@ class GPModeller(TorchModeller):
             if self.scheduler is not None:
                 self.scheduler.step()
 
-            # # Check for early stopping
-            # self.validate_model()
-            # self.validation_losses.append(self.validation_loss)
-            # self.early_stopping(self.save_model, epoch, self.validation_loss)
-            # if self.early_stopping.early_stop:
-            #     LOGGER.info("EARLY STOPPING")
-            #     break
+            # Check for early stopping
+            self.validate_model()
+            self.validation_losses.append(self.validation_loss)
+            self.early_stopping(self.save_model, epoch, self.validation_loss)
+            if self.early_stopping.early_stop:
+                LOGGER.info("EARLY STOPPING")
+                break
 
         # Save the models
         self.save_model(epoch, loss)
@@ -118,19 +114,21 @@ class GPModeller(TorchModeller):
 
         return prediction, self.labels_trainset
 
-    # def validate_model(self) -> Tuple[Tensor, Tensor]:
-    #     """compute the output of the model on the validation set
+    def validate_model(self) -> Tuple[Tensor, Tensor]:
+        """compute the output of the model on the validation set
 
-    #     Returns
-    #     -------
-    #     Tuple[Tensor, Tensor]
-    #         output of the network, ground truth of the data
-    #     """
-    #     # Disable any gradient calculation
-    #     with torch.no_grad():
-    #         self.network.eval()
-    #         predicted = self.network(self.features_validset)
-    #         loss = self.loss_func(predicted, self.labels_validset)
-    #         self.validation_loss = loss.item() / len(self.valid_dataset)
-    #         LOGGER.info(f"validation loss: {self.validation_loss}")
-    #     return predicted, self.labels_validset
+        Returns
+        -------
+        Tuple[Tensor, Tensor]
+            output of the network, ground truth of the data
+        """
+        self.network.eval()
+        self.network.likelihood.eval()
+
+        # Disable any gradient calculation
+        with torch.no_grad(), gp.settings.fast_pred_var():
+            predicted = self.network(self.features_validset)
+            loss = self.loss_func(predicted, self.labels_validset.flatten())
+            self.validation_loss = loss.item() / len(self.features_validset)
+            LOGGER.info(f"validation loss: {self.validation_loss}")
+        return predicted.loc, self.labels_validset

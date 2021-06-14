@@ -11,7 +11,6 @@ class GaussianProcess(gp.models.ExactGP):
             likelihood: Optional[gp.likelihoods.Likelihood] = None):
         likelihood = gp.likelihoods.GaussianLikelihood() if likelihood is None else likelihood
         super(GaussianProcess, self).__init__(train_x, train_y, likelihood)
-        self.likelihood = likelihood
         self.mean_module = gp.means.ConstantMean()
         self.covar_module = gp.kernels.ScaleKernel(gp.kernels.RBFKernel())
 

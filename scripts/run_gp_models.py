@@ -51,12 +51,12 @@ data = FingerprintsData(
 partition = split_dataset(data.fingerprints, data.labels, frac=(0.8, 0.2))
 
 # Model
-net = GaussianProcess(partition.features_trainset, partition.labels_trainset)
+model = GaussianProcess(partition.features_trainset, partition.labels_trainset.flatten())
 
 
 # training and validation
 torch.set_default_dtype(torch.float32)
-researcher = GPModeller(net, data, use_cuda=False)
+researcher = GPModeller(model, data, use_cuda=False)
 researcher.set_optimizer("Adam", lr=0.1)
 researcher.set_scheduler("StepLR", 0.1)
 researcher.data.scale_labels()
