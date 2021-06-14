@@ -7,9 +7,8 @@ from typing import Optional
 
 class GaussianProcess(gp.models.ExactGP):
     def __init__(
-            self, train_x: Tensor, train_y: Tensor,
-            likelihood: Optional[gp.likelihoods.Likelihood] = None):
-        likelihood = gp.likelihoods.GaussianLikelihood() if likelihood is None else likelihood
+            self, train_x: Tensor, train_y: Tensor):
+        likelihood = gp.likelihoods.GaussianLikelihood()
         super(GaussianProcess, self).__init__(train_x, train_y, likelihood)
         self.mean_module = gp.means.ConstantMean()
         self.covar_module = gp.kernels.ScaleKernel(gp.kernels.RBFKernel())
