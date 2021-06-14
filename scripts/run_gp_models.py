@@ -21,8 +21,7 @@ path_files = Path("tests/files")
 path_data = path_files / "thousand.csv"
 
 # Training variables
-nepoch = 100
-batch_size = 32
+nepoch = 10
 properties = ["gammas"]
 # properties = [
     # "Dissocation energy (nucleofuge)",
@@ -60,15 +59,16 @@ researcher = GPModeller(model, data, use_cuda=False)
 researcher.set_optimizer("Adam", lr=0.1)
 researcher.set_scheduler("StepLR", 0.1)
 researcher.data.scale_labels()
-multivariate_normal, expected = researcher.train_model(nepoch, partition, batch_size=batch_size)
-# predicted_train, expected_train = [x.cpu().detach().numpy() for x in trained_data]
+trained_data = researcher.train_model(nepoch, partition)
+# predicted_train, expected_train = [x.detach().numpy() for x in trained_data]
+# print(predicted_train[:10], expected_train[:10])
 # print("train regression")
 # create_scatter_plot(predicted_train, expected_train, properties, "trained_scatterplot")
 
-# # Print validation scatterplot
-# print("validation regression")
-# predicted_validation, expected_validation = [x.cpu().detach().numpy() for x in researcher.validate_model()]
-# create_scatter_plot(predicted_validation, expected_validation, properties, "validation_scatterplot")
+# Print validation scatterplot
+print("validation regression")
+predicted_validation, expected_validation = [x.detach().numpy() for x in researcher.validate_model()]
+create_scatter_plot(predicted_validation, expected_validation, properties, "validation_scatterplot")
 
 # print("properties stored in the HDF5")
 # researcher.state.show()

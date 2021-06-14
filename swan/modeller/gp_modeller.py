@@ -48,8 +48,9 @@ class GPModeller(TorchModeller):
         """Save the smiles used for training and validation."""
         self.features_trainset = partition.features_trainset
         self.features_validset = partition.features_validset
-        self.labels_trainset = partition.labels_trainset
-        self.labels_validset = partition.labels_validset
+
+        self.labels_trainset = torch.from_numpy(self.data.transformer.transform(partition.labels_trainset.numpy()))
+        self.labels_validset = torch.from_numpy(self.data.transformer.transform(partition.labels_validset.numpy()))
 
         indices = partition.indices
         ntrain = partition.ntrain
@@ -110,9 +111,9 @@ class GPModeller(TorchModeller):
 
         # Store the loss
         self.state.store_array("loss_train", self.train_losses)
-        # self.state.store_array("loss_validate", self.validation_losses)
+        self.state.store_array("loss_validate", self.validation_losses)
 
-        return prediction, self.labels_trainset
+        return prediction.loc.unsqueeze(-1), self.labels_trainset
 
     def validate_model(self) -> Tuple[Tensor, Tensor]:
         """compute the output of the model on the validation set
@@ -127,8 +128,8 @@ class GPModeller(TorchModeller):
 
         # Disable any gradient calculation
         with torch.no_grad(), gp.settings.fast_pred_var():
-            predicted = self.network(self.features_validset)
+            predicted = self.network.likelihood(self.network(self.features_validset))
             loss = self.loss_func(predicted, self.labels_validset.flatten())
             self.validation_loss = loss.item() / len(self.features_validset)
             LOGGER.info(f"validation loss: {self.validation_loss}")
-        return predicted.loc, self.labels_validset
+        return predicted.loc.unsqueeze(-1), self.labels_validset
