@@ -9,12 +9,12 @@ from swan.modeller.models import GaussianProcess
 from swan.utils.log_config import configure_logger
 from swan.utils.plot import create_confidence_plot
 
-
-configure_logger(Path("."))
-
 # Starting logger
+configure_logger(Path("."))
 LOGGER = logging.getLogger(__name__)
 
+# Set float size default
+torch.set_default_dtype(torch.float32)
 
 # Path to the DATASET
 path_data = Path("cdft.csv")
@@ -50,17 +50,12 @@ partition = split_dataset(data.fingerprints, data.labels, frac=(0.8, 0.2))
 # Model
 model = GaussianProcess(partition.features_trainset, partition.labels_trainset.flatten())
 
-
 # training and validation
-torch.set_default_dtype(torch.float32)
 researcher = GPModeller(model, data, use_cuda=False, replace_state=True)
 researcher.set_optimizer("Adam", lr=0.1)
 researcher.set_scheduler("StepLR", 0.1)
 researcher.data.scale_labels()
-trained_data = researcher.train_model(nepoch, partition)
-# predicted_train, expected_train = [x.detach().numpy() for x in trained_data]
-# print("train regression")
-# create_scatter_plot(predicted_train, expected_train, properties, "trained_scatterplot")
+trained_multivariate, expected_train = researcher.train_model(nepoch, partition)
 
 # # Print validation scatterplot
 print("validation regression")
@@ -73,3 +68,10 @@ create_confidence_plot(
 
 print("properties stored in the HDF5")
 researcher.state.show()
+
+
+fingers = FingerprintsData(Path("tests/files/smiles.csv"), properties=None, sanitize=False)
+
+predicted = researcher.predict(fingers.fingerprints)
+mean = predicted.mean.numpy().reshape(-1, 1)
+print("Predicted: ", researcher.data.transformer.inverse_transform(mean))

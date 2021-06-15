@@ -134,3 +134,23 @@ class GPModeller(TorchModeller):
             LOGGER.info(f"validation loss: {self.validation_loss}")
             lower, upper = predicted.confidence_region()
         return predicted, self.labels_validset
+
+    def predict(self, inp_data: Tensor) -> gp.distributions.MultivariateNormal:
+        """compute output of the model for a given input
+
+        Parameters
+        ----------
+        inp_data
+            input data of the network
+
+        Returns
+        -------
+        Tensor
+            output of the network
+        """
+        self.network.eval()
+        self.network.likelihood.eval()
+
+        with torch.no_grad(), gp.settings.fast_pred_var():
+            predicted = self.network.likelihood(self.network(inp_data))
+        return predicted

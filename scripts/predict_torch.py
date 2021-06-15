@@ -16,7 +16,7 @@ from swan.utils.plot import create_scatter_plot
 torch.set_default_dtype(torch.float32)
 
 path_files = Path("data/Carboxylic_acids/CDFT")
-PATH_DATA = "smiles.csv"  # path_files / "cdft_random_500.csv"
+PATH_DATA = path_files / "cdft_random_500.csv"
 
 # Datasets
 NUMLABELS = 1
