@@ -7,7 +7,7 @@ from swan.modeller import SKModeller
 
 from .utils_test import PATH_TEST
 
-DATA = FingerprintsData(PATH_TEST / "thousand.csv", properties=["gammas"], sanitize=False)
+DATA = FingerprintsData(PATH_TEST / "thousand.csv", properties=["Hardness (eta)"], sanitize=False)
 DATA.scale_labels()
 
 

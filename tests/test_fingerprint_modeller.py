@@ -11,7 +11,7 @@ from .utils_test import PATH_TEST, remove_files
 class TestFingerprintModeller(unittest.TestCase):
     """Test the finger print models"""
     def setUp(self):
-        data = FingerprintsData(PATH_TEST / "thousand.csv", properties=["gammas"])
+        data = FingerprintsData(PATH_TEST / "thousand.csv", properties=["Hardness (eta)"])
         self.net = FingerprintFullyConnected()
         self.modeller = TorchModeller(self.net, data)
 

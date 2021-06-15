@@ -13,7 +13,7 @@ from .utils_test import PATH_TEST, remove_files
 def test_e3nn_equivariant():
     """Check that the interface to E3NN is working correctly."""
     path_data = PATH_TEST / "thousand.csv"
-    data = TorchGeometricGraphData(path_data, properties=["gammas"])
+    data = TorchGeometricGraphData(path_data, properties=["Hardness (eta)"])
     net = InvariantPolynomial()
     modeller = TorchModeller(net, data, replace_state=True)
     modeller.set_optimizer('Adam', lr=0.001)
