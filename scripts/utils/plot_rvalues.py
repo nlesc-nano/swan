@@ -30,6 +30,7 @@ def plot_data():
     for k, (name, values) in enumerate(properties.items()):
         df = pd.DataFrame(values).T
         df.sort_index(inplace=True)
+        df = df ** 2
 
         ax = axis[k // 3][k % 3]
         obj = sns.lineplot(data=df, markers=True, ax=ax)
