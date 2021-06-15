@@ -11,6 +11,7 @@ from ..dataset.swan_data_base import SwanDataBase
 from ..type_hints import PathLike
 from ..utils.early_stopping import EarlyStopping
 from .base_modeller import BaseModeller
+import numpy as np
 
 # Starting logger
 LOGGER = logging.getLogger(__name__)
@@ -191,6 +192,7 @@ class TorchModeller(BaseModeller[torch.Tensor]):
         self.state.store_array("loss_validate", self.validation_losses)
 
         return torch.cat(results), torch.cat(expected)
+        # return tuple(self.inverse_transform(torch.cat(x)) for x in (results, expected))
 
     def train_batch(self, inp_data: Tensor, ground_truth: Tensor) -> Tuple[float, Tensor]:
         """Train a single mini batch
@@ -241,7 +243,9 @@ class TorchModeller(BaseModeller[torch.Tensor]):
                 expected.append(y_val)
             self.validation_loss = loss_all / len(self.data.valid_dataset)
             LOGGER.info(f"validation loss: {self.validation_loss}")
+
         return torch.cat(results), torch.cat(expected)
+        # return tuple(self.inverse_transform(torch.cat(x)) for x in (results, expected))
 
     def predict(self, inp_data: Tensor) -> Tensor:
         """compute output of the model for a given input
@@ -282,3 +286,14 @@ class TorchModeller(BaseModeller[torch.Tensor]):
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         self.epoch = checkpoint['epoch']
         self.loss = checkpoint['loss']
+
+    def inverse_transform(self, arr: Tensor) -> np.ndarray:
+        """Unscale ``arr`` using the fitted scaler."""
+        def invert(arr: Tensor) -> np.ndarray:
+            arr = arr.detach().numpy()
+            if len(arr.shape) == 1:
+                arr = arr.reshape(-1, 1)
+
+            return arr
+
+        return self.data.transformer.inverse_transform(invert(arr))

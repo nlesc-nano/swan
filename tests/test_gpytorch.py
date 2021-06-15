@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 
 from swan.dataset import FingerprintsData, split_dataset
@@ -24,11 +25,11 @@ def test_train_gaussian_processes():
     researcher.data.scale_labels()
     multivariate, _ = researcher.train_model(5, partition)
 
-    lower, upper = multivariate.confidence_region()
-    assert not multivariate.mean.isnan().all().item()
-    assert not lower.isnan().all().item()
-    assert not upper.isnan().all().item()
+    assert not np.isnan(multivariate.mean).all()
+    assert not np.isnan(multivariate.lower).all()
+    assert not np.isnan(multivariate.upper).all()
 
-
-def test_predict_gaussian_processes():
-    """Check the gaussian processes prediction functionality."""
+    # Predict
+    fingers = FingerprintsData(PATH_TEST / "smiles.csv", properties=None, sanitize=False)
+    predicted = researcher.predict(fingers.fingerprints)
+    assert not np.isnan(predicted.mean).all()

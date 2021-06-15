@@ -1,7 +1,7 @@
 """Gaussian Processes modeller."""
 
 import logging
-from typing import Tuple
+from typing import Tuple, NamedTuple
 
 import gpytorch as gp
 import torch
@@ -10,9 +10,17 @@ from torch import Tensor
 from ..dataset.fingerprints_data import FingerprintsData
 from .torch_modeller import TorchModeller
 from ..dataset.splitter import SplitDataset
+from ..type_hints import ArrayLike
 
 # Starting logger
 LOGGER = logging.getLogger(__name__)
+
+
+class GPMultivariate(NamedTuple):
+    """MultivariateNormal data resulting from the training."""
+    mean: ArrayLike
+    lower: ArrayLike
+    upper: ArrayLike
 
 
 class GPModeller(TorchModeller):
@@ -113,9 +121,9 @@ class GPModeller(TorchModeller):
         for param_name, param in self.network.named_parameters():
             print(f'Parameter name: {param_name:42} value = {param.item()}')
 
-        return prediction, self.labels_trainset
+        return self._create_result_object(prediction), self.inverse_transform(self.labels_trainset)
 
-    def validate_model(self) -> Tuple[Tensor, Tensor]:
+    def validate_model(self) -> Tuple[GPMultivariate, Tensor]:
         """compute the output of the model on the validation set
 
         Returns
@@ -133,9 +141,9 @@ class GPModeller(TorchModeller):
             self.validation_loss = loss.item() / len(self.features_validset)
             LOGGER.info(f"validation loss: {self.validation_loss}")
             lower, upper = predicted.confidence_region()
-        return predicted, self.labels_validset
+        return self._create_result_object(predicted), self.inverse_transform(self.labels_validset)
 
-    def predict(self, inp_data: Tensor) -> gp.distributions.MultivariateNormal:
+    def predict(self, inp_data: Tensor) -> GPMultivariate:
         """compute output of the model for a given input
 
         Parameters
@@ -153,4 +161,9 @@ class GPModeller(TorchModeller):
 
         with torch.no_grad(), gp.settings.fast_pred_var():
             predicted = self.network.likelihood(self.network(inp_data))
-        return predicted
+        return self._create_result_object(predicted)
+
+    def _create_result_object(self, output: gp.distributions.MultivariateNormal) -> GPMultivariate:
+        """Create a NamedTuple with the resulting MultivariateNormal."""
+        lower, upper = output.confidence_region()
+        return GPMultivariate(*[self.inverse_transform(x).flatten() for x in (output.mean, lower, upper)])

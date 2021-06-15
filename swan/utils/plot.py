@@ -2,29 +2,22 @@
 from pathlib import Path
 from typing import Any, Iterator, List
 
-import gpytorch as gp
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 from scipy import stats
-from torch import Tensor
+
+from ..modeller.gp_modeller import GPMultivariate
 
 plt.switch_backend('agg')
 
 
 def create_confidence_plot(
-        inverse_transform,
-        multi: gp.distributions.MultivariateNormal, expected: np.ndarray, prop: str,
+        multi: GPMultivariate, expected: np.ndarray, prop: str,
         output_name: str = "scatterplot") -> None:
     """Plot the results predicted multivariated results using confidence intervals."""
-    def to_numpy_matrix(arr: Tensor) -> np.ndarray:
-        return inverse_transform(arr.numpy().reshape(-1, 1)).flatten()
-
-    lower, upper = [to_numpy_matrix(x) for x in multi.confidence_region()]
-    expected = inverse_transform(expected).flatten()
-    predicted = to_numpy_matrix(multi.mean)
-    data = pd.DataFrame({"expected": expected, "predicted": predicted, "lower": lower, "upper": upper})
+    data = pd.DataFrame({"expected": expected, "predicted": multi.mean, "lower": multi.lower, "upper": multi.upper})
     _, ax = plt.subplots(1, 1, figsize=(10, 10))
     sns.scatterplot(x="expected", y="predicted", data=data, ax=ax)
     path = Path(".") / f"{output_name}.png"

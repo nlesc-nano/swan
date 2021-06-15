@@ -59,12 +59,10 @@ trained_multivariate, expected_train = researcher.train_model(nepoch, partition)
 
 # # Print validation scatterplot
 print("validation regression")
-output, label_validset = researcher.validate_model()
-lower, upper = output.confidence_region()
+multi, label_validset = researcher.validate_model()
 
 create_confidence_plot(
-    researcher.data.transformer.inverse_transform,
-    output, label_validset, properties[0], "validation_scatterplot")
+    multi, label_validset.flatten(), properties[0], "validation_scatterplot")
 
 print("properties stored in the HDF5")
 researcher.state.show()
@@ -73,5 +71,6 @@ researcher.state.show()
 fingers = FingerprintsData(Path("tests/files/smiles.csv"), properties=None, sanitize=False)
 
 predicted = researcher.predict(fingers.fingerprints)
-mean = predicted.mean.numpy().reshape(-1, 1)
-print("Predicted: ", researcher.data.transformer.inverse_transform(mean))
+print("mean: ", predicted.mean)
+print("lower: ", predicted.lower)
+print("upper: ", predicted.upper)
