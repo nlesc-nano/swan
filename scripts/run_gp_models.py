@@ -7,7 +7,7 @@ from swan.dataset import FingerprintsData, split_dataset
 from swan.modeller import GPModeller
 from swan.modeller.models import GaussianProcess
 from swan.utils.log_config import configure_logger
-from swan.utils.plot import create_scatter_plot
+from swan.utils.plot import create_confidence_plot
 
 
 configure_logger(Path("."))
@@ -20,7 +20,7 @@ LOGGER = logging.getLogger(__name__)
 path_data = Path("cdft.csv")
 
 # Training variables
-nepoch = 50
+nepoch = 100
 properties = [
     # "Dissocation energy (nucleofuge)",
     # "Dissociation energy (electrofuge)",
@@ -54,8 +54,8 @@ model = GaussianProcess(partition.features_trainset, partition.labels_trainset.f
 # training and validation
 torch.set_default_dtype(torch.float32)
 researcher = GPModeller(model, data, use_cuda=False, replace_state=True)
-researcher.set_optimizer("Adam", lr=0.5)
-# researcher.set_scheduler("StepLR", 0.1)
+researcher.set_optimizer("Adam", lr=0.1)
+researcher.set_scheduler("StepLR", 0.1)
 researcher.data.scale_labels()
 trained_data = researcher.train_model(nepoch, partition)
 # predicted_train, expected_train = [x.detach().numpy() for x in trained_data]
@@ -66,13 +66,10 @@ trained_data = researcher.train_model(nepoch, partition)
 print("validation regression")
 output, label_validset = researcher.validate_model()
 lower, upper = output.confidence_region()
-print("Lower: ", lower[:5].detach())
-print("Upper: ", upper[:5].detach())
-print("means")
-print(output.mean[:10])
-print("ground true")
-print(label_validset[:10])
-create_scatter_plot(output.mean.unsqueeze(-1).numpy(), label_validset.numpy(), properties, "validation_scatterplot")
 
-# print("properties stored in the HDF5")
-# researcher.state.show()
+create_confidence_plot(
+    researcher.data.transformer.inverse_transform,
+    output, label_validset, properties[0], "validation_scatterplot")
+
+print("properties stored in the HDF5")
+researcher.state.show()

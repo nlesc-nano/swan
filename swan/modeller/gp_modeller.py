@@ -87,7 +87,6 @@ class GPModeller(TorchModeller):
 
             prediction = self.network(self.features_trainset)
             loss = -self.loss_func(prediction, self.labels_trainset.flatten())
-            # print("pred: ", self.network.likelihood(prediction).mean[:2], self.labels_trainset[:2])
             loss.backward()
             self.optimizer.step()
             self.optimizer.zero_grad()
@@ -95,22 +94,14 @@ class GPModeller(TorchModeller):
             self.train_losses.append(loss)
             LOGGER.info(f"Loss: {loss}")
 
-            print('Loss: %.3f   lengthscale: %.3f   noise: %.3f' % (
+            LOGGER.info('Loss: %.1e   lengthscale: %.1e   noise: %.1e' % (
                 loss * len(self.labels_trainset),
                 self.network.covar_module.base_kernel.lengthscale.item(),
                 self.network.likelihood.noise.item()
             ))
-            # # decrease the LR if necessary
-            # if self.scheduler is not None:
-            #     self.scheduler.step()
-
-            # # Check for early stopping
-            # self.validate_model()
-            # self.validation_losses.append(self.validation_loss)
-            # self.early_stopping(self.save_model, epoch, self.validation_loss)
-            # if self.early_stopping.early_stop:
-            #     LOGGER.info("EARLY STOPPING")
-            #     break
+            # decrease the LR if necessary
+            if self.scheduler is not None:
+                self.scheduler.step()
 
         # Save the models
         self.save_model(epoch, loss)
@@ -141,4 +132,5 @@ class GPModeller(TorchModeller):
             loss = -self.loss_func(predicted, self.labels_validset.flatten())
             self.validation_loss = loss.item() / len(self.features_validset)
             LOGGER.info(f"validation loss: {self.validation_loss}")
+            lower, upper = predicted.confidence_region()
         return predicted, self.labels_validset

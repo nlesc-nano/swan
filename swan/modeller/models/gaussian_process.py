@@ -2,7 +2,6 @@
 
 import gpytorch as gp
 from torch import Tensor
-from typing import Optional
 
 
 class GaussianProcess(gp.models.ExactGP):
@@ -11,7 +10,7 @@ class GaussianProcess(gp.models.ExactGP):
         likelihood = gp.likelihoods.GaussianLikelihood()
         super(GaussianProcess, self).__init__(train_x, train_y, likelihood)
         self.mean_module = gp.means.ConstantMean()
-        self.covar_module = gp.kernels.ScaleKernel(gp.kernels.RBFKernel())
+        self.covar_module = gp.kernels.ScaleKernel(gp.kernels.MaternKernel())
 
     def forward(self, x: Tensor):
         mean_x = self.mean_module(x)
