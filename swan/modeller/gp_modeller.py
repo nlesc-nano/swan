@@ -102,6 +102,14 @@ class GPModeller(TorchModeller):
             self.train_losses.append(loss)
             LOGGER.info(f"Loss: {loss}")
 
+            # Check for early stopping
+            self.validate_model()
+            self.validation_losses.append(self.validation_loss)
+            self.early_stopping(self.save_model, epoch, self.validation_loss)
+            if self.early_stopping.early_stop:
+                LOGGER.info("EARLY STOPPING")
+                break
+
             LOGGER.info('Loss: %.1e   lengthscale: %.1e   noise: %.1e' % (
                 loss * len(self.labels_trainset),
                 self.network.covar_module.base_kernel.lengthscale.item(),
@@ -116,6 +124,7 @@ class GPModeller(TorchModeller):
 
         # Store the loss
         self.state.store_array("loss_train", self.train_losses)
+        self.state.store_array("loss_validate", self.validation_losses)
 
         return self._create_result_object(prediction), self.inverse_transform(self.labels_trainset)
 
