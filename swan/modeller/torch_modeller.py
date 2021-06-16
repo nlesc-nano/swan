@@ -191,8 +191,7 @@ class TorchModeller(BaseModeller[torch.Tensor]):
         self.state.store_array("loss_train", self.train_losses)
         self.state.store_array("loss_validate", self.validation_losses)
 
-        return torch.cat(results), torch.cat(expected)
-        # return tuple(self.inverse_transform(torch.cat(x)) for x in (results, expected))
+        return tuple(self.inverse_transform(torch.cat(x)) for x in (results, expected))
 
     def train_batch(self, inp_data: Tensor, ground_truth: Tensor) -> Tuple[float, Tensor]:
         """Train a single mini batch
@@ -244,8 +243,7 @@ class TorchModeller(BaseModeller[torch.Tensor]):
             self.validation_loss = loss_all / len(self.data.valid_dataset)
             LOGGER.info(f"validation loss: {self.validation_loss}")
 
-        return torch.cat(results), torch.cat(expected)
-        # return tuple(self.inverse_transform(torch.cat(x)) for x in (results, expected))
+        return tuple(self.inverse_transform(torch.cat(x)) for x in (results, expected))
 
     def predict(self, inp_data: Tensor) -> Tensor:
         """compute output of the model for a given input
