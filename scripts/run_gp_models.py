@@ -8,6 +8,7 @@ from swan.modeller import GPModeller
 from swan.modeller.models import GaussianProcess
 from swan.utils.log_config import configure_logger
 from swan.utils.plot import create_confidence_plot
+import pandas as pd
 
 # Starting logger
 configure_logger(Path("."))
@@ -64,13 +65,10 @@ multi, label_validset = researcher.validate_model()
 create_confidence_plot(
     multi, label_validset.flatten(), properties[0], "validation_scatterplot")
 
-print("properties stored in the HDF5")
-researcher.state.show()
-
 
 fingers = FingerprintsData(Path("tests/files/smiles.csv"), properties=None, sanitize=False)
 
 predicted = researcher.predict(fingers.fingerprints)
-print("mean: ", predicted.mean)
-print("lower: ", predicted.lower)
-print("upper: ", predicted.upper)
+df = pd.DataFrame(
+    {"smiles": fingers.dataframe.smiles, "mean": predicted.mean, "lower": predicted.lower, "upper": predicted.upper})
+df.to_csv("predicted_values.csv")

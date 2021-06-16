@@ -1,16 +1,16 @@
 """Gaussian Processes modeller."""
 
 import logging
-from typing import Tuple, NamedTuple
+from typing import NamedTuple, Tuple
 
 import gpytorch as gp
 import torch
 from torch import Tensor
 
 from ..dataset.fingerprints_data import FingerprintsData
-from .torch_modeller import TorchModeller
 from ..dataset.splitter import SplitDataset
-from ..type_hints import ArrayLike
+import numpy as np
+from .torch_modeller import TorchModeller
 
 # Starting logger
 LOGGER = logging.getLogger(__name__)
@@ -18,9 +18,9 @@ LOGGER = logging.getLogger(__name__)
 
 class GPMultivariate(NamedTuple):
     """MultivariateNormal data resulting from the training."""
-    mean: ArrayLike
-    lower: ArrayLike
-    upper: ArrayLike
+    mean: np.ndarray
+    lower: np.ndarray
+    upper: np.ndarray
 
 
 class GPModeller(TorchModeller):
@@ -116,10 +116,6 @@ class GPModeller(TorchModeller):
 
         # Store the loss
         self.state.store_array("loss_train", self.train_losses)
-        # self.state.store_array("loss_validate", self.validation_losses)
-
-        for param_name, param in self.network.named_parameters():
-            print(f'Parameter name: {param_name:42} value = {param.item()}')
 
         return self._create_result_object(prediction), self.inverse_transform(self.labels_trainset)
 
@@ -140,7 +136,6 @@ class GPModeller(TorchModeller):
             loss = -self.loss_func(predicted, self.labels_validset.flatten())
             self.validation_loss = loss.item() / len(self.features_validset)
             LOGGER.info(f"validation loss: {self.validation_loss}")
-            lower, upper = predicted.confidence_region()
         return self._create_result_object(predicted), self.inverse_transform(self.labels_validset)
 
     def predict(self, inp_data: Tensor) -> GPMultivariate:

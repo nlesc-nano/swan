@@ -17,9 +17,9 @@ def create_confidence_plot(
         multi: GPMultivariate, expected: np.ndarray, prop: str,
         output_name: str = "scatterplot") -> None:
     """Plot the results predicted multivariated results using confidence intervals."""
-    data = pd.DataFrame({"expected": expected, "predicted": multi.mean, "lower": multi.lower, "upper": multi.upper})
+    data = pd.DataFrame({"expected": expected, "predicted": multi.mean, "confidence": multi.upper - multi.lower, })
     _, ax = plt.subplots(1, 1, figsize=(10, 10))
-    sns.scatterplot(x="expected", y="predicted", data=data, ax=ax)
+    sns.scatterplot(x="expected", y="predicted", data=data, ax=ax, size="confidence", hue="confidence", sizes=(10, 100))
     path = Path(".") / f"{output_name}.png"
     plt.savefig(path)
 
