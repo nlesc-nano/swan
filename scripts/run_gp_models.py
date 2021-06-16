@@ -2,13 +2,15 @@
 
 import logging
 from pathlib import Path
+
+import pandas as pd
 import torch
+
 from swan.dataset import FingerprintsData, split_dataset
 from swan.modeller import GPModeller
 from swan.modeller.models import GaussianProcess
 from swan.utils.log_config import configure_logger
-from swan.utils.plot import create_confidence_plot
-import pandas as pd
+from swan.utils.plot import create_confidence_plot, create_scatter_plot
 
 # Starting logger
 configure_logger(Path("."))
@@ -19,6 +21,7 @@ torch.set_default_dtype(torch.float32)
 
 # Path to the DATASET
 path_data = Path("cdft.csv")
+#   path_data = Path("tests/files/cdft_properties.csv")
 
 # Training variables
 nepoch = 100
@@ -42,8 +45,7 @@ properties = [
 num_labels = len(properties)
 
 # Datasets
-data = FingerprintsData(
-    path_data, properties=properties, sanitize=False)
+data = FingerprintsData(path_data, properties=properties, sanitize=False)
 
 # Split the data into training and validation set
 partition = split_dataset(data.fingerprints, data.labels, frac=(0.8, 0.2))
@@ -54,9 +56,10 @@ model = GaussianProcess(partition.features_trainset, partition.labels_trainset.f
 # training and validation
 researcher = GPModeller(model, data, use_cuda=False, replace_state=True)
 researcher.set_optimizer("Adam", lr=0.1)
-researcher.set_scheduler("StepLR", 0.1)
+researcher.set_scheduler(None)
 researcher.data.scale_labels()
-trained_multivariate, expected_train = researcher.train_model(nepoch, partition)
+researcher.train_model(nepoch, partition)
+# trained_multivariate, expected_train = researcher.train_model(nepoch, partition)
 
 # # Print validation scatterplot
 print("validation regression")
@@ -65,10 +68,14 @@ multi, label_validset = researcher.validate_model()
 create_confidence_plot(
     multi, label_validset.flatten(), properties[0], "validation_scatterplot")
 
+create_scatter_plot(
+    multi.mean.reshape(-1, 1), label_validset, properties, "simple_scatterplot")
 
-fingers = FingerprintsData(Path("tests/files/smiles.csv"), properties=None, sanitize=False)
 
-predicted = researcher.predict(fingers.fingerprints)
-df = pd.DataFrame(
-    {"smiles": fingers.dataframe.smiles, "mean": predicted.mean, "lower": predicted.lower, "upper": predicted.upper})
-df.to_csv("predicted_values.csv")
+# fingers = FingerprintsData(Path("tests/files/smiles.csv"), properties=None, sanitize=False)
+
+# predicted = researcher.predict(fingers.fingerprints)
+# df = pd.DataFrame(
+#     {"smiles": fingers.dataframe.smiles, "mean": predicted.mean, "lower": predicted.lower, "upper": predicted.upper})
+
+# df.to_csv("predicted_values.csv")

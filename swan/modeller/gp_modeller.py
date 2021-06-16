@@ -81,6 +81,13 @@ class GPModeller(TorchModeller):
         batch_size
             batchsize, by default 64
         """
+        # def closure():
+        #     prediction = self.network(self.features_trainset)
+        #     loss = -self.loss_func(prediction, self.labels_trainset.flatten())
+        #     self.optimizer.zero_grad()
+        #     loss.backward()
+        #     return loss
+
         LOGGER.info("TRAINING STEP")
         self.split_data(partition)
 
@@ -93,14 +100,18 @@ class GPModeller(TorchModeller):
             # set the model to train mode and init loss
             self.network.train()
 
-            prediction = self.network(self.features_trainset)
-            loss = -self.loss_func(prediction, self.labels_trainset.flatten())
+            output = self.network(self.features_trainset)
+            loss = -self.loss_func(output, self.labels_trainset.flatten())
             loss.backward()
             self.optimizer.step()
             self.optimizer.zero_grad()
             loss = loss.item() / len(self.labels_trainset)
+            print(f"training loss: {loss:.3e}")
             self.train_losses.append(loss)
-            LOGGER.info(f"Loss: {loss}")
+
+            lengthscale = self.network.covar_module.base_kernel.lengthscale.item()
+            noise = self.network.likelihood.noise.item()
+            LOGGER.info(f"Training Loss: {loss:.3e}  lengthscale: {lengthscale:.1e} noise: {noise:.1e}")
 
             # Check for early stopping
             self.validate_model()
@@ -110,11 +121,6 @@ class GPModeller(TorchModeller):
                 LOGGER.info("EARLY STOPPING")
                 break
 
-            LOGGER.info('Loss: %.1e   lengthscale: %.1e   noise: %.1e' % (
-                loss * len(self.labels_trainset),
-                self.network.covar_module.base_kernel.lengthscale.item(),
-                self.network.likelihood.noise.item()
-            ))
             # decrease the LR if necessary
             if self.scheduler is not None:
                 self.scheduler.step()
@@ -126,7 +132,8 @@ class GPModeller(TorchModeller):
         self.state.store_array("loss_train", self.train_losses)
         self.state.store_array("loss_validate", self.validation_losses)
 
-        return self._create_result_object(prediction), self.inverse_transform(self.labels_trainset)
+        # output = self.network.likelihood(prediction)
+        # return self._create_result_object(output), self.inverse_transform(self.labels_trainset)
 
     def validate_model(self) -> Tuple[GPMultivariate, Tensor]:
         """compute the output of the model on the validation set
@@ -141,11 +148,12 @@ class GPModeller(TorchModeller):
 
         # Disable any gradient calculation
         with torch.no_grad(), gp.settings.fast_pred_var():
-            predicted = self.network.likelihood(self.network(self.features_validset))
-            loss = -self.loss_func(predicted, self.labels_validset.flatten())
-            self.validation_loss = loss.item() / len(self.features_validset)
+            output = self.network(self.features_validset)
+            loss = -self.loss_func(output, self.labels_validset.flatten())
+            self.validation_loss = loss.item() / len(self.labels_validset)
+            print(f"validation loss: {self.validation_loss:.3e}")
             LOGGER.info(f"validation loss: {self.validation_loss}")
-        return self._create_result_object(predicted), self.inverse_transform(self.labels_validset)
+        return self._create_result_object(self.network.likelihood(output)), self.inverse_transform(self.labels_validset)
 
     def predict(self, inp_data: Tensor) -> GPMultivariate:
         """compute output of the model for a given input
@@ -164,8 +172,8 @@ class GPModeller(TorchModeller):
         self.network.likelihood.eval()
 
         with torch.no_grad(), gp.settings.fast_pred_var():
-            predicted = self.network.likelihood(self.network(inp_data))
-        return self._create_result_object(predicted)
+            output = self.network.likelihood(self.network(inp_data))
+        return self._create_result_object(output)
 
     def _create_result_object(self, output: gp.distributions.MultivariateNormal) -> GPMultivariate:
         """Create a NamedTuple with the resulting MultivariateNormal."""

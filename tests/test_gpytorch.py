@@ -23,7 +23,8 @@ def test_train_gaussian_processes():
     researcher.set_optimizer("Adam", lr=0.1)
     researcher.set_scheduler("StepLR", 0.1)
     researcher.data.scale_labels()
-    multivariate, _ = researcher.train_model(5, partition)
+    researcher.train_model(5, partition)
+    multivariate, _ = researcher.validate_model()
 
     assert not np.isnan(multivariate.mean).all()
     assert not np.isnan(multivariate.lower).all()

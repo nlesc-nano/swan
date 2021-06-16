@@ -11,6 +11,7 @@ from scipy import stats
 from swan.dataset import FingerprintsData
 from swan.modeller import SKModeller
 from swan.utils.log_config import configure_logger
+from swan.utils.plot import create_scatter_plot
 
 configure_logger(Path("."))
 
@@ -27,26 +28,26 @@ dict_parameters = {
 
 # Training variables
 properties = [
-    "Dissocation energy (nucleofuge)",
-    "Dissociation energy (electrofuge)",
-    "Electroaccepting power(w+)",
-    "Electrodonating power (w-)",
-    "Electronegativity (chi=-mu)",
-    "Electronic chemical potential (mu)",
-    "Electronic chemical potential (mu+)",
-    "Electronic chemical potential (mu-)",
-    "Electrophilicity index (w=omega)",
-    "Global Dual Descriptor Deltaf+",
-    "Global Dual Descriptor Deltaf-",
+    # "Dissocation energy (nucleofuge)",
+    # "Dissociation energy (electrofuge)",
+    # "Electroaccepting power(w+)",
+    # "Electrodonating power (w-)",
+    # "Electronegativity (chi=-mu)",
+    # "Electronic chemical potential (mu)",
+    # "Electronic chemical potential (mu+)",
+    # "Electronic chemical potential (mu-)",
+    # "Electrophilicity index (w=omega)",
+    # "Global Dual Descriptor Deltaf+",
+    # "Global Dual Descriptor Deltaf-",
     "Hardness (eta)",
-    "Hyperhardness (gamma)",
-    "Net Electrophilicity",
-    "Softness (S)"
+    # "Hyperhardness (gamma)",
+    # "Net Electrophilicity",
+    # "Softness (S)"
 ]
 
 
 def run_all(path_data: str, output_file: str):
-    nruns = 3
+    nruns = 1
     models = ["gaussian_process"]  # ["decision_tree", "svm"]
     rvalues = {}
     for p in properties:
@@ -65,10 +66,11 @@ def run_all(path_data: str, output_file: str):
 
 def run_scikit_model(name_model: str, data: FingerprintsData):
     parameters = dict_parameters[name_model]
-    modeller = SKModeller(data, name_model, **parameters)
+    modeller = SKModeller(name_model, data, **parameters)
     modeller.train_model()
     predicted, expected = modeller.validate_model()
-    reg = stats.linregress(predicted, expected.flatten())
+    create_scatter_plot(predicted, expected, ["Hardness (eta)"], "scikit_validation")
+    reg = stats.linregress(predicted.flatten(), expected.flatten())
     return reg.rvalue
 
 
