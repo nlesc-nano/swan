@@ -17,6 +17,7 @@ class BaseModeller(Generic[T_co]):
     """Base class for the modellers."""
 
     def __init__(self, data: SwanDataBase, replace_state: bool) -> None:
+        self.data = data
         self.state = StateH5(replace_state=replace_state)
         self.smiles = data.dataframe.smiles.to_numpy()
 

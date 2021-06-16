@@ -85,7 +85,7 @@ class SKModeller(BaseModeller[np.ndarray]):
         expected = self.labels_validset
         score = self.model.score(self.features_validset, expected)
         LOGGER.info(f"Validation R^2 score: {score}")
-        return predicted, expected
+        return tuple(self.inverse_transform(x) for x in (predicted, expected))
 
     def load_model(self, path_model: Optional[PathLike]) -> None:
         """Load the model from the state file."""
@@ -106,3 +106,23 @@ class SKModeller(BaseModeller[np.ndarray]):
         Array containing the predicted results
         """
         return self.model.predict(inp_data)
+
+    def inverse_transform(self, arr: np.ndarray) -> np.ndarray:
+        """Unscale ``arr`` using the fitted scaler.
+
+        Parameters
+        ----------
+        arr
+            Array to inverse-transform
+
+        Returns
+        -------
+        Inverse-Transformed array
+        """
+        def invert(arr: np.ndarray) -> np.ndarray:
+            if len(arr.shape) == 1:
+                arr = arr.reshape(-1, 1)
+
+            return arr
+
+        return self.data.transformer.inverse_transform(invert(arr))

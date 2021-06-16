@@ -52,9 +52,6 @@ class TorchModeller(BaseModeller[torch.Tensor]):
         # create the network
         self.network = network.to(self.device)
 
-        # add dataset in the class
-        self.data = data
-
         # set the default optimizer
         self.set_optimizer('SGD', lr=0.001)
 
