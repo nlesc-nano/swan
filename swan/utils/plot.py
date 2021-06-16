@@ -18,7 +18,7 @@ def create_confidence_plot(
         output_name: str = "scatterplot") -> None:
     """Plot the results predicted multivariated results using confidence intervals."""
     data = pd.DataFrame({
-        "expected": expected, "predicted": multi.mean, "confidence": multi.upper - multi.lower,
+        "expected": expected, "predicted": multi.mean, "confidence": (multi.upper - multi.lower) * 0.5,
         "lower": multi.lower, "upper": multi.upper})
     _, ax = plt.subplots(1, 1, figsize=(10, 10))
     sns.regplot(x="expected", y="predicted", data=data, ax=ax)
