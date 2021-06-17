@@ -15,15 +15,13 @@ plt.switch_backend('agg')
 
 def create_confidence_plot(
         multi: GPMultivariate, expected: np.ndarray, prop: str,
-        output_name: str = "scatterplot") -> None:
+        output_name: str = "confidence_scatterplot") -> None:
     """Plot the results predicted multivariated results using confidence intervals."""
     data = pd.DataFrame({
         "expected": expected, "predicted": multi.mean, "confidence": (multi.upper - multi.lower) * 0.5,
         "lower": multi.lower, "upper": multi.upper})
     _, ax = plt.subplots(1, 1, figsize=(10, 10))
     sns.lineplot(x="expected", y="expected", data=data, ax=ax)
-    # sns.scatterplot(x="expected", y="upper", data=data, alpha=0.5)
-    # sns.scatterplot(x="expected", y="lower", data=data, alpha=0.5)
     sns.scatterplot(x="expected", y="predicted", data=data, ax=ax, size="confidence", hue="confidence", sizes=(10, 100))
 
     path = Path(".") / f"{output_name}.png"
