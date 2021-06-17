@@ -12,6 +12,7 @@ from ..type_hints import PathLike
 from ..utils.early_stopping import EarlyStopping
 from .base_modeller import BaseModeller
 import numpy as np
+import sklearn
 
 # Starting logger
 LOGGER = logging.getLogger(__name__)
@@ -284,11 +285,14 @@ class TorchModeller(BaseModeller[torch.Tensor]):
 
     def inverse_transform(self, arr: Tensor) -> np.ndarray:
         """Unscale ``arr`` using the fitted scaler."""
-        def invert(arr: Tensor) -> np.ndarray:
+        def _detach(arr: Tensor) -> np.ndarray:
             arr = arr.detach().numpy()
             if len(arr.shape) == 1:
                 arr = arr.reshape(-1, 1)
 
             return arr
 
-        return self.data.transformer.inverse_transform(invert(arr))
+        try:
+            return self.data.transformer.inverse_transform(_detach(arr))
+        except sklearn.exceptions.NotFittedError:
+            return _detach(arr)

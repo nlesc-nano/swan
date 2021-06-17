@@ -1,15 +1,17 @@
 """Gaussian Processes modeller."""
 
 import logging
+import warnings
 from typing import NamedTuple, Tuple
 
 import gpytorch as gp
+import numpy as np
+import sklearn
 import torch
 from torch import Tensor
 
 from ..dataset.fingerprints_data import FingerprintsData
 from ..dataset.splitter import SplitDataset
-import numpy as np
 from .torch_modeller import TorchModeller
 
 # Starting logger
@@ -58,8 +60,13 @@ class GPModeller(TorchModeller):
         self.features_validset = partition.features_validset
 
         # Scales the labels coming from the partition
-        self.labels_trainset = torch.from_numpy(self.data.transformer.transform(partition.labels_trainset.numpy()))
-        self.labels_validset = torch.from_numpy(self.data.transformer.transform(partition.labels_validset.numpy()))
+        try:
+            self.labels_trainset = torch.from_numpy(self.data.transformer.transform(partition.labels_trainset.numpy()))
+            self.labels_validset = torch.from_numpy(self.data.transformer.transform(partition.labels_validset.numpy()))
+        except sklearn.exceptions.NotFittedError:
+            self.labels_trainset = partition.labels_trainset
+            self.labels_validset = partition.labels_validset
+            warnings.warn("The labels have not been scaled. Is this the intended behavior?", UserWarning)
 
         indices = partition.indices
         ntrain = partition.ntrain
@@ -68,8 +75,7 @@ class GPModeller(TorchModeller):
 
     def train_model(self,
                     nepoch: int,
-                    partition: SplitDataset,
-                    batch_size: int = 64) -> Tuple[Tensor, Tensor]:
+                    partition: SplitDataset) -> Tuple[Tensor, Tensor]:
         """Train the model
 
         Parameters
@@ -78,15 +84,7 @@ class GPModeller(TorchModeller):
             number of ecpoch to run
         partition
             Dataset split into training and validation set
-        batch_size
-            batchsize, by default 64
         """
-        # def closure():
-        #     prediction = self.network(self.features_trainset)
-        #     loss = -self.loss_func(prediction, self.labels_trainset.flatten())
-        #     self.optimizer.zero_grad()
-        #     loss.backward()
-        #     return loss
 
         LOGGER.info("TRAINING STEP")
         self.split_data(partition)
@@ -106,12 +104,11 @@ class GPModeller(TorchModeller):
             self.optimizer.step()
             self.optimizer.zero_grad()
             loss = loss.item() / len(self.labels_trainset)
-            print(f"training loss: {loss:.3e}")
             self.train_losses.append(loss)
 
             lengthscale = self.network.covar_module.base_kernel.lengthscale.item()
             noise = self.network.likelihood.noise.item()
-            LOGGER.info(f"Training Loss: {loss:.3e}  lengthscale: {lengthscale:.1e} noise: {noise:.1e}")
+            LOGGER.info(f"Training loss: {loss:.3e}  lengthscale: {lengthscale:.1e} noise: {noise:.1e}")
 
             # Check for early stopping
             self.validate_model()
@@ -132,8 +129,8 @@ class GPModeller(TorchModeller):
         self.state.store_array("loss_train", self.train_losses)
         self.state.store_array("loss_validate", self.validation_losses)
 
-        # output = self.network.likelihood(prediction)
-        # return self._create_result_object(output), self.inverse_transform(self.labels_trainset)
+        predicted = self.network.likelihood(output)
+        return self._create_result_object(predicted), self.inverse_transform(self.labels_trainset)
 
     def validate_model(self) -> Tuple[GPMultivariate, Tensor]:
         """compute the output of the model on the validation set
@@ -151,8 +148,7 @@ class GPModeller(TorchModeller):
             output = self.network(self.features_validset)
             loss = -self.loss_func(output, self.labels_validset.flatten())
             self.validation_loss = loss.item() / len(self.labels_validset)
-            print(f"validation loss: {self.validation_loss:.3e}")
-            LOGGER.info(f"validation loss: {self.validation_loss}")
+            LOGGER.info(f"validation loss: {self.validation_loss:.3e}")
         return self._create_result_object(self.network.likelihood(output)), self.inverse_transform(self.labels_validset)
 
     def predict(self, inp_data: Tensor) -> GPMultivariate:
