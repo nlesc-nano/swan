@@ -8,6 +8,7 @@
 
 ## Changed
 * Fix prediction functionality (#81)
+* Return predicted and expected values scaled back (#90)
 
 # 0.5.0 [04/05/2021]
 ## Changed

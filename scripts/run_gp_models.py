@@ -10,6 +10,7 @@ from swan.modeller import GPModeller
 from swan.modeller.models import GaussianProcess
 from swan.utils.log_config import configure_logger
 from swan.utils.plot import create_confidence_plot, create_scatter_plot
+import pandas as pd
 
 # Starting logger
 configure_logger(Path("."))
@@ -54,7 +55,7 @@ model = GaussianProcess(partition.features_trainset, partition.labels_trainset.f
 # training and validation
 researcher = GPModeller(model, data, use_cuda=False, replace_state=True)
 researcher.set_optimizer("Adam", lr=0.5)
-researcher.set_scheduler("StepLR", 0.1)
+researcher.set_scheduler(None)
 # researcher.train_model(nepoch, partition)
 trained_multivariate, expected_train = researcher.train_model(nepoch, partition)
 
