@@ -8,7 +8,8 @@ from swan.modeller.gp_modeller import GPMultivariate
 
 def remove_plot(file_name: str):
     p = Path(f"{file_name}.png")
-    p.unlink(missing_ok=True)
+    if p.exists():
+        p.unlink()
 
 
 def test_confidence_plot():
