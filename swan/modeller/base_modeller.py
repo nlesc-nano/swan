@@ -17,11 +17,12 @@ class BaseModeller(Generic[T_co]):
     """Base class for the modellers."""
 
     def __init__(self, data: SwanDataBase, replace_state: bool) -> None:
+        self.data = data
         self.state = StateH5(replace_state=replace_state)
         self.smiles = data.dataframe.smiles.to_numpy()
 
     @abc.abstractmethod
-    def train_model(self, frac: Tuple[float, float] = (0.8, 0.2), **kwargs):
+    def train_model(self, nepoch: int, frac: Tuple[float, float] = (0.8, 0.2), **kwargs):
         """Train the model using the given data.
 
         Parameters

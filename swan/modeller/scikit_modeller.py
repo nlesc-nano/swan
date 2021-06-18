@@ -8,6 +8,7 @@ import numpy as np
 from sklearn import gaussian_process, svm, tree
 
 from ..dataset.fingerprints_data import FingerprintsData
+from ..dataset.splitter import split_dataset
 from ..type_hints import PathLike
 from .base_modeller import BaseModeller
 
@@ -17,19 +18,19 @@ LOGGER = logging.getLogger(__name__)
 class SKModeller(BaseModeller[np.ndarray]):
     """Create statistical models using the scikit learn library."""
 
-    def __init__(self, data: FingerprintsData, name: str, replace_state: bool = True, **kwargs):
+    def __init__(self, name: str, data: FingerprintsData, replace_state: bool = False, **kwargs):
         """Class constructor.
 
         Parameters
         ----------
-        data
-            FingerprintsData object containing the dataset
         name
             scikit learn model to use
+        data
+            FingerprintsData object containing the dataset
         replace_state
             Remove previous state file
         """
-        super().__init__(data, replace_state)
+        super(SKModeller, self).__init__(data, replace_state)
         self.fingerprints = data.fingerprints.numpy()
         self.labels = data.dataset.labels.numpy()
         self.path_model = "swan_skmodeller.pkl"
@@ -47,30 +48,7 @@ class SKModeller(BaseModeller[np.ndarray]):
 
         LOGGER.info(f"Created {name} model")
 
-    def split_data(self, frac: Tuple[float, float]):
-        """Split the data into a training and validation set.
-
-        Parameters
-        ----------
-        frac
-            fraction to divide the dataset, by default [0.8, 0.2]
-        """
-        # Generate random indices to train and validate the model
-        size = len(self.fingerprints)
-        indices = np.arange(size)
-        np.random.shuffle(indices)
-
-        ntrain = int(size * frac[0])
-        self.features_trainset = self.fingerprints[indices[:ntrain]]
-        self.features_validset = self.fingerprints[indices[ntrain:]]
-        self.labels_trainset = self.labels[indices[:ntrain]]
-        self.labels_validset = self.labels[indices[ntrain:]]
-
-        # Store the smiles used for training and validation
-        self.state.store_array("smiles_train", self.smiles[indices[:ntrain]], dtype="str")
-        self.state.store_array("smiles_validate", self.smiles[indices[ntrain:]], dtype="str")
-
-    def train_model(self, frac: Tuple[float, float] = (0.8, 0.2)):
+    def train_model(self, frac: Tuple[float, float] = (0.8, 0.2)) -> None:
         """Train the model using the given data.
 
         Parameters
@@ -81,6 +59,20 @@ class SKModeller(BaseModeller[np.ndarray]):
         self.split_data(frac)
         self.model.fit(self.features_trainset, self.labels_trainset.flatten())
         self.save_model()
+
+    def split_data(self, frac: Tuple[float, float]) -> None:
+        """Split the dataset into a training and validation set."""
+        partition = split_dataset(self.fingerprints, self.labels, frac)
+        self.features_trainset = partition.features_trainset
+        self.features_validset = partition.features_validset
+        self.labels_trainset = partition.labels_trainset
+        self.labels_validset = partition.labels_validset
+
+        # Split the smiles using the same partition than the features
+        indices = partition.indices
+        ntrain = partition.ntrain
+        self.state.store_array("smiles_train", self.smiles[indices[:ntrain]], dtype="str")
+        self.state.store_array("smiles_validate", self.smiles[indices[ntrain:]], dtype="str")
 
     def save_model(self):
         """Store the trained model."""
@@ -93,7 +85,7 @@ class SKModeller(BaseModeller[np.ndarray]):
         expected = self.labels_validset
         score = self.model.score(self.features_validset, expected)
         LOGGER.info(f"Validation R^2 score: {score}")
-        return predicted, expected
+        return tuple(self.inverse_transform(x) for x in (predicted, expected))
 
     def load_model(self, path_model: Optional[PathLike]) -> None:
         """Load the model from the state file."""
@@ -114,3 +106,23 @@ class SKModeller(BaseModeller[np.ndarray]):
         Array containing the predicted results
         """
         return self.model.predict(inp_data)
+
+    def inverse_transform(self, arr: np.ndarray) -> np.ndarray:
+        """Unscale ``arr`` using the fitted scaler.
+
+        Parameters
+        ----------
+        arr
+            Array to inverse-transform
+
+        Returns
+        -------
+        Inverse-Transformed array
+        """
+        def invert(arr: np.ndarray) -> np.ndarray:
+            if len(arr.shape) == 1:
+                arr = arr.reshape(-1, 1)
+
+            return arr
+
+        return self.data.transformer.inverse_transform(invert(arr))

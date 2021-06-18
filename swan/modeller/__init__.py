@@ -1,4 +1,5 @@
-from .modeller import Modeller
+from .gp_modeller import GPModeller
 from .scikit_modeller import SKModeller
+from .torch_modeller import TorchModeller
 
-_all__ = ["Modeller", "SKModeller"]
+__all__ = ["GPModeller", "SKModeller", "TorchModeller"]

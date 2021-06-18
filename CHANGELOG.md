@@ -4,9 +4,11 @@
 ## New
 * Add interface to scikit regressors (#85)
 * Add interface to HDF5 to store the training results (#88)
+* Add interface to GPyTorch (#90)
 
 ## Changed
 * Fix prediction functionality (#81)
+* Return predicted and expected values scaled back (#90)
 
 # 0.5.0 [04/05/2021]
 ## Changed

@@ -1,4 +1,4 @@
-"""Base class to configure the statistical model."""
+"""class to create models with Pytorch statistical model."""
 
 import logging
 from pathlib import Path
@@ -11,12 +11,14 @@ from ..dataset.swan_data_base import SwanDataBase
 from ..type_hints import PathLike
 from ..utils.early_stopping import EarlyStopping
 from .base_modeller import BaseModeller
+import numpy as np
+import sklearn
 
 # Starting logger
 LOGGER = logging.getLogger(__name__)
 
 
-class Modeller(BaseModeller[torch.Tensor]):
+class TorchModeller(BaseModeller[torch.Tensor]):
     """Object to create statistical models."""
     def __init__(self,
                  network: nn.Module,
@@ -50,9 +52,6 @@ class Modeller(BaseModeller[torch.Tensor]):
 
         # create the network
         self.network = network.to(self.device)
-
-        # add dataset in the class
-        self.data = data
 
         # set the default optimizer
         self.set_optimizer('SGD', lr=0.001)
@@ -190,7 +189,7 @@ class Modeller(BaseModeller[torch.Tensor]):
         self.state.store_array("loss_train", self.train_losses)
         self.state.store_array("loss_validate", self.validation_losses)
 
-        return torch.cat(results), torch.cat(expected)
+        return tuple(self.inverse_transform(torch.cat(x)) for x in (results, expected))
 
     def train_batch(self, inp_data: Tensor, ground_truth: Tensor) -> Tuple[float, Tensor]:
         """Train a single mini batch
@@ -236,12 +235,13 @@ class Modeller(BaseModeller[torch.Tensor]):
                 y_val = y_val.to(self.device)
                 predicted = self.network(x_val)
                 loss = self.loss_func(predicted, y_val)
-                loss_all += loss.item() * len(x_val)
+                loss_all += loss.item()
                 results.append(predicted)
                 expected.append(y_val)
             self.validation_loss = loss_all / len(self.data.valid_dataset)
             LOGGER.info(f"validation loss: {self.validation_loss}")
-        return torch.cat(results), torch.cat(expected)
+
+        return tuple(self.inverse_transform(torch.cat(x)) for x in (results, expected))
 
     def predict(self, inp_data: Tensor) -> Tensor:
         """compute output of the model for a given input
@@ -282,3 +282,17 @@ class Modeller(BaseModeller[torch.Tensor]):
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         self.epoch = checkpoint['epoch']
         self.loss = checkpoint['loss']
+
+    def inverse_transform(self, arr: Tensor) -> np.ndarray:
+        """Unscale ``arr`` using the fitted scaler."""
+        def _detach(arr: Tensor) -> np.ndarray:
+            arr = arr.detach().numpy()
+            if len(arr.shape) == 1:
+                arr = arr.reshape(-1, 1)
+
+            return arr
+
+        try:
+            return self.data.transformer.inverse_transform(_detach(arr))
+        except sklearn.exceptions.NotFittedError:
+            return _detach(arr)
