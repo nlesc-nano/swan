@@ -25,11 +25,14 @@ def test_state(tmp_path: Path, capsys):
     out, _ = capsys.readouterr()
     assert "Available data" in out
 
+    assert not all(state.has_data(f"non_existing_{i}") for i in range(2))
+
 
 def test_state_unknown_key(tmp_path: Path):
     """Check that an error is raised if there is not data."""
     path_hdf5 = tmp_path / "swan_state.h5"
-    state = StateH5(path_hdf5)
+    path_hdf5.touch()
+    state = StateH5(path_hdf5, replace_state=True)
 
     with pytest.raises(KeyError):
         state.retrieve_data("nonexisting property")
@@ -46,3 +49,5 @@ def store_smiles_in_state(tmp_path: Path):
     state.store_array("smiles", smiles, "str")
     data = [x.decode() for x in state.retrieve_data("smiles")]
     assert data == smiles.tolist()
+
+

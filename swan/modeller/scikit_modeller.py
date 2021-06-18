@@ -102,7 +102,7 @@ class SKModeller(BaseModeller[np.ndarray]):
         -------
         Array containing the predicted results
         """
-        return self.model.predict(inp_data)
+        return self.inverse_transform(self.model.predict(inp_data))
 
     def inverse_transform(self, arr: np.ndarray) -> np.ndarray:
         """Unscale ``arr`` using the fitted scaler.
