@@ -69,10 +69,7 @@ class SKModeller(BaseModeller[np.ndarray]):
         self.labels_validset = partition.labels_validset
 
         # Split the smiles using the same partition than the features
-        indices = partition.indices
-        ntrain = partition.ntrain
-        self.state.store_array("smiles_train", self.smiles[indices[:ntrain]], dtype="str")
-        self.state.store_array("smiles_validate", self.smiles[indices[ntrain:]], dtype="str")
+        self.store_trainset_in_state(partition.indices, partition.ntrain)
 
     def save_model(self):
         """Store the trained model."""

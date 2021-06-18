@@ -67,3 +67,25 @@ class BaseModeller(Generic[T_co]):
     def save_model(self, *args, **kwargs):
         """Store the trained model."""
         raise NotImplementedError
+
+    def store_trainset_in_state(self, indices: T_co, ntrain: int, store_features: bool = True) -> None:
+        """Store features, indices, smiles, etc. into the state file."""
+        self.state.store_array("indices", indices, "int")
+        self.state.store_array("ntrain", ntrain, "int")
+        self.state.store_array("smiles_train", self.smiles[indices[:ntrain]], dtype="str")
+        self.state.store_array("smiles_validate", self.smiles[indices[ntrain:]], dtype="str")
+
+        if isinstance(self.labels_trainset, torch.Tensor):
+            self.state.store_array("labels_trainset", self.labels_trainset.numpy())
+            self.state.store_array("labels_validset", self.labels_validset.numpy())
+        else:
+            self.state.store_array("labels_trainset", self.labels_trainset)
+            self.state.store_array("labels_validset", self.labels_validset)
+
+        if store_features:
+            if isinstance(self.features_trainset, torch.Tensor):
+                self.state.store_array("features_trainset", self.features_trainset.numpy())
+                self.state.store_array("features_validset", self.features_validset.numpy())
+            else:
+                self.state.store_array("features_trainset", self.features_trainset)
+                self.state.store_array("features_validset", self.features_validset)

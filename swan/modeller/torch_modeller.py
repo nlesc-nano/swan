@@ -121,10 +121,9 @@ class TorchModeller(BaseModeller[torch.Tensor]):
         """
         # create the dataloader
         indices_train, indices_validate = self.data.create_data_loader(frac=frac, batch_size=batch_size)
-
-        # Store the smiles used for training and validation
-        self.state.store_array("smiles_train", self.smiles[indices_train], dtype="str")
-        self.state.store_array("smiles_validate", self.smiles[indices_validate], dtype="str")
+        self.labels_trainset = self.data.labels[indices_train]
+        self.labels_validset = self.data.labels[indices_validate]
+        self.store_trainset_in_state(np.concatenate((indices_train, indices_validate)), len(indices_validate), store_features=False)
 
     def train_model(self,
                     nepoch: int,

@@ -15,12 +15,12 @@ NUM_CHANNELS = 4  # Number of channels in middle layers
 torch.set_default_dtype(torch.float32)
 
 CSV_FILE = PATH_TEST / "thousand.csv"
-DATA = DGLGraphData(CSV_FILE, properties=["Hardness (eta)"])
+DATA = DGLGraphData(CSV_FILE, properties=["Hardness (eta)"], optimize_molecule=True)
 
 
 def run_modeller(net: torch.nn.Module):
     """Run a given model."""
-    modeller = TorchModeller(net, DATA, use_cuda=False, replace_state=False)
+    modeller = TorchModeller(net, DATA, use_cuda=False, replace_state=True)
 
     modeller.data.scale_labels()
     modeller.train_model(nepoch=1, batch_size=64)

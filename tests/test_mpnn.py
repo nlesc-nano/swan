@@ -18,7 +18,7 @@ class TestMPNN(unittest.TestCase):
         self.data = PATH_TEST / "thousand.csv"
         self.data = TorchGeometricGraphData(self.data, properties=["Hardness (eta)"])
         self.net = MPNN()
-        self.modeller = TorchModeller(self.net, self.data)
+        self.modeller = TorchModeller(self.net, self.data, replace_state=True)
 
     def test_train_data_mpnn(self):
 
