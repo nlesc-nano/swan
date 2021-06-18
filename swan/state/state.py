@@ -1,7 +1,7 @@
 """Module to interact with HDF5."""
 
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Optional
 
 import h5py
 import numpy as np
@@ -50,7 +50,7 @@ class StateH5:
         data
             Numpy array or list of array to store
         """
-        supported_types = {'float': float, 'str': h5py.string_dtype(encoding='utf-8')}
+        supported_types = {'int': int, 'float': float, 'str': h5py.string_dtype(encoding='utf-8')}
         if dtype in supported_types:
             dtype = supported_types[dtype]
         else:
@@ -60,7 +60,7 @@ class StateH5:
         with h5py.File(self.path, 'r+') as f5:
             f5.require_dataset(node, shape=np.shape(data), data=data, dtype=dtype)
 
-    def retrieve_data(self, paths_to_prop: str) -> List[np.ndarray]:
+    def retrieve_data(self, paths_to_prop: str) -> Any:
         """Read Numerical properties from ``paths_hdf5``.
 
         Parameters
@@ -70,7 +70,7 @@ class StateH5:
 
         Returns
         -------
-        array or list of array
+        Numpy array, float or int
 
         Raises
         ------

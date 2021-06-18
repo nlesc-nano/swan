@@ -72,6 +72,12 @@ class GPModeller(TorchModeller):
         ntrain = partition.ntrain
         self.state.store_array("smiles_train", self.smiles[indices[:ntrain]], dtype="str")
         self.state.store_array("smiles_validate", self.smiles[indices[ntrain:]], dtype="str")
+        self.state.store_array("features_trainset", self.features_trainset.numpy())
+        self.state.store_array("features_validset", self.features_validset.numpy())
+        self.state.store_array("labels_trainset", self.labels_trainset.numpy())
+        self.state.store_array("labels_validset", self.labels_validset.numpy())
+        self.state.store_array("indices", indices, "int")
+        self.state.store_array("ntrain", ntrain, "int")
 
     def train_model(self,
                     nepoch: int,
@@ -168,6 +174,8 @@ class GPModeller(TorchModeller):
         self.network.likelihood.eval()
 
         with torch.no_grad(), gp.settings.fast_pred_var():
+            first = self.network(inp_data)
+            print(first.mean)
             output = self.network.likelihood(self.network(inp_data))
         return self._create_result_object(output)
 
