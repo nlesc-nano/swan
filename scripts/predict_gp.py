@@ -30,7 +30,6 @@ researcher = GPModeller(model, data, use_cuda=False, replace_state=False)
 researcher.load_model("swan_chk.pt")
 
 fingers = data.fingerprints
-print("shape fingers: ", fingers.shape)
 predicted = researcher.predict(fingers)
 df = pd.DataFrame(
     {"smiles": data.dataframe.smiles, "mean": predicted.mean, "lower": predicted.lower, "upper": predicted.upper})

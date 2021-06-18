@@ -1,7 +1,7 @@
 """Module to interact with HDF5."""
 
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, List, Optional, Union
 
 import h5py
 import numpy as np
@@ -22,7 +22,7 @@ class StateH5:
         if not self.path.exists():
             self.path.touch()
 
-    def has_data(self, data: ArrayLike) -> bool:
+    def has_data(self, data: Union[str, List[str]]) -> bool:
         """Search if the node exists in the HDF5 file.
 
         Parameters

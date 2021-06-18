@@ -69,10 +69,7 @@ class SKModeller(BaseModeller[np.ndarray]):
         self.labels_validset = partition.labels_validset
 
         # Split the smiles using the same partition than the features
-        indices = partition.indices
-        ntrain = partition.ntrain
-        self.state.store_array("smiles_train", self.smiles[indices[:ntrain]], dtype="str")
-        self.state.store_array("smiles_validate", self.smiles[indices[ntrain:]], dtype="str")
+        self.store_trainset_in_state(partition.indices, partition.ntrain)
 
     def save_model(self):
         """Store the trained model."""
@@ -105,7 +102,7 @@ class SKModeller(BaseModeller[np.ndarray]):
         -------
         Array containing the predicted results
         """
-        return self.model.predict(inp_data)
+        return self.inverse_transform(self.model.predict(inp_data))
 
     def inverse_transform(self, arr: np.ndarray) -> np.ndarray:
         """Unscale ``arr`` using the fitted scaler.

@@ -7,30 +7,45 @@ from swan.modeller import SKModeller
 
 from .utils_test import PATH_TEST
 
-DATA = FingerprintsData(PATH_TEST / "thousand.csv", properties=["Hardness (eta)"], sanitize=False)
-DATA.scale_labels()
-
 
 def run_test(model: str, **kwargs):
     """Run the training and validation step for the given model."""
-    modeller = SKModeller(model, DATA)
+    data = FingerprintsData(PATH_TEST / "thousand.csv", properties=["Hardness (eta)"], sanitize=False)
+    data.scale_labels()
+    modeller = SKModeller(model, data)
     modeller.train_model()
     predicted, expected = modeller.validate_model()
     reg = stats.linregress(predicted.flatten(), expected.flatten())
     assert not np.isnan(reg.rvalue)
 
 
+def run_prediction(model: str):
+    """Check the prediction functionality."""
+    data = FingerprintsData(PATH_TEST / "smiles.csv", sanitize=False)
+    modeller = SKModeller(model, data)
+    modeller.load_model("swan_skmodeller.pkl")
+    modeller.data.load_scale()
+    predicted = modeller.predict(data.fingerprints)
+    assert not np.isnan(predicted).all()
+
+
 def test_decision_tree():
     """Check the interface to the Decisiontree class."""
-    run_test("decision_tree")
+    model = "decision_tree"
+    run_test(model)
+    run_prediction(model)
 
 
 def test_svm():
     """Check the interface to the support vector machine."""
-    run_test("svm")
+    model = "svm"
+    run_test(model)
+    run_prediction(model)
 
 
 def test_gaussian_process():
     """Check the interface to the support vector machine."""
     kernel = ConstantKernel(constant_value=10)
-    run_test("gaussian_process", kernel=kernel)
+    model = "gaussian_process"
+    run_test(model, kernel=kernel)
+    run_prediction(model)
