@@ -1,6 +1,9 @@
 # Change Log
 
-# 0.6.0 [Unreleased]
+# 0.7.0 [Unreleased]
+
+
+# 0.6.0 [21/06/2021]
 ## New
 * Add interface to scikit regressors (#85)
 * Add interface to HDF5 to store the training results (#88)
