@@ -3,7 +3,7 @@ name: build with conda
 on: [push]
 
 env:
-  TORCH: "1.8.1"
+  TORCH: "1.8.0"
 
 jobs:
   build:
@@ -27,8 +27,7 @@ jobs:
         update-conda: true
         python-version: ${{ matrix.version }}
         conda-channels: anaconda
-    - run: conda --version
-    - run: which python
+
     - name: install conda dependencies
 
       run: conda install scipy rdkit pytorch==${TORCH} torchvision cpuonly dgl -c pytorch -c conda-forge -c dglteam
