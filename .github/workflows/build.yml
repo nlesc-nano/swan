@@ -48,6 +48,12 @@ jobs:
       env:
         CONDA_PREFIX: /usr/share/miniconda
 
+    - name: Conda info
+      run: conda info
+
+    - name: Conda list
+      run: conda list -n base
+
     - name: Test with pytest
       env:
         CONDA_PREFIX: /usr/share/miniconda
