@@ -3,7 +3,8 @@ name: build with conda
 on: [push]
 
 env:
-  TORCH: "1.8.0"
+  TORCH: "1.8.1"
+  CONDA_PREFIX: /usr/share/miniconda
 
 jobs:
   build:
@@ -28,25 +29,19 @@ jobs:
         python-version: ${{ matrix.version }}
         conda-channels: anaconda
 
-    - name: install conda dependencies
-
-      run: conda install scipy rdkit pytorch==${TORCH} torchvision cpuonly dgl -c pytorch -c conda-forge -c dglteam
-
-    - name: install torch-geometric dependencies
+    - name: install dependencies
       run: |
+        # torch==1.8.1 dependencies
+        conda install scipy rdkit pytorch==${TORCH} torchvision cpuonly dgl -c pytorch -c conda-forge -c dglteam
+
+        # torch-geometric dependencies
         pip install --no-index torch-scatter -f https://pytorch-geometric.com/whl/torch-${TORCH}+cpu.html
         pip install --no-index torch-sparse -f https://pytorch-geometric.com/whl/torch-${TORCH}+cpu.html
         pip install --no-index torch-cluster -f https://pytorch-geometric.com/whl/torch-${TORCH}+cpu.html
         pip install --no-index torch-spline-conv -f https://pytorch-geometric.com/whl/torch-${TORCH}+cpu.html
-        pip install torch-geometric
 
-    - name: install torch-geometric
-      run:  pip install torch-geometric
-
-    - name: Install the package
-      run: pip install .[test,doc]
-      env:
-        CONDA_PREFIX: /usr/share/miniconda
+        # The package
+        pip install .[test,doc]
 
     - name: Conda info
       run: conda info
@@ -55,8 +50,6 @@ jobs:
       run: conda list -n base
 
     - name: Test with pytest
-      env:
-        CONDA_PREFIX: /usr/share/miniconda
       run: |
         pytest
 
