@@ -1,4 +1,6 @@
-from typing import Generic, NamedTuple, Tuple, TypeVar, Union
+from __future__ import annotations
+
+from typing import NamedTuple, Tuple, TypeVar
 
 import numpy as np
 import torch
@@ -6,19 +8,21 @@ import torch
 from ..state import StateH5
 from ..type_hints import PathLike
 
-T_co = TypeVar('T_co', bound=Union[np.ndarray, torch.Tensor], covariant=True)
 
-
-class SplitDataset(NamedTuple, Generic[T_co]):
+class SplitDataset(NamedTuple):
     indices: np.ndarray       # Shuffled indices to split the data
     ntrain: int               # Number of points used for training
-    features_trainset: T_co   # Features for training
-    features_validset: T_co   # Features for validation
-    labels_trainset: T_co     # Labels for training
-    labels_validset: T_co     # Labels for validation
+    features_trainset: np.ndarray | torch.Tensor   # Features for training
+    features_validset: np.ndarray | torch.Tensor   # Features for validation
+    labels_trainset: np.ndarray | torch.Tensor     # Labels for training
+    labels_validset: np.ndarray | torch.Tensor     # Labels for validation
 
 
-def split_dataset(features: T_co, labels: T_co, frac: Tuple[float, float] = (0.8, 0.2)) -> SplitDataset:
+def split_dataset(
+    features: np.ndarray | torch.Tensor,
+    labels: np.ndarray | torch.Tensor,
+    frac: Tuple[float, float] = (0.8, 0.2),
+) -> SplitDataset:
     """Split the fingerprint dataset into a training and validation set.
 
     Parameters

@@ -33,6 +33,7 @@ setup(
         'Natural Language :: English',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
     ],
     install_requires=[
         'e3nn@git+https://github.com/e3nn/e3nn@main',

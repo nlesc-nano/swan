@@ -2,6 +2,10 @@ name: build with conda
 
 on: [push]
 
+env:
+  TORCH: "1.8.1"
+  CONDA_PREFIX: /usr/share/miniconda
+
 jobs:
   build:
 
@@ -10,11 +14,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [3.7, 3.8]
+        version: [3.7, 3.8, 3.9]
 
     steps:
     - name: Cancel Previous Runs
-      uses: styfle/cancel-workflow-action@0.4.0
+      uses: styfle/cancel-workflow-action@0.9.1
       with:
           access_token: ${{ github.token }}
     - uses: actions/checkout@v2
@@ -24,39 +28,34 @@ jobs:
         update-conda: true
         python-version: ${{ matrix.version }}
         conda-channels: anaconda
-    - run: conda --version
-    - run: which python
-    - name: install conda dependencies
-      env:
-        TORCH: "1.8"
-      run: conda install h5py scipy rdkit pytorch==${TORCH} torchvision cpuonly dgl -c pytorch -c conda-forge -c dglteam
 
-    - name: install torch-geometric dependencies
-      env:
-        TORCHG: "1.8.0"
+    - name: install dependencies
       run: |
-        pip install --no-index torch-scatter -f https://pytorch-geometric.com/whl/torch-${TORCHG}+cpu.html
-        pip install --no-index torch-sparse -f https://pytorch-geometric.com/whl/torch-${TORCHG}+cpu.html
-        pip install --no-index torch-cluster -f https://pytorch-geometric.com/whl/torch-${TORCHG}+cpu.html
-        pip install --no-index torch-spline-conv -f https://pytorch-geometric.com/whl/torch-${TORCHG}+cpu.html
-        pip install torch-geometric
+        # torch==1.8.1 dependencies
+        conda install scipy rdkit pytorch==${TORCH} torchvision cpuonly dgl -c pytorch -c conda-forge -c dglteam
+        pip install "gpytorch<=1.5.1"  # TODO: Remove when switching to pytorch >=1.9
 
-    - name: install torch-geometric
-      run:  pip install torch-geometric
+        # torch-geometric dependencies
+        pip install --no-index torch-scatter -f https://pytorch-geometric.com/whl/torch-${TORCH}+cpu.html
+        pip install --no-index torch-sparse -f https://pytorch-geometric.com/whl/torch-${TORCH}+cpu.html
+        pip install --no-index torch-cluster -f https://pytorch-geometric.com/whl/torch-${TORCH}+cpu.html
+        pip install --no-index torch-spline-conv -f https://pytorch-geometric.com/whl/torch-${TORCH}+cpu.html
 
-    - name: Install the package
-      run: pip install .[test,doc]
-      env:
-        CONDA_PREFIX: /usr/share/miniconda
+        # The package
+        pip install .[test,doc]
+
+    - name: Conda info
+      run: conda info
+
+    - name: Conda list
+      run: conda list -n base
 
     - name: Test with pytest
-      env:
-        CONDA_PREFIX: /usr/share/miniconda
       run: |
         pytest
 
     - name: coverage
-      uses: codecov/codecov-action@v1
+      uses: codecov/codecov-action@v2
       with:
         file: ./coverage.xml
         name: codecov-umbrella
