@@ -40,7 +40,8 @@ setup(
         'equivariant_attention@git+https://github.com/nlesc-nano/se3-transformer-public@dev',
         'gpytorch', 'h5py', 'mendeleev', 'numpy', 'pandas', 'pyyaml', 'scikit-learn',
         'scipy', 'seaborn', 'schema',
-        'torch-geometric'],
+        'torch-geometric',
+        'requests'],
 
     extras_require={
         'test': ['coverage', 'mypy', 'pycodestyle', 'pytest>=3.9', 'pytest-cov',
