@@ -32,7 +32,7 @@ jobs:
     - name: install dependencies
       run: |
         # torch==1.8.1 dependencies
-        conda install scipy rdkit pytorch==${TORCH} torchvision cpuonly
+        conda install scipy rdkit pytorch==${TORCH} torchvision cpuonly -c pytorch -c conda-forge
         pip install "gpytorch<=1.5.1"  # TODO: Remove when switching to pytorch >=1.9
         pip install dgl
 
