@@ -32,8 +32,9 @@ jobs:
     - name: install dependencies
       run: |
         # torch==1.8.1 dependencies
-        conda install scipy rdkit pytorch==${TORCH} torchvision cpuonly dgl -c pytorch -c conda-forge -c dglteam
+        conda install scipy rdkit pytorch==${TORCH} torchvision cpuonly
         pip install "gpytorch<=1.5.1"  # TODO: Remove when switching to pytorch >=1.9
+        pip install dgl
 
         # torch-geometric dependencies
         pip install --no-index torch-scatter -f https://pytorch-geometric.com/whl/torch-${TORCH}+cpu.html
