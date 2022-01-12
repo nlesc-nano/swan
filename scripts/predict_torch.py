@@ -8,7 +8,7 @@ import torch_geometric as tg
 from swan.dataset import (DGLGraphData, FingerprintsData,
                           TorchGeometricGraphData)
 from swan.dataset.dgl_graph_data import dgl_data_loader
-from swan.modeller import Modeller
+from swan.modeller import TorchModeller as Modeller
 from swan.modeller.models import MPNN, FingerprintFullyConnected
 from swan.modeller.models.se3_transformer import SE3Transformer
 from swan.utils.plot import create_scatter_plot
