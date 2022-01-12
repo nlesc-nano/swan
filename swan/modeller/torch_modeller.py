@@ -97,7 +97,7 @@ class TorchModeller(BaseModeller[torch.Tensor]):
         self.loss_func = getattr(nn, name)(*args, **kwargs)
 
     def set_scheduler(self, name, *args, **kwargs) -> None:
-        """Set the sceduler used for decreasing the LR
+        """Set the scheduler used for decreasing the learning rate
 
         Parameters
         ----------
@@ -134,11 +134,11 @@ class TorchModeller(BaseModeller[torch.Tensor]):
         Parameters
         ----------
         nepoch : int
-            number of ecpoch to run
+            number of epochs to run
         frac : List[int], optional
             divide the dataset in train/valid, by default [0.8, 0.2]
         batch_size : int, optional
-            batchsize, by default 64
+            batch size, by default 64
         """
         LOGGER.info("TRAINING STEP")
         self.split_data(frac, batch_size)
@@ -198,7 +198,7 @@ class TorchModeller(BaseModeller[torch.Tensor]):
         inp_data : Tensor
             input data of the network
         ground_truth : Tensor
-            ground trurth of the data points in input
+            ground truth of the data points in input
 
         Returns
         -------
@@ -214,7 +214,7 @@ class TorchModeller(BaseModeller[torch.Tensor]):
         return loss.item(), prediction
 
     def validate_model(self) -> Tuple[Tensor, Tensor]:
-        """compute the output of the model on the validation set
+        """Compute the output of the model on the validation set
 
         Returns
         -------
@@ -243,7 +243,7 @@ class TorchModeller(BaseModeller[torch.Tensor]):
         return tuple(self.inverse_transform(torch.cat(x)) for x in (results, expected))
 
     def predict(self, inp_data: Tensor) -> Tensor:
-        """compute output of the model for a given input
+        """Compute output of the model for a given input
 
         Parameters
         ----------
@@ -264,7 +264,7 @@ class TorchModeller(BaseModeller[torch.Tensor]):
                    epoch: int,
                    loss: float,
                    filename: str = 'swan_chk.pt') -> None:
-        """Save the modle current status."""
+        """Save the model's current status."""
         path = self.workdir / filename
         torch.save(
             {
