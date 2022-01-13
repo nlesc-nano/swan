@@ -26,7 +26,7 @@ def predict_fingerprints():
     """Predict data using a previously trained fingerprint model."""
     data = FingerprintsData(PATH_DATA, sanitize=True)
     # FullyConnected NN
-    net = FingerprintFullyConnected(hidden_units=100, output_units=NUMLABELS)
+    net = FingerprintFullyConnected(hidden_units=(100, 100), output_units=NUMLABELS)
     return call_modeller(net, data, data.fingerprints)
 
 

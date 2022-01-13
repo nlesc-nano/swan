@@ -50,7 +50,7 @@ data = FingerprintsData(
 #     path_data, properties=properties, file_geometries=path_geometries, sanitize=False)
 # data = TorchGeometricGraphData(path_data, properties=properties, file_geometries=path_geometries, sanitize=False)
 # FullyConnected NN
-net = FingerprintFullyConnected(hidden_units=100, output_units=num_labels)
+net = FingerprintFullyConnected(hidden_units=(100, 100), output_units=num_labels)
 
 # # Graph NN configuration
 # net = MPNN(batch_size=batch_size, output_channels=40, num_labels=num_labels)
