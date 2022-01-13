@@ -21,7 +21,7 @@ class SwanOptimizer:
             model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
         if self.scheduler_name is not None:
             self.scheduler = getattr(torch.optim.lr_scheduler, self.scheduler_name)(
-                self.optimizer, **scheduler_kwargs)
+                self.optimizer, **self.scheduler_kwargs)
         
     def step(self, loss):
         """Perform a single training step, and if using a scheduler update the learning rate.
