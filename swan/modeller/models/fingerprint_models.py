@@ -37,3 +37,11 @@ class FingerprintFullyConnected(nn.Module):
         all_layers = list(chain(*zip(linear_layers, activations)))[:-1]  # no activation after last layer
         
         return all_layers
+    
+    def get_config(self):
+        return {
+            'input_units': self.input_units,
+            'hidden_units': self.hidden_units,
+            'output_units': self.output_units,
+            'activation': self.activation
+        }
