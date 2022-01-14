@@ -41,14 +41,18 @@ class StateH5:
                 return data in f5
 
     def store_array(self, node: str, data: ArrayLike, dtype: str = "float") -> None:
-        """Store a tensor in the HDF5.
+        """
+        Store a tensor as a dataset in the HDF5 file. 
+        If the dataset already exists, it overwrites it.
 
         Parameters
         ----------
-        paths
-            list of nodes where the data is going to be stored
+        node
+            node where the data is going to be stored
         data
             Numpy array or list of array to store
+        dtype
+            dtype of data
         """
         supported_types = {'int': int, 'float': float, 'str': h5py.string_dtype(encoding='utf-8')}
         if dtype in supported_types:
@@ -58,7 +62,9 @@ class StateH5:
             raise RuntimeError(msg)
 
         with h5py.File(self.path, 'r+') as f5:
-            f5.require_dataset(node, shape=np.shape(data), data=data, dtype=dtype)
+            if node in f5:
+                del f5[node]
+            f5.create_dataset(node, shape=np.shape(data), data=data, dtype=dtype)
 
     def retrieve_data(self, paths_to_prop: str) -> Any:
         """Read Numerical properties from ``paths_hdf5``.
