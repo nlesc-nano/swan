@@ -155,14 +155,15 @@ class TorchModeller(BaseModeller[torch.Tensor]):
             loss_all = 0.
 
             # iterate over the data loader
-            for batch_data in self.data.train_loader:
-                x_batch, y_batch = self.data.get_item(batch_data)
-                x_batch = x_batch.to(self.device)
-                y_batch = y_batch.to(self.device)
-                loss_batch, predicted = self.train_batch(x_batch, y_batch)
-                loss_all += loss_batch
+            print('a')
+            for batch, (X, y) in enumerate(self.data.train_loader):
+                print('b')
+                X = X.to(self.device)
+                y = y.to(self.device)
+                loss, predicted = self.train_batch(X, y)
+                loss_all += loss
                 results.append(predicted)
-                expected.append(y_batch)
+                expected.append(y)
 
             # Train loss
             loss = loss_all / len(self.data.train_dataset)
@@ -228,15 +229,14 @@ class TorchModeller(BaseModeller[torch.Tensor]):
         with torch.no_grad():
             self.network.eval()
             loss_all = 0
-            for batch_data in self.data.valid_loader:
-                x_val, y_val = self.data.get_item(batch_data)
-                x_val = x_val.to(self.device)
-                y_val = y_val.to(self.device)
-                predicted = self.network(x_val)
-                loss = self.loss_func(predicted, y_val)
+            for batch, (X, y) in enumerate(self.data.valid_loader):
+                X = X.to(self.device)
+                y = y.to(self.device)
+                predicted = self.network(X)
+                loss = self.loss_func(predicted, y)
                 loss_all += loss.item()
                 results.append(predicted)
-                expected.append(y_val)
+                expected.append(y)
             self.validation_loss = loss_all / len(self.data.valid_dataset)
             LOGGER.info(f"validation loss: {self.validation_loss}")
 
