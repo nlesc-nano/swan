@@ -7,10 +7,10 @@ from typing import Optional, Tuple
 import numpy as np
 from sklearn import gaussian_process, svm, tree
 
-from ..dataset.fingerprints_data import FingerprintsData
-from ..dataset.splitter import split_dataset
-from ..type_hints import PathLike
-from .base_modeller import BaseModeller
+from swan.dataset.fingerprints_data import FingerprintsData
+from swan.dataset.splitter import split_dataset
+from swan.type_hints import PathLike
+from swan.modeller.base_modeller import BaseModeller
 
 LOGGER = logging.getLogger(__name__)
 

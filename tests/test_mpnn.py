@@ -8,7 +8,7 @@ from swan.dataset import TorchGeometricGraphData
 from swan.modeller import TorchModeller
 from swan.modeller.models.graph_models import MPNN
 
-from .utils_test import PATH_TEST, remove_files
+from tests.utils_test import PATH_TEST, remove_files
 
 @pytest.fixture
 def data():

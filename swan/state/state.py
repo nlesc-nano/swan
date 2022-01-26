@@ -6,7 +6,7 @@ from typing import Any, List, Optional, Union
 import h5py
 import numpy as np
 
-from ..type_hints import PathLike, ArrayLike
+from swan.type_hints import PathLike, ArrayLike
 
 
 class StateH5:

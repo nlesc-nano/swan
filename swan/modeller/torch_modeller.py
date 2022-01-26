@@ -7,10 +7,10 @@ from typing import Tuple
 import torch
 from torch import Tensor, nn
 
-from ..dataset.swan_data_base import SwanDataBase
-from ..type_hints import PathLike
-from ..utils.early_stopping import EarlyStopping
-from .base_modeller import BaseModeller
+from swan.dataset.swan_data_base import SwanDataBase
+from swan.type_hints import PathLike
+from swan.utils.early_stopping import EarlyStopping
+from swan.modeller.base_modeller import BaseModeller
 import numpy as np
 import sklearn
 

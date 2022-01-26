@@ -3,9 +3,9 @@
 from typing import List, Optional, Union
 
 
-from .geometry import guess_positions
-from .swan_data_base import SwanDataBase
-from ..type_hints import PathLike
+from swan.dataset.geometry import guess_positions
+from swan.dataset.swan_data_base import SwanDataBase
+from swan.type_hints import PathLike
 
 
 __all__ = ["SwanGraphData"]

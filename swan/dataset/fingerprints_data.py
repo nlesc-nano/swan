@@ -6,9 +6,9 @@ from torch.utils.data import Dataset
 
 from rdkit import RDLogger
 
-from .features.featurizer import generate_fingerprints
-from .swan_data_base import SwanDataBase
-from ..type_hints import PathLike
+from swan.dataset.features.featurizer import generate_fingerprints
+from swan.dataset.swan_data_base import SwanDataBase
+from swan.type_hints import PathLike
 
 __all__ = ["FingerprintsData"]
 RDLogger.DisableLog('rdApp.*')  # disable rdkit messages, preventing spam of 'Molecule does not have explicit Hs. Consider calling AddHs()'

@@ -5,7 +5,7 @@ from swan.modeller import TorchModeller
 from swan.modeller.models.fingerprint_models import FingerprintFullyConnected
 from swan.dataset import FingerprintsData
 
-from .utils_test import PATH_TEST, remove_files
+from tests.utils_test import PATH_TEST, remove_files
 
 
 @pytest.fixture

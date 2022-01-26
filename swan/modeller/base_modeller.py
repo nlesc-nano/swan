@@ -5,9 +5,9 @@ from typing import Generic, Optional, Tuple, TypeVar, Union
 import numpy as np
 import torch
 
-from ..dataset.swan_data_base import SwanDataBase
-from ..state import StateH5
-from ..type_hints import PathLike
+from swan.dataset.swan_data_base import SwanDataBase
+from swan.state import StateH5
+from swan.type_hints import PathLike
 
 # `bound` preserves all sub-type information, which might be useful
 T_co = TypeVar('T_co', bound=Union[np.ndarray, torch.Tensor], covariant=True)

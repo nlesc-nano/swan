@@ -5,8 +5,8 @@ from typing import NamedTuple, Tuple, TypeVar
 import numpy as np
 import torch
 
-from ..state import StateH5
-from ..type_hints import PathLike
+from swan.state import StateH5
+from swan.type_hints import PathLike
 
 
 class SplitDataset(NamedTuple):

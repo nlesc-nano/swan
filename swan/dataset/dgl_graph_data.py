@@ -4,9 +4,9 @@ from typing import List, Optional, Tuple, Union
 import torch
 from torch.utils.data import DataLoader, Dataset
 
-from .data_graph_base import SwanGraphData
-from .graph.molecular_graph import create_molecular_dgl_graph
-from ..type_hints import PathLike
+from swan.dataset.data_graph_base import SwanGraphData
+from swan.dataset.graph.molecular_graph import create_molecular_dgl_graph
+from swan.type_hints import PathLike
 
 try:
     import dgl

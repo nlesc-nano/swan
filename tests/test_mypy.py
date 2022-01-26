@@ -5,7 +5,7 @@ import warnings
 
 from typing_extensions import Literal
 
-from .utils_test import PATH_SWAN, PATH_TEST
+from tests.utils_test import PATH_SWAN, PATH_TEST
 
 PACKAGE = PATH_SWAN.absolute().as_posix()
 INI = (PATH_TEST / 'mypy.ini').absolute().as_posix()

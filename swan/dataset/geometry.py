@@ -8,7 +8,7 @@ import numpy as np
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
-from ..type_hints import PathLike
+from swan.type_hints import PathLike
 
 
 def read_geometries_from_files(file_geometries: PathLike) -> Tuple[List[Chem.rdchem.Mol], List[np.ndarray]]:
