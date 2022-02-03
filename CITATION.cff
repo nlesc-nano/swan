@@ -2,17 +2,17 @@
 ---
 title: "swan"
 abstract: "Workflows and statistical models to predict numerical properties for nanomaterials"
-authors: 
+authors:
   -
     family-names: Zapata
     given-names: Felipe
-    orcid: "0000-0001-8286-677X"
+    orcid: "https://orcid.org/0000-0001-8286-677X"
   -
     family-names: Nicolas
     given-names: Renaud
-    orcid: "0000-0001-9589-2694"
+    orcid: "https://orcid.org/0000-0001-9589-2694"
 cff-version: 1.2.0
-keywords: 
+keywords:
   - "quantum-chemistry"
   - "materials-science"
   - "machine-learning"
