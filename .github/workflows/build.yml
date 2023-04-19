@@ -40,7 +40,7 @@ jobs:
 
     - name: install dependencies
       run: |
-        conda install scipy rdkit pytorch==${TORCH} torchvision cpuonly -c pytorch -c conda-forge
+        conda install pytorch==${TORCH} torchvision cpuonly -c pytorch -c conda-forge
         pip install dgl
 
         # torch-geometric dependencies

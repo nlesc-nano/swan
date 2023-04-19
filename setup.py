@@ -42,7 +42,7 @@ setup(
         'equivariant_attention@git+https://github.com/nlesc-nano/se3-transformer-public@dev',
         'gpytorch', 'h5py', 'mendeleev', 'numpy', 'pandas', 'pyyaml', 'scikit-learn',
         'scipy', 'seaborn', 'schema',
-        'torch-geometric'
+        'torch-geometric', 'rdkit'
         ],
 
     extras_require={
