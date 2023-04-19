@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  TORCH: "1.8.1"
+  TORCH: "1.9.1"
   PY_COLORS: "1"
 
 concurrency:
@@ -26,7 +26,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [3.7, 3.8, 3.9]
+        version: ["3.7", "3.8", "3.9", "3.10"]
 
     steps:
     - uses: actions/checkout@v3
@@ -40,9 +40,7 @@ jobs:
 
     - name: install dependencies
       run: |
-        # torch==1.8.1 dependencies
         conda install scipy rdkit pytorch==${TORCH} torchvision cpuonly -c pytorch -c conda-forge
-        pip install "gpytorch<=1.5.1"  # TODO: Remove when switching to pytorch >=1.9
         pip install dgl
 
         # torch-geometric dependencies
