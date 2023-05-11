@@ -34,6 +34,7 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
     ],
     install_requires=[
         'requests',
@@ -41,7 +42,7 @@ setup(
         'equivariant_attention@git+https://github.com/nlesc-nano/se3-transformer-public@dev',
         'gpytorch', 'h5py', 'mendeleev', 'numpy', 'pandas', 'pyyaml', 'scikit-learn',
         'scipy', 'seaborn', 'schema',
-        'torch-geometric'
+        'torch-geometric', 'rdkit'
         ],
 
     extras_require={
