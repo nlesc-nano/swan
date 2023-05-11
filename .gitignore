@@ -45,6 +45,7 @@ var/
 *.lprof
 *.prof
 *.out
+.coverage*
 
 # pytest
 .pytest*

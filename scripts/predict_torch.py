@@ -8,7 +8,7 @@ import torch_geometric as tg
 from swan.dataset import (DGLGraphData, FingerprintsData,
                           TorchGeometricGraphData)
 from swan.dataset.dgl_graph_data import dgl_data_loader
-from swan.modeller import Modeller
+from swan.modeller import TorchModeller as Modeller
 from swan.modeller.models import MPNN, FingerprintFullyConnected
 from swan.modeller.models.se3_transformer import SE3Transformer
 from swan.utils.plot import create_scatter_plot
@@ -26,7 +26,7 @@ def predict_fingerprints():
     """Predict data using a previously trained fingerprint model."""
     data = FingerprintsData(PATH_DATA, sanitize=True)
     # FullyConnected NN
-    net = FingerprintFullyConnected(hidden_cells=100, num_labels=NUMLABELS)
+    net = FingerprintFullyConnected(hidden_units=(100, 100), output_units=NUMLABELS)
     return call_modeller(net, data, data.fingerprints)
 
 

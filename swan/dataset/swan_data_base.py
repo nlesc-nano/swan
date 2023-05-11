@@ -10,9 +10,9 @@ from rdkit.Chem import PandasTools
 from sklearn.preprocessing import RobustScaler
 from torch.utils.data import DataLoader, Dataset, Subset
 
-from ..type_hints import PathLike
-from .geometry import read_geometries_from_files
-from .sanitize_data import sanitize_data
+from swan.type_hints import PathLike
+from swan.dataset.geometry import read_geometries_from_files
+from swan.dataset.sanitize_data import sanitize_data
 
 __all__ = ["SwanDataBase"]
 

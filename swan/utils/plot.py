@@ -8,7 +8,7 @@ import pandas as pd
 import seaborn as sns
 from scipy import stats
 
-from ..modeller.gp_modeller import GPMultivariate
+from swan.modeller.gp_modeller import GPMultivariate
 
 plt.switch_backend('agg')
 

@@ -11,9 +11,9 @@ import torch
 import torch_geometric as tg
 from torch_geometric.data import Data
 
-from ..type_hints import PathLike
-from .data_graph_base import SwanGraphData
-from .graph.molecular_graph import create_molecular_torch_geometric_graph
+from swan.type_hints import PathLike
+from swan.dataset.data_graph_base import SwanGraphData
+from swan.dataset.graph.molecular_graph import create_molecular_torch_geometric_graph
 
 
 class TorchGeometricGraphData(SwanGraphData):

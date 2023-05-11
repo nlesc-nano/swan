@@ -5,7 +5,7 @@ from swan.dataset import FingerprintsData, split_dataset, load_split_dataset
 from swan.modeller import GPModeller
 from swan.modeller.models import GaussianProcess
 
-from .utils_test import PATH_TEST
+from tests.utils_test import PATH_TEST
 
 torch.set_default_dtype(torch.float32)
 

@@ -5,7 +5,7 @@ from sklearn.gaussian_process.kernels import ConstantKernel
 from swan.dataset import FingerprintsData
 from swan.modeller import SKModeller
 
-from .utils_test import PATH_TEST
+from tests.utils_test import PATH_TEST
 
 
 def run_test(model: str, **kwargs):

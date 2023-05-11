@@ -6,7 +6,7 @@ from swan.dataset.dgl_graph_data import dgl_data_loader
 from swan.modeller import TorchModeller
 from swan.modeller.models import TFN, SE3Transformer
 
-from .utils_test import PATH_TEST, remove_files
+from tests.utils_test import PATH_TEST, remove_files
 
 NUM_LAYERS = 2     # Number of equivariant layers
 NUM_CHANNELS = 4  # Number of channels in middle layers

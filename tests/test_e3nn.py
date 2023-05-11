@@ -7,7 +7,7 @@ from swan.dataset import TorchGeometricGraphData
 from swan.modeller import TorchModeller
 from swan.modeller.models import InvariantPolynomial
 
-from .utils_test import PATH_TEST, remove_files
+from tests.utils_test import PATH_TEST, remove_files
 
 
 def test_e3nn_equivariant():

@@ -1,6 +1,6 @@
 
 from swan.dataset import FingerprintsData, TorchGeometricGraphData, DGLGraphData
-from .utils_test import PATH_TEST
+from tests.utils_test import PATH_TEST
 
 
 PATH_CSV = PATH_TEST / "thousand.csv"

@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 import pandas as pd
 
-from .utils_test import PATH_TEST
+from tests.utils_test import PATH_TEST
 
 
 def test_state(tmp_path: Path, capsys):

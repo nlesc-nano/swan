@@ -10,9 +10,9 @@ import sklearn
 import torch
 from torch import Tensor
 
-from ..dataset.fingerprints_data import FingerprintsData
-from ..dataset.splitter import SplitDataset
-from .torch_modeller import TorchModeller
+from swan.dataset.fingerprints_data import FingerprintsData
+from swan.dataset.splitter import SplitDataset
+from swan.modeller.torch_modeller import TorchModeller
 
 # Starting logger
 LOGGER = logging.getLogger(__name__)

@@ -45,7 +45,7 @@ PROPERTIES = [
 def predict_fingerprints(data, path_parameters: Path, path_scales: Path):
     """Predict data using a previously trained fingerprint model."""
     # FullyConnected NN
-    net = FingerprintFullyConnected(hidden_cells=100, num_labels=NUMLABELS)
+    net = FingerprintFullyConnected(hidden_units=(100, 100), output_units=NUMLABELS)
     return call_modeller(net, data, data.fingerprints, path_parameters, path_scales)
 
 
